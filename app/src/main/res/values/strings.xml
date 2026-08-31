@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Infaqan</string>
+    <string name="widget_sedekah_subuh_desc">Tombol cepat pencatatan sedekah subuh harian</string>
+    <string name="widget_ibadah_goal_desc">Ringkasan kemajuan tabungan ibadah dan qurban</string>
+</resources>
