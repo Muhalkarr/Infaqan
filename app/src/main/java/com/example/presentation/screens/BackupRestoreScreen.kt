@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Restore
@@ -104,7 +105,8 @@ import java.util.Locale
 @Composable
 fun BackupRestoreScreen(
     viewModel: AmanahLedgerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val syncState by viewModel.syncState.collectAsState()
@@ -155,6 +157,18 @@ fun BackupRestoreScreen(
                         modifier = Modifier.testTag("backup_screen_back_button")
                     ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("backup_screen_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

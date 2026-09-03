@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TableChart
@@ -77,7 +78,8 @@ import java.util.Locale
 @Composable
 fun ExportReportScreen(
     viewModel: AmanahLedgerViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -108,6 +110,18 @@ fun ExportReportScreen(
                         modifier = Modifier.testTag("export_back_btn")
                     ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("export_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

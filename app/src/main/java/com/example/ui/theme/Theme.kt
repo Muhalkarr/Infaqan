@@ -5,7 +5,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+
+enum class UiScaleMode(val displayName: String, val scaleFactor: Float, val description: String) {
+    COMPACT("Ringkas (85%)", 0.85f, "Elemen lebih padat, muat lebih banyak informasi"),
+    DEFAULT("Standar (100%)", 1.0f, "Ukuran proporsional bawaan sistem"),
+    LARGE("Besar (115%)", 1.15f, "Teks dan tombol lebih besar, nyaman dibaca"),
+    EXTRA_LARGE("Ekstra Besar (130%)", 1.30f, "Keterbacaan maksimal untuk kemudahan penglihatan")
+}
 
 enum class AppThemeMode(val title: String, val description: String) {
     ELEGANT_DARK("Elegant Dark", "Tema bernuansa emerald gelap & aksen emas berkilau"),
@@ -106,6 +117,7 @@ private val HighContrastDarkColorScheme = darkColorScheme(
 fun AmanahLedgerTheme(
     darkTheme: Boolean = true,
     highContrast: Boolean = false,
+    uiScaleFactor: Float = 1.0f,
     content: @Composable () -> Unit
 ) {
     val colorScheme: ColorScheme = when {
@@ -115,10 +127,23 @@ fun AmanahLedgerTheme(
         else -> IslamicLightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    val currentDensity = LocalDensity.current
+    val effectiveScale = uiScaleFactor.coerceIn(0.75f, 1.6f)
+    val scaledDensity = remember(currentDensity, effectiveScale) {
+        Density(
+            density = currentDensity.density * effectiveScale,
+            fontScale = currentDensity.fontScale * effectiveScale
+        )
+    }
+
+    CompositionLocalProvider(
+        LocalDensity provides scaledDensity
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }
 

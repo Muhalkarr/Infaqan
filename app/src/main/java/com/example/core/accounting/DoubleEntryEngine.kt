@@ -4,6 +4,12 @@ import com.example.core.receipt.ReceiptAttachment
 import java.util.Date
 import kotlin.math.abs
 
+enum class FiscalCycleType(val title: String, val description: String) {
+    MONTHLY_SALARY_DATE("Siklus Tanggal Gajian", "Periode pembukuan dihitung dari tanggal gajian (misal tgl 25 s/d 24 bulan berikutnya)"),
+    CALENDAR_MONTH("Bulan Kalender Masehi", "Periode pembukuan standar tanggal 1 hingga akhir bulan kalender"),
+    HIJRI_MONTH("Bulan Kalender Hijriah", "Periode pembukuan mengikuti siklus 1 hingga 29/30 setiap bulan Hijriah")
+}
+
 enum class AccountCategory(val displayName: String, val codePrefix: String) {
     ASSET("Aset (Kas, Bank, Emas)", "100"),
     LIABILITY("Kewajiban & Vault Amanah", "200"),

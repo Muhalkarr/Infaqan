@@ -59,6 +59,7 @@ val White60 = Color(0x99FFFFFF)
 val White38 = Color(0x61FFFFFF)
 val White12 = Color(0x1FFFFFFF)
 
+val Color.Companion.White80: Color get() = com.example.ui.theme.White80
 val Color.Companion.White70: Color get() = com.example.ui.theme.White70
 val Color.Companion.White60: Color get() = com.example.ui.theme.White60
 val Color.Companion.White38: Color get() = com.example.ui.theme.White38

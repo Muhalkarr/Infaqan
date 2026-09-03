@@ -32,6 +32,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -105,7 +106,8 @@ import java.util.Locale
 fun AddTransactionScreen(
     viewModel: AmanahLedgerViewModel,
     editEntryId: String? = null,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -364,6 +366,16 @@ fun AddTransactionScreen(
                                 tint = ExpenseCoral
                             )
                         }
+                    }
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("add_tx_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = Color.White
+                        )
                     }
                 }
             )

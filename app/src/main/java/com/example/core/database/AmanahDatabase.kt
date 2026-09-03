@@ -29,18 +29,21 @@ import java.util.Date
         IbadahGoalEntity::class,
         QardhRecordEntity::class,
         BudgetAllocationEntity::class,
-        SedekahSubuhEntity::class
+        SedekahSubuhEntity::class,
+        SettingsEntity::class
     ],
-    version = 1,
+    version = 3,
     exportSchema = false
 )
 abstract class AmanahDatabase : RoomDatabase() {
     abstract fun journalDao(): JournalEntryDao
+    fun transactionDao(): TransactionDao = journalDao()
     abstract fun walletDao(): WalletDao
     abstract fun ibadahGoalDao(): IbadahGoalDao
     abstract fun qardhDao(): QardhDao
     abstract fun budgetDao(): BudgetDao
     abstract fun sedekahSubuhDao(): SedekahSubuhDao
+    abstract fun settingsDao(): SettingsDao
 
     companion object {
         @Volatile

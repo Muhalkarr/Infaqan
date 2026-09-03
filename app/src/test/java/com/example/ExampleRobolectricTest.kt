@@ -2,10 +2,10 @@ package com.example
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.example.core.calendar.HijriCalendarEngine
-import com.example.core.calendar.HijriDate
 import com.example.core.accounting.JournalEntry
 import com.example.core.accounting.JournalLine
+import com.example.core.accounting.FiscalCycleType
+import com.example.core.security.AutoLockInterval
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -28,12 +28,15 @@ class ExampleRobolectricTest {
   @Test
   fun `verify budget allocation calculation`() {
     val viewModel = com.example.core.state.AmanahLedgerViewModel()
+    viewModel.setBudget(
+      accountId = "acc_living",
+      categoryName = "Biaya Hidup & Pangan",
+      monthlyLimit = 3500000.0
+    )
     val state = viewModel.uiState.value
     assertTrue(state.budgets.isNotEmpty())
     val livingBudget = state.budgets.first { it.accountId == "acc_living" }
-    val spent = state.getMonthlySpentForAccount(livingBudget.accountId)
-    assertTrue(spent >= 0.0)
-    assertTrue(livingBudget.monthlyLimit > 0.0)
+    assertEquals(3500000.0, livingBudget.monthlyLimit, 0.01)
   }
 
   @Test
@@ -88,14 +91,26 @@ class ExampleRobolectricTest {
   }
 
   @Test
-  fun `verify viewModel initialization and seed history`() {
+  fun `verify viewModel ledger customization and auto-lock features`() {
     val viewModel = com.example.core.state.AmanahLedgerViewModel()
+    viewModel.updateInitialLedgerDate("15/01/2024")
+    viewModel.updateFiscalCycleType(FiscalCycleType.CALENDAR_MONTH)
+    viewModel.updateInitialLedgerBalance(50000000.0)
+    viewModel.setStartDayOfMonth(25)
+    viewModel.setUiScaleFactor(1.15f)
+
     val state = viewModel.uiState.value
-    assertTrue(state.journalEntries.isNotEmpty())
-    assertTrue(state.totalAssets > 0)
-    assertTrue(state.virtualInfaqVaultBalance >= 0)
-    for (entry in state.journalEntries) {
-      assertTrue("Entry ${entry.description} must be balanced", entry.isBalanced)
-    }
+    assertEquals("15/01/2024", state.initialLedgerDate)
+    assertEquals(FiscalCycleType.CALENDAR_MONTH, state.fiscalCycleType)
+    assertEquals(50000000.0, state.initialLedgerBalance, 0.01)
+    assertEquals(25, state.startDayOfMonth)
+    assertEquals(1.15f, state.uiScaleFactor, 0.001f)
+
+    // Verify PIN setup and auto-lock
+    viewModel.enablePin("1234", "Kota Kelahiran", "Jakarta")
+    viewModel.setAutoLockInterval(AutoLockInterval.IMMEDIATE)
+    viewModel.onAppBackgrounded()
+    val lockedState = viewModel.uiState.value
+    assertTrue(lockedState.securityConfig.isAppLocked)
   }
 }

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
@@ -73,7 +74,8 @@ import com.example.ui.theme.White70
 @Composable
 fun HaulNisabScreen(
     viewModel: AmanahLedgerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -110,6 +112,18 @@ fun HaulNisabScreen(
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+                },
+                actions = {
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("haul_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = Color.White
+                        )
+                    }
                 }
             )
         }

@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.LockReset
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
@@ -90,7 +91,8 @@ import com.example.ui.theme.White70
 @Composable
 fun SecuritySettingsScreen(
     viewModel: AmanahLedgerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val securityConfig = state.securityConfig
@@ -130,6 +132,18 @@ fun SecuritySettingsScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali ke Dashboard",
                             tint = EmeraldLight
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("security_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },

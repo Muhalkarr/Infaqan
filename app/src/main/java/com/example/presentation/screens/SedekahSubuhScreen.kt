@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
@@ -98,7 +99,8 @@ import java.util.Locale
 @Composable
 fun SedekahSubuhScreen(
     viewModel: AmanahLedgerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val subuhState = state.sedekahSubuhState
@@ -171,6 +173,16 @@ fun SedekahSubuhScreen(
                                 color = GoldAccent
                             )
                         }
+                    }
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("sedekah_subuh_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = Color.White
+                        )
                     }
                 }
             )

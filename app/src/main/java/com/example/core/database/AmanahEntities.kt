@@ -1,6 +1,7 @@
 package com.example.core.database
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
@@ -11,7 +12,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Date
 
-@Entity(tableName = "journal_entries")
+@Entity(
+    tableName = "journal_entries",
+    indices = [Index(value = ["dateMillis"])]
+)
 data class JournalEntryEntity(
     @PrimaryKey val id: String,
     val dateMillis: Long,
@@ -57,7 +61,10 @@ data class IbadahGoalEntity(
     val isSynced: Boolean = false
 )
 
-@Entity(tableName = "qardh_records")
+@Entity(
+    tableName = "qardh_records",
+    indices = [Index(value = ["agreementDateMillis"])]
+)
 data class QardhRecordEntity(
     @PrimaryKey val id: String,
     val type: String,
@@ -96,3 +103,14 @@ data class SedekahSubuhEntity(
     val lastContributionDateMillis: Long = 0L,
     val updatedAtMillis: Long = System.currentTimeMillis()
 )
+
+@Entity(tableName = "app_settings")
+data class SettingsEntity(
+    @PrimaryKey val key: String,
+    val value: String,
+    val updatedAtMillis: Long = System.currentTimeMillis()
+)
+
+typealias TransactionEntity = JournalEntryEntity
+typealias BudgetEntity = BudgetAllocationEntity
+

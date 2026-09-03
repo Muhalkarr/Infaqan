@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Savings
@@ -96,7 +97,8 @@ import java.util.UUID
 @Composable
 fun MultiWalletScreen(
     viewModel: AmanahLedgerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
@@ -137,6 +139,16 @@ fun MultiWalletScreen(
                         modifier = Modifier.testTag("wallet_top_transfer_button")
                     ) {
                         Icon(Icons.Default.SwapHoriz, contentDescription = "Mutasi Saldo", tint = GoldAccent)
+                    }
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("wallet_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

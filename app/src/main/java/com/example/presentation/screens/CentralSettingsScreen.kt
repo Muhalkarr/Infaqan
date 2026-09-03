@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PieChart
@@ -103,6 +104,8 @@ import com.example.core.budget.FinancialGoalMode
 import com.example.core.security.AutoLockInterval
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.DarkBorder
+import com.example.ui.theme.DarkSurfaceVariant
 import com.example.ui.theme.EmeraldDark
 import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.EmeraldPrimary
@@ -137,7 +140,8 @@ fun CentralSettingsScreen(
     onNavigateToQardh: () -> Unit = {},
     onNavigateToAmilDirectory: () -> Unit = {},
     onNavigateToFaraidh: () -> Unit = {},
-    onNavigateToExportReport: () -> Unit = {}
+    onNavigateToExportReport: () -> Unit = {},
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -148,6 +152,8 @@ fun CentralSettingsScreen(
 
     // Dialog state
     var showEditProfileDialog by remember { mutableStateOf(false) }
+    var showEditInitialDateDialog by remember { mutableStateOf(false) }
+    var showEditInitialBalanceDialog by remember { mutableStateOf(false) }
     var showEditGoldPriceDialog by remember { mutableStateOf(false) }
     var showResetConfirmationDialog by remember { mutableStateOf(false) }
     var showExportSummaryDialog by remember { mutableStateOf(false) }
@@ -205,6 +211,16 @@ fun CentralSettingsScreen(
                             imageVector = Icons.Default.RestartAlt,
                             contentDescription = "Reset Pengaturan Awal",
                             tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("central_settings_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -299,7 +315,121 @@ fun CentralSettingsScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
-                        // Tanggal Awal Periode Bulanan
+                        // Tanggal Awal Pembukuan / Buku Kas
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showEditInitialDateDialog = true }
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Tanggal Awal Buku Kas",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Mulai pencatatan: ${state.initialLedgerDate}",
+                                    fontSize = 12.sp,
+                                    color = EmeraldLight
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Ubah Tanggal Awal",
+                                tint = GoldAccent,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                        // Saldo Awal Ekuitas / Modal Awal
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showEditInitialBalanceDialog = true }
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Saldo Awal Pembukuan (Modal Awal)",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Rp ${nf.format(state.initialLedgerBalance)}",
+                                    fontSize = 12.sp,
+                                    color = GoldAccent
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Ubah Saldo Awal",
+                                tint = GoldAccent,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                        // Jenis Siklus Periode Fiskal
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            Text(
+                                text = "Model Siklus Periode Pembukuan",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            com.example.core.accounting.FiscalCycleType.entries.forEach { cycle ->
+                                val isSelected = state.fiscalCycleType == cycle
+                                Surface(
+                                    color = if (isSelected) EmeraldPrimary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, EmeraldLight) else null,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 2.dp)
+                                        .clickable { viewModel.updateFiscalCycleType(cycle) }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isSelected) Icons.Default.Check else Icons.Default.Schedule,
+                                            contentDescription = null,
+                                            tint = if (isSelected) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column {
+                                            Text(
+                                                text = when (cycle) {
+                                                    com.example.core.accounting.FiscalCycleType.MONTHLY_SALARY_DATE -> "Siklus Bulanan Gajian (Tgl ${state.startDayOfMonth})"
+                                                    com.example.core.accounting.FiscalCycleType.CALENDAR_MONTH -> "Bulan Kalender Masehi (1 - Akhir Bulan)"
+                                                    com.example.core.accounting.FiscalCycleType.HIJRI_MONTH -> "Bulan Tarikh Hijriyah (1 - 29/30 H)"
+                                                },
+                                                fontSize = 12.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) EmeraldLight else MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                        // Tanggal Awal Periode Bulanan (Gajian)
                         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -440,6 +570,110 @@ fun CentralSettingsScreen(
                             ) {
                                 viewModel.setThemeMode(AppThemeMode.HIGH_CONTRAST_DARK)
                             }
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+                        // Skala Tampilan UI & Ukuran Keterbacaan
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Skala Tampilan & Ukuran Teks",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Atur kepadatan antarmuka & kenyamanan membaca",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Surface(
+                                    color = EmeraldPrimary.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = "${(state.uiScaleFactor * 100).toInt()}%",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = EmeraldLight,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // 4 preset mode buttons
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                val modes = listOf(
+                                    com.example.ui.theme.UiScaleMode.COMPACT to "85%",
+                                    com.example.ui.theme.UiScaleMode.DEFAULT to "100%",
+                                    com.example.ui.theme.UiScaleMode.LARGE to "115%",
+                                    com.example.ui.theme.UiScaleMode.EXTRA_LARGE to "130%"
+                                )
+
+                                modes.forEach { (m, pctLabel) ->
+                                    val isSelected = state.uiScaleMode == m
+                                    Surface(
+                                        onClick = { viewModel.setUiScaleMode(m) },
+                                        color = if (isSelected) EmeraldPrimary.copy(alpha = 0.25f) else DarkSurfaceVariant.copy(alpha = 0.5f),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            width = 1.dp,
+                                            color = if (isSelected) EmeraldPrimary else Color.Transparent
+                                        ),
+                                        modifier = Modifier.weight(1f).testTag("btn_ui_scale_${m.name.lowercase()}")
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = pctLabel,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isSelected) EmeraldLight else Color.White
+                                            )
+                                            Text(
+                                                text = when(m) {
+                                                    com.example.ui.theme.UiScaleMode.COMPACT -> "Ringkas"
+                                                    com.example.ui.theme.UiScaleMode.DEFAULT -> "Standar"
+                                                    com.example.ui.theme.UiScaleMode.LARGE -> "Besar"
+                                                    com.example.ui.theme.UiScaleMode.EXTRA_LARGE -> "Ekstra"
+                                                },
+                                                fontSize = 9.sp,
+                                                color = if (isSelected) EmeraldLight else Color.White.copy(alpha = 0.6f)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Fine slider control
+                            Slider(
+                                value = state.uiScaleFactor,
+                                onValueChange = { viewModel.setUiScaleFactor(it) },
+                                valueRange = 0.80f..1.35f,
+                                steps = 10,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = EmeraldLight,
+                                    activeTrackColor = EmeraldPrimary,
+                                    inactiveTrackColor = DarkBorder
+                                ),
+                                modifier = Modifier.fillMaxWidth().testTag("slider_ui_scale_factor")
+                            )
                         }
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -1077,7 +1311,7 @@ fun CentralSettingsScreen(
 
                         Spacer(modifier = Modifier.height(6.dp))
 
-                        // Reset Data
+                        // Hapus Semua Data Dummy (Buku Kas Bersih)
                         OutlinedButton(
                             onClick = { showResetConfirmationDialog = true },
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
@@ -1086,7 +1320,24 @@ fun CentralSettingsScreen(
                         ) {
                             Icon(imageVector = Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Reset & Muat Ulang Data Bawaan", fontSize = 12.sp)
+                            Text("Hapus Seluruh Data Dummy (Mulai Buku Kas Bersih)", fontSize = 12.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Muat Ulang Data Sampel / Dummy
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.loadDummyData()
+                                Toast.makeText(context, "Data contoh/dummy berhasil dimuat kembali!", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth().testTag("settings_load_dummy_button")
+                        ) {
+                            Icon(imageVector = Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Muat Ulang Data Contoh / Dummy", fontSize = 12.sp)
                         }
                     }
                 }
@@ -1138,6 +1389,124 @@ fun CentralSettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEditProfileDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    // Dialog Edit Tanggal Awal Buku Kas
+    if (showEditInitialDateDialog) {
+        var tempDate by remember { mutableStateOf(state.initialLedgerDate) }
+        AlertDialog(
+            onDismissRequest = { showEditInitialDateDialog = false },
+            title = { Text("Ubah Tanggal Awal Buku Kas") },
+            text = {
+                Column {
+                    Text(
+                        text = "Tentukan tanggal pembukaan / cutoff awal pembukuan kas (format: DD/MM/YYYY):",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tempDate,
+                        onValueChange = { tempDate = it },
+                        singleLine = true,
+                        placeholder = { Text("DD/MM/YYYY") },
+                        modifier = Modifier.fillMaxWidth().testTag("dialog_input_initial_date")
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        val sdf = java.text.SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        val todayStr = sdf.format(java.util.Date())
+                        val startOfMonthStr = "01/" + java.text.SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(java.util.Date())
+                        val startOfYearStr = "01/01/" + java.text.SimpleDateFormat("yyyy", Locale.getDefault()).format(java.util.Date())
+
+                        listOf("Hari Ini" to todayStr, "Awal Bulan" to startOfMonthStr, "Awal Tahun" to startOfYearStr).forEach { (label, dateVal) ->
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(6.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .clickable { tempDate = dateVal }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 10.sp,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (tempDate.isNotBlank()) {
+                            viewModel.updateInitialLedgerDate(tempDate.trim())
+                        }
+                        showEditInitialDateDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                ) {
+                    Text("Simpan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditInitialDateDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    // Dialog Edit Saldo Awal Pembukuan
+    if (showEditInitialBalanceDialog) {
+        var tempBalanceStr by remember { mutableStateOf(state.initialLedgerBalance.toLong().toString()) }
+        AlertDialog(
+            onDismissRequest = { showEditInitialBalanceDialog = false },
+            title = { Text("Ubah Saldo Awal (Modal Awal)") },
+            text = {
+                Column {
+                    Text(
+                        text = "Masukkan total ekuitas / saldo awal kas saat pertama kali memulai pembukuan:",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tempBalanceStr,
+                        onValueChange = { if (it.all { char -> char.isDigit() }) tempBalanceStr = it },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        prefix = { Text("Rp ") },
+                        modifier = Modifier.fillMaxWidth().testTag("dialog_input_initial_balance")
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val parsed = tempBalanceStr.toDoubleOrNull()
+                        if (parsed != null && parsed >= 0) {
+                            viewModel.updateInitialLedgerBalance(parsed)
+                        }
+                        showEditInitialBalanceDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                ) {
+                    Text("Terapkan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditInitialBalanceDialog = false }) {
                     Text("Batal")
                 }
             }
@@ -1218,23 +1587,24 @@ fun CentralSettingsScreen(
         AlertDialog(
             onDismissRequest = { showResetConfirmationDialog = false },
             icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text("Reset Data Bawaan?") },
+            title = { Text("Hapus Semua Data Dummy?") },
             text = {
                 Text(
-                    "Tindakan ini akan mengembalikan seluruh transaksi jurnal, anggaran, aturan infaq, dan brankas ke kondisi awal simulasi. Konfigurasi PIN tetap aman.",
+                    "Tindakan ini akan menghapus seluruh data contoh/dummy (transaksi jurnal kas, kantong rekening, anggaran belanja, target ibadah, hutang/piutang qardh, dan riwayat sedekah subuh) sehingga buku kas Anda menjadi bersih 100% untuk mulai mencatat keuangan pribadi secara riil.\n\nCatatan: Anda dapat memuat ulang data contoh kapan saja melalui tombol 'Muat Ulang Data Contoh'.",
                     fontSize = 13.sp
                 )
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.resetAllDataToDefault()
+                        viewModel.clearAllDummyData()
                         showResetConfirmationDialog = false
-                        Toast.makeText(context, "Data berhasil direset ke kondisi awal.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Data dummy berhasil dihapus. Buku kas bersih.", Toast.LENGTH_SHORT).show()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.testTag("confirm_reset_dummy_button")
                 ) {
-                    Text("Ya, Reset Data")
+                    Text("Ya, Hapus Data Dummy")
                 }
             },
             dismissButton = {

@@ -13,16 +13,21 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.VolunteerActivism
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -32,15 +37,18 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.Screen
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.navigation.AmanahNavHost
 import com.example.navigation.AmanahRoutes
+import com.example.presentation.components.AppNavigationDrawerContent
 import com.example.presentation.screens.AppLockScreen
 import com.example.ui.theme.AmanahLedgerTheme
 import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.GoldAccent
+import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
     private val viewModel: AmanahLedgerViewModel by viewModels()
@@ -55,7 +63,8 @@ class MainActivity : FragmentActivity() {
             val state by viewModel.uiState.collectAsState()
             AmanahLedgerTheme(
                 darkTheme = state.isDarkMode,
-                highContrast = state.isHighContrast
+                highContrast = state.isHighContrast,
+                uiScaleFactor = state.uiScaleFactor
             ) {
                 if (state.securityConfig.isPinEnabled && state.securityConfig.isAppLocked) {
                     AppLockScreen(viewModel = viewModel)
@@ -64,6 +73,16 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        viewModel.onAppBackgrounded()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        viewModel.onAppForegrounded()
     }
 }
 
@@ -79,6 +98,11 @@ fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val currentScreen = remember(currentRoute) { Screen.fromRoute(currentRoute) }
+    val state by viewModel.uiState.collectAsState()
+
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
 
     val bottomNavItems = listOf(
         BottomNavItem(
@@ -113,67 +137,94 @@ fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
         )
     )
 
-    val showBottomBar = currentRoute in listOf(
-        AmanahRoutes.DASHBOARD,
-        AmanahRoutes.LEDGER,
-        AmanahRoutes.INFAQ_VAULT,
-        AmanahRoutes.MULTI_WALLET,
-        AmanahRoutes.CENTRAL_SETTINGS
-    )
+    val showBottomBar = true
 
-    Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar(
-                    containerColor = DarkSurface,
-                    tonalElevation = 8.dp
-                ) {
-                    bottomNavItems.forEach { item ->
-                        val isSelected = currentRoute == item.route
-                        NavigationBarItem(
-                            selected = isSelected,
-                            onClick = {
-                                if (currentRoute != item.route) {
-                                    navController.navigate(item.route) {
-                                        popUpTo(navController.graph.findStartDestination().id) {
-                                            saveState = true
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppNavigationDrawerContent(
+                currentScreen = currentScreen,
+                uiState = state,
+                onSelectScreen = { screen ->
+                    val targetRoute = screen.toRoute()
+                    if (currentRoute != targetRoute) {
+                        navController.navigate(targetRoute) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                    // Do NOT close drawerState so sidebar stays open for swift multi-feature exploration
+                },
+                onCloseDrawer = {
+                    coroutineScope.launch { drawerState.close() }
+                },
+                onToggleTheme = { viewModel.toggleDarkMode() },
+                onTogglePrivacy = { viewModel.toggleBalancePrivacy() },
+                onLockAppNow = {
+                    coroutineScope.launch { drawerState.close() }
+                    viewModel.lockAppNow()
+                }
+            )
+        }
+    ) {
+        Scaffold(
+            bottomBar = {
+                if (showBottomBar) {
+                    NavigationBar(
+                        containerColor = DarkSurface,
+                        tonalElevation = 8.dp
+                    ) {
+                        bottomNavItems.forEach { item ->
+                            val isSelected = currentRoute == item.route
+                            NavigationBarItem(
+                                selected = isSelected,
+                                onClick = {
+                                    if (currentRoute != item.route) {
+                                        navController.navigate(item.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
                                         }
-                                        launchSingleTop = true
-                                        restoreState = true
                                     }
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = item.icon,
-                                    contentDescription = item.title
-                                )
-                            },
-                            label = {
-                                Text(
-                                    text = item.title,
-                                    fontSize = 10.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = EmeraldLight,
-                                selectedTextColor = EmeraldLight,
-                                indicatorColor = EmeraldPrimary.copy(alpha = 0.2f),
-                                unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                                unselectedTextColor = Color.White.copy(alpha = 0.6f)
-                            ),
-                            modifier = Modifier.testTag(item.testTag)
-                        )
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.title
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = item.title,
+                                        fontSize = 10.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = EmeraldLight,
+                                    selectedTextColor = EmeraldLight,
+                                    indicatorColor = EmeraldPrimary.copy(alpha = 0.2f),
+                                    unselectedIconColor = Color.White.copy(alpha = 0.6f),
+                                    unselectedTextColor = Color.White.copy(alpha = 0.6f)
+                                ),
+                                modifier = Modifier.testTag(item.testTag)
+                            )
+                        }
                     }
                 }
             }
+        ) { paddingValues ->
+            AmanahNavHost(
+                navController = navController,
+                viewModel = viewModel,
+                onOpenDrawer = { coroutineScope.launch { drawerState.open() } },
+                modifier = Modifier.padding(paddingValues)
+            )
         }
-    ) { paddingValues ->
-        AmanahNavHost(
-            navController = navController,
-            viewModel = viewModel,
-            modifier = Modifier.padding(paddingValues)
-        )
     }
 }

@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -97,6 +98,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import com.example.Screen
 import com.example.presentation.components.AppNavigationDrawerContent
+import com.example.presentation.components.BudgetCategoryAllocationChart
+import com.example.presentation.components.DualCalendarCard
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -120,6 +123,7 @@ import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.ExpenseCoral
 import com.example.ui.theme.GoldAccent
+import com.example.ui.theme.GoldLight
 import com.example.ui.theme.White12
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
@@ -130,6 +134,7 @@ import java.util.Date
 @Composable
 fun DashboardScreen(
     viewModel: AmanahLedgerViewModel,
+    onOpenDrawer: () -> Unit = {},
     onNavigateToAddTransaction: () -> Unit,
     onEditTransaction: (String) -> Unit,
     onNavigateToBudget: () -> Unit,
@@ -150,7 +155,8 @@ fun DashboardScreen(
     onNavigateToQardh: () -> Unit = {},
     onNavigateToAmilDirectory: () -> Unit = {},
     onNavigateToFaraidh: () -> Unit = {},
-    onNavigateToExportReport: () -> Unit = {}
+    onNavigateToExportReport: () -> Unit = {},
+    onNavigateToIslamicGrounding: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val latestAlert by viewModel.appStateNotifier.latestAlert.collectAsState()
@@ -161,209 +167,52 @@ fun DashboardScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var selectedEntryForDetail by remember { mutableStateOf<JournalEntry?>(null) }
     var entryToDelete by remember { mutableStateOf<JournalEntry?>(null) }
+    var dismissBackupNudge by remember { mutableStateOf(false) }
 
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val coroutineScope = rememberCoroutineScope()
-
-    ModalNavigationDrawer(
-        drawerState = drawerState,
-        drawerContent = {
-            AppNavigationDrawerContent(
-                currentScreen = Screen.DASHBOARD,
-                uiState = state,
-                onSelectScreen = { screen ->
-                    coroutineScope.launch { drawerState.close() }
-                    when (screen) {
-                        Screen.DASHBOARD -> { /* Sudah di beranda */ }
-                        Screen.ADD_TRANSACTION -> onNavigateToAddTransaction()
-                        Screen.BUDGET_ALLOCATION -> onNavigateToBudget()
-                        Screen.ANALYTICS -> onNavigateToAnalytics()
-                        Screen.HAUL_NISAB -> onNavigateToHaulNisab()
-                        Screen.INFAQ_RULES -> onNavigateToRules()
-                        Screen.RECURRING_TRANSACTIONS -> onNavigateToRecurring()
-                        Screen.MONTHLY_REPORT -> onNavigateToMonthlyReport()
-                        Screen.VAULT_HISTORY -> onNavigateToVaultHistory()
-                        Screen.SEDEKAH_SUBUH -> onNavigateToSedekahSubuh()
-                        Screen.INTERACTIVE_GUIDE -> onNavigateToGuide()
-                        Screen.SECURITY_SETTINGS -> onNavigateToSecurity()
-                        Screen.CENTRAL_SETTINGS -> onNavigateToCentralSettings()
-                        Screen.MULTI_WALLET -> onNavigateToMultiWallet()
-                        Screen.IBADAH_GOALS -> onNavigateToIbadahGoals()
-                        Screen.ZAKAT_HUB -> onNavigateToZakatHub()
-                        Screen.BACKUP_RESTORE -> onNavigateToBackupRestore()
-                        Screen.QARDH -> onNavigateToQardh()
-                        Screen.AMIL_DIRECTORY -> onNavigateToAmilDirectory()
-                        Screen.FARAIDH_CALCULATOR -> onNavigateToFaraidh()
-                        Screen.EXPORT_REPORT -> onNavigateToExportReport()
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                navigationIcon = {
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("dashboard_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                onCloseDrawer = { coroutineScope.launch { drawerState.close() } },
-                onToggleTheme = { viewModel.toggleDarkMode() },
-                onTogglePrivacy = { viewModel.toggleBalancePrivacy() },
-                onLockAppNow = { viewModel.lockAppNow() }
-            )
-        }
-    ) {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            topBar = {
-                TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    navigationIcon = {
-                        IconButton(
-                            onClick = { coroutineScope.launch { drawerState.open() } },
-                            modifier = Modifier.testTag("dashboard_menu_sidebar_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = "Buka Menu Sidebar",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    },
-                    title = {
-                        Column {
-                            Text(
-                                text = "Infaqan Syariah",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "$hijriNow ${if (isFriday) "• Hari Jumat Berkah" else ""}",
-                                fontSize = 11.sp,
-                                color = EmeraldLight
-                            )
-                        }
-                    },
-                    actions = {
-                        // Quick Balance Privacy Mask Toggle (Mata Saldo)
-                        IconButton(
-                            onClick = { viewModel.toggleBalancePrivacy() },
-                            modifier = Modifier.testTag("dashboard_privacy_toggle_button")
-                        ) {
-                            Icon(
-                                imageVector = if (state.securityConfig.isMaskBalance) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = "Privasi Saldo",
-                                tint = if (state.securityConfig.isMaskBalance) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        // Central Settings Shortcut Button
-                        IconButton(
-                            onClick = onNavigateToCentralSettings,
-                            modifier = Modifier.testTag("dashboard_central_settings_button")
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Pusat Pengaturan Terpusat",
-                                tint = GoldAccent
-                            )
-                        }
-
-                    // Security & App Lock Settings Center
-                    IconButton(
-                        onClick = onNavigateToSecurity,
-                        modifier = Modifier.testTag("dashboard_security_settings_button")
-                    ) {
-                        Box {
-                            Icon(
-                                imageVector = Icons.Default.Shield,
-                                contentDescription = "Pengamanan & Privasi",
-                                tint = if (state.securityConfig.isPinEnabled) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (state.securityConfig.isPinEnabled) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(7.dp)
-                                        .clip(CircleShape)
-                                        .background(EmeraldLight)
-                                        .align(Alignment.TopEnd)
-                                )
-                            }
-                        }
-                    }
-
-                    // Panduan Interaktif Pengguna Baru
-                    IconButton(
-                        onClick = onNavigateToGuide,
-                        modifier = Modifier.testTag("interactive_guide_nav_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.HelpOutline,
-                            contentDescription = "Panduan Interaktif Pengguna",
-                            tint = GoldAccent
+                title = {
+                    Column {
+                        Text(
+                            text = "Infaqan Syariah",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "$hijriNow ${if (isFriday) "• Hari Jumat Berkah" else ""}",
+                            fontSize = 11.sp,
+                            color = EmeraldLight
                         )
                     }
-
-                    // Theme Switcher (Dark / Light / High Contrast Dialog)
+                },
+                actions = {
+                    // Quick Balance Privacy Mask Toggle (Mata Saldo)
                     IconButton(
-                        onClick = { showThemeDialog = true },
-                        modifier = Modifier.testTag("theme_toggle_button")
+                        onClick = { viewModel.toggleBalancePrivacy() },
+                        modifier = Modifier.testTag("dashboard_privacy_toggle_button")
                     ) {
                         Icon(
-                            imageVector = if (state.isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
-                            contentDescription = "Ganti Tema & Aksesibilitas",
-                            tint = GoldAccent
-                        )
-                    }
-
-                    // Recurring Scheduler (Otomasi Rutin)
-                    IconButton(
-                        onClick = onNavigateToRecurring,
-                        modifier = Modifier.testTag("recurring_nav_button")
-                    ) {
-                        Box {
-                            Icon(
-                                imageVector = Icons.Default.Schedule,
-                                contentDescription = "Jadwal Transaksi Rutin",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (state.dueRecurringCount > 0) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .clip(CircleShape)
-                                        .background(GoldAccent)
-                                        .align(Alignment.TopEnd)
-                                )
-                            }
-                        }
-                    }
-
-                    // Monthly Financial Report & PDF Export
-                    IconButton(
-                        onClick = onNavigateToMonthlyReport,
-                        modifier = Modifier.testTag("report_nav_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PictureAsPdf,
-                            contentDescription = "Laporan PDF Bulanan",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onNavigateToBudget,
-                        modifier = Modifier.testTag("budget_nav_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PieChart,
-                            contentDescription = "Pemisahan Anggaran",
-                            tint = GoldAccent
-                        )
-                    }
-
-                    IconButton(
-                        onClick = onNavigateToAnalytics,
-                        modifier = Modifier.testTag("analytics_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Analytics,
-                            contentDescription = "Infografis & Visualisasi",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            imageVector = if (state.securityConfig.isMaskBalance) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = "Privasi Saldo",
+                            tint = if (state.securityConfig.isMaskBalance) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -391,81 +240,7 @@ fun DashboardScreen(
         ) {
             item { Spacer(modifier = Modifier.height(4.dp)) }
 
-            // Interactive Guide Hero Banner Card
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onNavigateToGuide() }
-                        .testTag("dashboard_interactive_guide_banner"),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(EmeraldPrimary.copy(alpha = 0.2f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                                contentDescription = null,
-                                tint = GoldAccent,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "Panduan Interaktif Aplikasi",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = GoldAccent.copy(alpha = 0.25f)
-                                ) {
-                                    Text(
-                                        text = "TUTORIAL",
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = GoldAccent,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Panduan lengkap 8 modul fitur, simulasi infaq otomatis, dan tips syariah.",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = 15.sp
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.Default.ArrowForwardIos,
-                            contentDescription = null,
-                            tint = EmeraldLight,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
-                }
-            }
-
-            // App State Notifier Live Alert Banner
+            // 1. PRIORITAS TERTINGGI: App State Notifier Live Alert Banner (Peringatan & Status Sistem)
             if (latestAlert != null) {
                 item {
                     val alert = latestAlert!!
@@ -519,7 +294,17 @@ fun DashboardScreen(
                 }
             }
 
-            // 1. Hero Virtual Infaq Vault Card
+            // 2. PRIORITAS TERTINGGI: Over-Budget Alert Visual Indicator Banner (Peringatan Melebihi Batas Pagu)
+            if (state.overBudgetCount > 0) {
+                item {
+                    DashboardOverBudgetAlertBanner(
+                        overBudgetCount = state.overBudgetCount,
+                        onClick = onNavigateToBudget
+                    )
+                }
+            }
+
+            // 3. PRIORITAS UTAMA (HERO): Virtual Infaq Vault & Total Assets (Brankas Amanah & Saldo Kas)
             item {
                 VirtualInfaqVaultCard(
                     vaultBalance = state.virtualInfaqVaultBalance,
@@ -531,7 +316,14 @@ fun DashboardScreen(
                 )
             }
 
-            // 1a. Sedekah Subuh Streak Visualizer Widget
+            // 4. PRIORITAS UTAMA: Dual Calendar Gregorian & Hijriah Header
+            item {
+                DualCalendarCard(
+                    selectedHijriOffset = state.selectedHijriOffset
+                )
+            }
+
+            // 5. PRIORITAS UTAMA: Sedekah Subuh Streak Visualizer Widget (Habit Tracker Fajar)
             item {
                 DashboardSedekahSubuhWidget(
                     subuhState = state.sedekahSubuhState,
@@ -542,206 +334,198 @@ fun DashboardScreen(
                 )
             }
 
-            // Quick Shortcut Row: Otomasi Rutin, Unduh PDF, & Riwayat Vault
+            // 6. PRIORITAS TINGGI: Pintasan Cepat Fitur Kunci (2x2 Grid Aksi Cepat)
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { onNavigateToRecurring() }
-                            .testTag("shortcut_recurring_card"),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(EmeraldPrimary.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AutoMode,
-                                    contentDescription = null,
-                                    tint = EmeraldLight,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = "Otomasi Rutin",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = if (state.dueRecurringCount > 0) "${state.dueRecurringCount} Jatuh Tempo" else "${state.recurringTransactions.size} Terjadwal",
-                                    fontSize = 10.sp,
-                                    color = if (state.dueRecurringCount > 0) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { onNavigateToMonthlyReport() }
-                            .testTag("shortcut_report_card"),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(GoldAccent.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.PictureAsPdf,
-                                    contentDescription = null,
-                                    tint = GoldAccent,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = "Laporan PDF",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "Unduh & Bagikan",
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Central Settings Hub Shortcut Banner
-            item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .clickable { onNavigateToCentralSettings() }
-                        .testTag("dashboard_central_settings_hub_card"),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.35f))
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onNavigateToRecurring() }
+                                .testTag("shortcut_recurring_card"),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(EmeraldPrimary.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Settings,
-                                    contentDescription = null,
-                                    tint = GoldAccent,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(EmeraldPrimary.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AutoMode,
+                                        contentDescription = null,
+                                        tint = EmeraldLight,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
                                     Text(
-                                        text = "Pengaturan Terpusat",
-                                        fontSize = 14.sp,
+                                        text = "Otomasi Rutin",
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        color = GoldAccent.copy(alpha = 0.2f),
-                                        shape = RoundedCornerShape(4.dp)
-                                    ) {
-                                        Text(
-                                            text = "SEMUA FITUR",
-                                            fontSize = 8.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = GoldAccent,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                        )
-                                    }
+                                    Text(
+                                        text = if (state.dueRecurringCount > 0) "${state.dueRecurringCount} Jatuh Tempo" else "${state.recurringTransactions.size} Terjadwal",
+                                        fontSize = 10.sp,
+                                        color = if (state.dueRecurringCount > 0) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
-                                Text(
-                                    text = "Kelola kas, tema, infaq vault, nisab zakat, israf & PIN",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
                             }
                         }
-                        Icon(
-                            imageVector = Icons.Default.ArrowForwardIos,
-                            contentDescription = null,
-                            tint = EmeraldLight,
-                            modifier = Modifier.size(14.dp)
-                        )
+
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onNavigateToMultiWallet() }
+                                .testTag("shortcut_multi_wallet_card"),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(GoldAccent.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalanceWallet,
+                                        contentDescription = null,
+                                        tint = GoldAccent,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "Multi-Wallet",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${state.wallets.size} Akun Kas",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onNavigateToMonthlyReport() }
+                                .testTag("shortcut_report_card"),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(GoldAccent.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.PictureAsPdf,
+                                        contentDescription = null,
+                                        tint = GoldAccent,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "Laporan PDF",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Unduh & Bagikan",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onNavigateToZakatHub() }
+                                .testTag("shortcut_zakat_hub_card"),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(12.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(EmeraldPrimary.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.VolunteerActivism,
+                                        contentDescription = null,
+                                        tint = EmeraldLight,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "Zakat Hub",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "8 Asnaf Syariah",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            // 1b. Over-Budget Alert Visual Indicator Banner (if any category exceeds limit)
-            if (state.overBudgetCount > 0) {
-                item {
-                    DashboardOverBudgetAlertBanner(
-                        overBudgetCount = state.overBudgetCount,
-                        onClick = onNavigateToBudget
-                    )
-                }
-            }
-
-            // 2. Pemisahan Anggaran (Budget Allocation) Overview Card
-            item {
-                DashboardBudgetAllocationCard(
-                    state = state,
-                    onClick = onNavigateToBudget
-                )
-            }
-
-            // 3. Status Anggaran per Kategori (Visual Progress Bars)
-            item {
-                DashboardCategoryBudgetsSection(
-                    state = state,
-                    onManageClick = onNavigateToBudget
-                )
-            }
-
-            // 4. Metrics Row: Spiritual Liquidity Index & Nisab Status
+            // 7. PRIORITAS MENENGAH: Metrik Finansial & Spiritual (SLI & Status Nisab 85g Emas)
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -828,7 +612,33 @@ fun DashboardScreen(
                 }
             }
 
-            // 3. Ringkasan Kasab vs Non-Kasab
+            // 8. PRIORITAS MENENGAH: Pemisahan Anggaran (Budget Allocation Overview Card)
+            item {
+                DashboardBudgetAllocationCard(
+                    state = state,
+                    onClick = onNavigateToBudget
+                )
+            }
+
+            // 9. PRIORITAS MENENGAH: Sharia Budget Category Allocation Chart
+            item {
+                BudgetCategoryAllocationChart(
+                    budgetCategories = state.budgets,
+                    journalEntries = state.journalEntries,
+                    currencySymbol = state.primaryCurrencySymbol,
+                    onNavigateToBudget = onNavigateToBudget
+                )
+            }
+
+            // 10. PRIORITAS MENENGAH: Status Anggaran per Kategori (Visual Progress Bars)
+            item {
+                DashboardCategoryBudgetsSection(
+                    state = state,
+                    onManageClick = onNavigateToBudget
+                )
+            }
+
+            // 11. PRIORITAS MENENGAH: Ringkasan Kasab vs Non-Kasab
             item {
                 IncomeBreakdownCard(
                     incomeKasab = state.totalIncomeKasab,
@@ -836,7 +646,7 @@ fun DashboardScreen(
                 )
             }
 
-            // 4. Double-Entry Journal History Section Header
+            // 12. PRIORITAS OPERASIONAL: Double-Entry Journal History Section Header
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -847,7 +657,7 @@ fun DashboardScreen(
                         text = "Buku Besar Terkini (Double-Entry Log)",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White70
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -866,7 +676,7 @@ fun DashboardScreen(
                 }
             }
 
-            // 5. List of Journal Entries
+            // 13. PRIORITAS OPERASIONAL: List of Journal Entries
             if (state.journalEntries.isEmpty()) {
                 item {
                     Box(
@@ -877,7 +687,7 @@ fun DashboardScreen(
                     ) {
                         Text(
                             text = "Belum ada transaksi tercatat",
-                            color = Color.White38,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp
                         )
                     }
@@ -890,6 +700,248 @@ fun DashboardScreen(
                         onEditClick = { onEditTransaction(entry.id) },
                         onDeleteClick = { entryToDelete = entry }
                     )
+                }
+            }
+
+            // 14. PRIORITAS PALING BAWAH (EDUKASI & PANDUAN): Interactive Guide Hero Banner Card
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToGuide() }
+                        .testTag("dashboard_interactive_guide_banner"),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    shape = RoundedCornerShape(14.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(EmeraldPrimary.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                                contentDescription = null,
+                                tint = GoldAccent,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Panduan Interaktif Aplikasi",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = GoldAccent.copy(alpha = 0.25f)
+                                ) {
+                                    Text(
+                                        text = "PANDUAN LENGKAP",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = GoldAccent,
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Panduan interaktif seluruh fitur, simulasi infaq kasab, fiqih muamalah, dan tips syariah.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 15.sp
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ArrowForwardIos,
+                            contentDescription = null,
+                            tint = EmeraldLight,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
+
+            // 15. PRIORITAS PALING BAWAH (REFERENSI FATWA): Search Grounding & Islamic Knowledge Hub Banner
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToIslamicGrounding() }
+                        .testTag("dashboard_islamic_grounding_banner"),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    shape = RoundedCornerShape(14.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(EmeraldPrimary.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Verified,
+                                contentDescription = "Rujukan Fatwa DSN-MUI",
+                                tint = EmeraldLight,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Ensiklopedia Fatwa & Zakat",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = EmeraldPrimary.copy(alpha = 0.25f),
+                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, EmeraldLight.copy(alpha = 0.5f))
+                                ) {
+                                    Text(
+                                        text = "DSN-MUI",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = EmeraldLight,
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "Rujukan Fiqih & Bebas Riba",
+                                    fontSize = 10.sp,
+                                    color = GoldLight,
+                                    maxLines = 1
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = "Pencarian fatwa fiqih muamalah, hisab zakat maal/profesi, dan uji bebas riba.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 15.sp
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ArrowForwardIos,
+                            contentDescription = null,
+                            tint = EmeraldLight,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
+
+            // 16. PRIORITAS PALING BAWAH (PEMELIHARAAN SISTEM): Periodic Local Room Database Backup Nudge
+            if (!dismissBackupNudge) {
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("database_backup_nudge_banner"),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(GoldAccent.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Shield,
+                                    contentDescription = "Cadangan Database",
+                                    tint = GoldAccent,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Amankan Data Finansial Syariah",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Data tersimpan di database Room lokal. Cadangkan berkas secara berkala untuk proteksi optimal.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    lineHeight = 15.sp
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Surface(
+                                        onClick = onNavigateToBackupRestore,
+                                        color = GoldAccent,
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.testTag("backup_now_button")
+                                    ) {
+                                        Text(
+                                            text = "Cadangkan Sekarang",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.Black,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                        )
+                                    }
+
+                                    Text(
+                                        text = "Nanti",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier
+                                            .clickable { dismissBackupNudge = true }
+                                            .padding(horizontal = 6.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1009,7 +1061,6 @@ fun DashboardScreen(
                 viewModel.toggleHighContrast()
             }
         )
-    }
     }
 }
 

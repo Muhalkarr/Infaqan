@@ -125,4 +125,31 @@ interface SedekahSubuhDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(state: SedekahSubuhEntity)
+
+    @Query("DELETE FROM sedekah_subuh_state")
+    suspend fun clearAll()
 }
+
+@Dao
+interface SettingsDao {
+    @Query("SELECT * FROM app_settings")
+    fun getAllSettingsFlow(): Flow<List<SettingsEntity>>
+
+    @Query("SELECT * FROM app_settings WHERE `key` = :key LIMIT 1")
+    suspend fun getSettingByKey(key: String): SettingsEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(setting: SettingsEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(settings: List<SettingsEntity>)
+
+    @Query("DELETE FROM app_settings WHERE `key` = :key")
+    suspend fun deleteByKey(key: String)
+
+    @Query("DELETE FROM app_settings")
+    suspend fun clearAll()
+}
+
+typealias TransactionDao = JournalEntryDao
+

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -80,7 +81,8 @@ import com.example.ui.theme.White70
 @Composable
 fun AnalyticsScreen(
     viewModel: AmanahLedgerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -181,6 +183,16 @@ fun AnalyticsScreen(
                             imageVector = Icons.Default.FileDownload,
                             contentDescription = "Ekspor Buku Besar",
                             tint = EmeraldLight
+                        )
+                    }
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("analytics_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = Color.White
                         )
                     }
                 }

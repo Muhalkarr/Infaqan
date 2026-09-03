@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Savings
@@ -111,7 +112,8 @@ import com.example.ui.theme.White70
 @Composable
 fun BudgetAllocationScreen(
     viewModel: AmanahLedgerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     var showAddEditDialog by remember { mutableStateOf(false) }
@@ -164,6 +166,16 @@ fun BudgetAllocationScreen(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Tambah Anggaran",
                             tint = GoldAccent
+                        )
+                    }
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("budget_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = Color.White
                         )
                     }
                 }

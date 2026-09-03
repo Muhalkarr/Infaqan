@@ -36,7 +36,8 @@ import java.util.*
 @Composable
 fun QardhScreen(
     viewModel: AmanahLedgerViewModel,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val rupiahFormat = remember {
@@ -69,6 +70,18 @@ fun QardhScreen(
                         modifier = Modifier.testTag("qardh_back_btn")
                     ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("qardh_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

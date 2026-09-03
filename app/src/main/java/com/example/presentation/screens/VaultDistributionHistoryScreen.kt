@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
@@ -82,7 +83,8 @@ import java.util.Locale
 @Composable
 fun VaultDistributionHistoryScreen(
     viewModel: AmanahLedgerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     var selectedAsnafFilter by remember { mutableStateOf<AsnafCategory?>(null) }
@@ -144,6 +146,16 @@ fun VaultDistributionHistoryScreen(
                             imageVector = Icons.Default.VolunteerActivism,
                             contentDescription = "Salurkan Infaq",
                             tint = GoldAccent
+                        )
+                    }
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("vault_history_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }

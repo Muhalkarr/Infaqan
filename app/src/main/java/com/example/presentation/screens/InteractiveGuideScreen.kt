@@ -34,21 +34,30 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AutoGraph
+import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Button
@@ -71,6 +80,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -111,7 +121,18 @@ fun InteractiveGuideScreen(
     onNavigateToRules: () -> Unit,
     onNavigateToHaulNisab: () -> Unit,
     onNavigateToSedekahSubuh: () -> Unit,
-    onNavigateToVaultHistory: () -> Unit
+    onNavigateToVaultHistory: () -> Unit,
+    onNavigateToAmilDirectory: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToFaraidh: () -> Unit = {},
+    onNavigateToQardh: () -> Unit = {},
+    onNavigateToZakatHub: () -> Unit = {},
+    onNavigateToMultiWallet: () -> Unit = {},
+    onNavigateToRecurring: () -> Unit = {},
+    onNavigateToIbadahGoals: () -> Unit = {},
+    onNavigateToIslamicGrounding: () -> Unit = {},
+    onNavigateToExportReport: () -> Unit = {},
+    onOpenDrawer: () -> Unit = {}
 ) {
     val topics = remember {
         listOf(
@@ -176,20 +197,109 @@ fun InteractiveGuideScreen(
                 title = "8. Modifikasi & Hapus Transaksi",
                 shortSubtitle = "Kelola & perbaiki data aman",
                 icon = Icons.Default.Edit,
-                badge = "Fitur Baru",
+                badge = "Fitur",
                 actionButtonText = "Buka Buku Besar"
+            ),
+            GuideTopic(
+                id = "topic_amil_directory",
+                title = "9. Direktori Lembaga Amil (CRUD)",
+                shortSubtitle = "Kelola rekening resmi ZISWAF & perizinan",
+                icon = Icons.Default.VolunteerActivism,
+                badge = "Fitur Baru",
+                actionButtonText = "Buka Direktori Amil"
+            ),
+            GuideTopic(
+                id = "topic_room_persistence",
+                title = "10. Penyimpanan Lokal Room & Backup",
+                shortSubtitle = "Jaminan data tersimpan permanen & offline",
+                icon = Icons.Default.Storage,
+                badge = "Privasi & Integritas",
+                actionButtonText = "Cek Status Database"
+            ),
+            GuideTopic(
+                id = "topic_faraidh",
+                title = "11. Kalkulator Waris Islam (Faraidh)",
+                shortSubtitle = "Hak ashabul furudh & ashabah QS An-Nisa",
+                icon = Icons.Default.School,
+                badge = "Fiqih Mawarith",
+                actionButtonText = "Buka Kalkulator Waris"
+            ),
+            GuideTopic(
+                id = "topic_qardh",
+                title = "12. Akad Qardh Hasan (Bebas Riba)",
+                shortSubtitle = "Pencatatan hutang piutang QS Al-Baqarah 282",
+                icon = Icons.Default.Description,
+                badge = "Anti Riba",
+                actionButtonText = "Buka Qardh Hasan"
+            ),
+            GuideTopic(
+                id = "topic_zakat_hub",
+                title = "13. Zakat Hub & Penyaluran 8 Asnaf",
+                shortSubtitle = "Hisab zakat maal/profesi & disburse amanah",
+                icon = Icons.Default.VolunteerActivism,
+                badge = "8 Asnaf",
+                actionButtonText = "Buka Zakat Hub"
+            ),
+            GuideTopic(
+                id = "topic_multi_wallet",
+                title = "14. Multi-Wallet & Rekening Kas Syariah",
+                shortSubtitle = "Pemisahan bank, e-wallet, kas tunai & brankas",
+                icon = Icons.Default.AccountBalanceWallet,
+                badge = "Aset Syariah",
+                actionButtonText = "Kelola Multi-Wallet"
+            ),
+            GuideTopic(
+                id = "topic_recurring",
+                title = "15. Otomasi Transaksi Rutin (Recurring)",
+                shortSubtitle = "Istiqamah nafkah, infaq & tagihan terjadwal",
+                icon = Icons.Default.AutoMode,
+                badge = "Istiqamah",
+                actionButtonText = "Buka Transaksi Rutin"
+            ),
+            GuideTopic(
+                id = "topic_ibadah_goals",
+                title = "16. Tabungan Target Ibadah (Goals)",
+                shortSubtitle = "Rencana tabungan Qurban, Umroh, Haji & Aqiqah",
+                icon = Icons.Default.CardGiftcard,
+                badge = "Ibadah Goals",
+                actionButtonText = "Buka Target Ibadah"
+            ),
+            GuideTopic(
+                id = "topic_islamic_grounding",
+                title = "17. Ensiklopedia Fatwa & Rujukan DSN-MUI",
+                shortSubtitle = "Pencarian fatwa muamalah & uji bebas riba",
+                icon = Icons.Default.Verified,
+                badge = "DSN-MUI",
+                actionButtonText = "Buka Ensiklopedia Fatwa"
+            ),
+            GuideTopic(
+                id = "topic_export_report",
+                title = "18. Laporan Keuangan Syariah (PDF/CSV)",
+                shortSubtitle = "Audit hisab neraca, laba rugi & unduh dokumen",
+                icon = Icons.Default.PictureAsPdf,
+                badge = "Transparansi & Hisab",
+                actionButtonText = "Buka Ekspor Laporan"
             )
         )
     }
 
-    var currentTopicIndex by remember { mutableIntStateOf(0) }
+    var currentTopicIndex by remember { mutableIntStateOf(viewModel.activeGuideTopicIndex.coerceIn(0, topics.size - 1)) }
     val completedTopics = remember { mutableSetOf(0) }
+
+    LaunchedEffect(currentTopicIndex) {
+        viewModel.setGuideTopic(currentTopicIndex, topics[currentTopicIndex].title)
+    }
 
     val currentTopic = topics[currentTopicIndex]
     val progressPercent = ((completedTopics.size.toFloat() / topics.size) * 100).toInt()
 
     fun markCurrentCompleted() {
         completedTopics.add(currentTopicIndex)
+    }
+
+    val openModule: (Int, () -> Unit) -> Unit = { idx, action ->
+        viewModel.activateGuideMode(idx, topics[idx].title)
+        action()
     }
 
     Scaffold(
@@ -199,7 +309,10 @@ fun InteractiveGuideScreen(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0B1718)),
                 navigationIcon = {
                     IconButton(
-                        onClick = onNavigateBack,
+                        onClick = {
+                            viewModel.deactivateGuideMode()
+                            onNavigateBack()
+                        },
                         modifier = Modifier.testTag("guide_back_button")
                     ) {
                         Icon(
@@ -237,6 +350,16 @@ fun InteractiveGuideScreen(
                             fontWeight = FontWeight.Bold,
                             color = GoldAccent,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("guide_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
+                            tint = Color.White
                         )
                     }
                 }
@@ -328,14 +451,24 @@ fun InteractiveGuideScreen(
 
                         // Interactive Content Body per topic
                         when (targetIdx) {
-                            0 -> TopicDoubleEntryContent()
-                            1 -> TopicInfaqKasabInteractiveContent(onTryAction = onNavigateToAddTransaction)
-                            2 -> TopicRoundUpInteractiveContent(onTryAction = onNavigateToAddTransaction)
-                            3 -> TopicVaultContent(onTryAction = onNavigateToVaultHistory)
-                            4 -> TopicSedekahSubuhContent(onTryAction = onNavigateToSedekahSubuh)
-                            5 -> TopicBudgetContent(onTryAction = onNavigateToBudget)
-                            6 -> TopicHaulNisabInteractiveContent(onTryAction = onNavigateToHaulNisab)
-                            7 -> TopicModifyDeleteContent(onTryAction = onNavigateBack)
+                            0 -> TopicDoubleEntryContent(onTryAction = { openModule(0, onNavigateBack) })
+                            1 -> TopicInfaqKasabInteractiveContent(onTryAction = { openModule(1, onNavigateToAddTransaction) })
+                            2 -> TopicRoundUpInteractiveContent(onTryAction = { openModule(2, onNavigateToAddTransaction) })
+                            3 -> TopicVaultContent(onTryAction = { openModule(3, onNavigateToVaultHistory) })
+                            4 -> TopicSedekahSubuhContent(onTryAction = { openModule(4, onNavigateToSedekahSubuh) })
+                            5 -> TopicBudgetContent(onTryAction = { openModule(5, onNavigateToBudget) })
+                            6 -> TopicHaulNisabInteractiveContent(onTryAction = { openModule(6, onNavigateToHaulNisab) })
+                            7 -> TopicModifyDeleteContent(onTryAction = { openModule(7, onNavigateBack) })
+                            8 -> TopicAmilDirectoryContent(onTryAction = { openModule(8, onNavigateToAmilDirectory) })
+                            9 -> TopicRoomPersistenceContent(onTryAction = { openModule(9, onNavigateToSettings) })
+                            10 -> TopicFaraidhContent(onTryAction = { openModule(10, onNavigateToFaraidh) })
+                            11 -> TopicQardhContent(onTryAction = { openModule(11, onNavigateToQardh) })
+                            12 -> TopicZakatHubContent(onTryAction = { openModule(12, onNavigateToZakatHub) })
+                            13 -> TopicMultiWalletContent(onTryAction = { openModule(13, onNavigateToMultiWallet) })
+                            14 -> TopicRecurringContent(onTryAction = { openModule(14, onNavigateToRecurring) })
+                            15 -> TopicIbadahGoalsContent(onTryAction = { openModule(15, onNavigateToIbadahGoals) })
+                            16 -> TopicIslamicGroundingContent(onTryAction = { openModule(16, onNavigateToIslamicGrounding) })
+                            17 -> TopicExportReportContent(onTryAction = { openModule(17, onNavigateToExportReport) })
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -391,6 +524,7 @@ fun InteractiveGuideScreen(
                         Button(
                             onClick = {
                                 markCurrentCompleted()
+                                viewModel.deactivateGuideMode()
                                 onNavigateBack()
                             },
                             shape = RoundedCornerShape(10.dp),
@@ -486,8 +620,15 @@ fun TopicHeaderCard(topic: GuideTopic, stepNumber: Int, totalSteps: Int) {
 // TOPIC 1: AKUNTANSI SYARIAH DOUBLE-ENTRY
 // ----------------------------------------------------
 @Composable
-fun TopicDoubleEntryContent() {
+fun TopicDoubleEntryContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "QS. Al-Baqarah: 282 & Kaidah Amanah",
+            arabicText = "وَلَا تَسْأَمُوا أَن تَكْتُبُوهُ صَغِيرًا أَوْ كَبِيرًا إِلَىٰ أَجَلِهِ ۚ ذَٰلِكُمْ أَقْسَطُ عِندَ اللَّهِ",
+            translation = "Dan janganlah kamu jemu menuliskannya, baik kecil maupun besar sampai batas waktu pembayarannya. Yang demikian itu lebih adil di sisi Allah dan lebih dapat menguatkan persaksian...",
+            fiqhNote = "Sistem pencatatan berpasangan (Double-Entry) menjamin akuntabilitas mutlak: setiap rupiah ada sumbernya (kredit) dan jelas penempatannya (debit), selaras dengan prinsip kejujuran (shiddiq) dan amanah."
+        )
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF102022)),
@@ -531,25 +672,31 @@ fun TopicDoubleEntryContent() {
             }
         }
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, DarkBorder)
+        IslamicStepByStepCard(
+            title = "Prinsip Akuntansi Syariah dalam Praktik:",
+            steps = listOf(
+                "Setiap transaksi pemasukan diakui sebagai rezeki halal dan dicatat pada sisi Debit Kas dan Kredit Pendapatan.",
+                "Infaq kasab otomatis memotong hak Allah/mustahiq ke akun kewajiban Virtual Vault.",
+                "Setiap pengeluaran diverifikasi agar tidak mengandung unsur riba, gharar, atau maysir.",
+                "Neraca saldo harian selalu dipastikan seimbang: Total Aset = Total Kewajiban + Ekuitas Bersih."
+            )
+        )
+
+        IslamicQACard(
+            question = "Mengapa akuntansi syariah memisahkan dana infaq sebagai kewajiban (liability)?",
+            answer = "Karena begitu kita berniat dan menyisihkan dana untuk infaq/zakat, dana tersebut bukan lagi milik pribadi kita, melainkan hak fakir miskin (mustahiq) yang dititipkan kepada kita sampai tersalurkan.",
+            reference = "Standar Akuntansi Syariah PSAK 109 & Fiqih Zakat Yusuf Al-Qardhawi"
+        )
+
+        Button(
+            onClick = onTryAction,
+            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("🌟 Manfaat Utama untuk Anda:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
-                listOf(
-                    "Pemisahan Ketat: Harta pribadi tidak akan pernah tercampur dengan dana titipan infaq/zakat.",
-                    "Audit Kapan Saja: Setiap rupiah memiliki riwayat asal (kredit) dan penempatan (debit) yang transparan.",
-                    "Bebas Selisih: Aplikasi menjamin jumlah ∑Debit selalu sama persis dengan ∑Kredit."
-                ).forEach { point ->
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Text("• ", color = GoldAccent, fontWeight = FontWeight.Bold)
-                        Text(point, fontSize = 11.sp, color = Color.White70, lineHeight = 16.sp)
-                    }
-                }
-            }
+            Icon(Icons.Default.AccountBalance, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Buka Neraca Keuangan Dashboard", fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -567,6 +714,13 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
     val netIncome = incomeVal - infaqVal
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "QS. Al-Baqarah: 267 & Pensucian Harta",
+            arabicText = "يَا أَيُّهَا الَّذِينَ آمَنُوا أَنفِقُوا مِن طَيِّبَاتِ مَا كَسَبْتُمْ",
+            translation = "Wahai orang-orang yang beriman! Infakkanlah sebagian dari hasil usahamu yang baik-baik...",
+            fiqhNote = "Infaq kasab adalah wujud syukur atas rezeki halal yang kita peroleh dengan menyisihkan sebagian nominal secara langsung saat penerimaan dana, menjaga harta tetap bersih dan penuh barokah."
+        )
+
         Text(
             text = "Setiap rezeki yang masuk disucikan dengan menyisihkan sebagian nominal secara otomatis ke Virtual Vault.",
             fontSize = 12.sp,
@@ -662,6 +816,23 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
             }
         }
 
+        IslamicStepByStepCard(
+            title = "Langkah Praktis Infaq Kasab:",
+            steps = listOf(
+                "Pilih menu 'Catat Pemasukan' di layar utama.",
+                "Masukkan nominal rezeki atau gaji yang diterima.",
+                "Tentukan persentase infaq penyucian (misal 2.5%, 5%, atau 10%).",
+                "Aplikasi otomatis menghitung dana bersih yang masuk ke rekening kas dan dana yang dialokasikan ke Virtual Vault.",
+                "Simpan transaksi, dan saldo amanah infaq Anda langsung bertambah secara otomatis."
+            )
+        )
+
+        IslamicQACard(
+            question = "Apakah infaq kasab menggantikan kewajiban zakat profesi?",
+            answer = "Infaq kasab adalah sedekah sunnah untuk membersihkan rezeki harian. Jika total penghasilan setahun Anda mencapai nisab (85 gram emas), Anda tetap memiliki kewajiban zakat profesi sebesar 2.5%. Namun infaq yang telah disalurkan dengan niat zakat dapat dihitung sebagai pemenuhan zakat.",
+            reference = "Fatwa MUI No. 3 Tahun 2003 tentang Zakat Penghasilan"
+        )
+
         Button(
             onClick = onTryAction,
             colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
@@ -689,6 +860,13 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
     val totalDebited = expVal + roundUpInfaq
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "HR. Bukhari & Muslim (Sedekah Walau Sedikit)",
+            arabicText = "اتَّقُوا النَّارَ وَلَوْ بِشِقِّ تَمْرَةٍ",
+            translation = "Jagalah diri kalian dari api neraka walaupun hanya dengan bersedekah separuh butir kurma.",
+            fiqhNote = "Sedekah receh melalui pembulatan transaksi belanja membiasakan jiwa kita untuk senantiasa dermawan dalam setiap aktivitas konsumsi harian."
+        )
+
         Text(
             text = "Ubah sisa belanja harian menjadi tabungan akhirat. Nominal ganjil dibulatkan ke kelipatan terdekat (misal: Rp 5.000 atau Rp 10.000), dan selisihnya otomatis disedekahkan!",
             fontSize = 12.sp,
@@ -774,6 +952,23 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
             }
         }
 
+        IslamicStepByStepCard(
+            title = "Langkah Praktis Round-Up Infaq:",
+            steps = listOf(
+                "Pilih menu 'Catat Pengeluaran' saat berbelanja keperluan harian.",
+                "Ketik nominal belanja (misal: Rp 43.200).",
+                "Aktifkan opsi 'Round-Up Infaq' dan tentukan kelipatan (Rp 1.000, Rp 5.000, atau Rp 10.000).",
+                "Sistem otomatis membulatkan pembayaran (menjadi Rp 45.000 atau Rp 50.000) dan mengalirkan selisihnya ke Virtual Vault.",
+                "Belanja kebutuhan terpenuhi sekaligus menabung pahala jariyah di sisi Allah SWT."
+            )
+        )
+
+        IslamicQACard(
+            question = "Apakah pembulatan belanja ini termasuk riba atau pemborosan?",
+            answer = "Tidak. Karena pembulatan dilakukan atas keridhaan penuh dan akad tabarru' (donasi sukarela), di mana dana selisih tidak diambil oleh penjual melainkan dialokasikan ke pos titipan sedekah untuk mustahiq.",
+            reference = "Kaidah Fiqih Muamalah: Al-Ashlu fil 'uquud ar-ridha"
+        )
+
         Button(
             onClick = onTryAction,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5E35B1)),
@@ -793,6 +988,13 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
 @Composable
 fun TopicVaultContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "QS. At-Taubah: 60 & Amanah 8 Asnaf",
+            arabicText = "إِنَّمَا الصَّدَقَاتُ لِلْفُقَرَاءِ وَالْمَسَاكِينِ وَالْعَامِلِينَ عَلَيْهَا وَالْمُؤَلَّفَةِ قُلُوبُهُمْ وَفِي الرِّقَابِ وَالْغَارِمِينَ وَفِي سَبِيلِ اللَّهِ وَابْنِ السَّبِيلِ",
+            translation = "Sesungguhnya zakat itu hanyalah untuk orang-orang fakir, orang miskin, amil zakat yang mengurusnya, para mualaf yang dibujuk hatinya, untuk memerdekakan budak, orang-orang yang berhutang, untuk jalan Allah, dan untuk orang yang sedang dalam perjalanan...",
+            fiqhNote = "Virtual Vault menampung amanah dana umat dan memastikan penyalurannya strictly terarah kepada asnaf yang telah ditetapkan syariat secara akuntabel."
+        )
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = DarkSurface),
@@ -830,6 +1032,23 @@ fun TopicVaultContent(onTryAction: () -> Unit) {
                 }
             }
         }
+
+        IslamicStepByStepCard(
+            title = "Langkah Praktis Penyaluran Dana Vault:",
+            steps = listOf(
+                "Buka menu Virtual Vault untuk melihat akumulasi saldo titipan infaq.",
+                "Klik 'Salurkan Dana' untuk memulai proses distribusi amanah.",
+                "Pilih asnaf sasaran (misal: Fakir Miskin, Anak Yatim, atau Fisabilillah) dan lembaga amil penyalur.",
+                "Masukkan nominal yang akan dicairkan dan lampirkan catatan berita acara.",
+                "Sistem menerbitkan invoice resmi dan mendebit saldo kewajiban Vault secara akuntabel."
+            )
+        )
+
+        IslamicQACard(
+            question = "Bolehkah memakai dana Virtual Vault untuk keperluan pribadi mendesak sementara waktu?",
+            answer = "Tidak boleh. Dana di Virtual Vault berstatus amanah titipan (wadiah yad amanah). Menggunakannya untuk kepentingan pribadi tanpa izin syar'i termasuk perbuatan khianat atas hak mustahiq.",
+            reference = "Kaidah Amanah & QS. Al-Anfal: 27"
+        )
 
         Button(
             onClick = onTryAction,
@@ -890,6 +1109,23 @@ fun TopicSedekahSubuhContent(onTryAction: () -> Unit) {
             }
         }
 
+        IslamicStepByStepCard(
+            title = "Langkah Praktis Istiqamah Sedekah Subuh:",
+            steps = listOf(
+                "Buka aplikasi saat fajar setelah sholat subuh.",
+                "Tekan tombol kilat '+Rp 5.000' atau '+Rp 10.000' pada modul Sedekah Subuh.",
+                "Baca doa fajar pembuka berkah yang tampil di layar.",
+                "Streak harian Anda akan bertambah, memperkuat kebiasaan istiqomah.",
+                "Dana otomatis masuk ke Virtual Vault dan siap disalurkan ke asnaf dhuafa."
+            )
+        )
+
+        IslamicQACard(
+            question = "Mengapa sedekah subuh memiliki keistimewaan doa malaikat?",
+            answer = "Setiap subuh dua malaikat turun mendoakan orang yang berinfak agar diganti dengan kebaikan berlipat ganda, sedangkan orang yang menahan hartanya didoakan agar hartanya binasa. Istiqomah setiap hari mengundang keberkahan hidup dan keselamatan.",
+            reference = "HR. Bukhari No. 1442 dan Muslim No. 1010"
+        )
+
         Button(
             onClick = onTryAction,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF795548)),
@@ -909,6 +1145,13 @@ fun TopicSedekahSubuhContent(onTryAction: () -> Unit) {
 @Composable
 fun TopicBudgetContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "QS. Al-Isra: 26-27 & Larangan Tabdzir/Israf",
+            arabicText = "وَلَا تُبَذِّرْ تَبْذِيرًا إِنَّ الْمُبَذِّرِينَ كَانُوا إِخْوَانَ الشَّيَاطِينِ",
+            translation = "Dan janganlah kamu menghambur-hamburkan (hartamu) secara boros. Sesungguhnya pemboros-pemboros itu adalah saudara-saudara setan...",
+            fiqhNote = "Mengatur anggaran adalah kewajiban syar'i untuk mencegah perilaku konsumtif yang berlebihan dan menjamin nafkah keluarga tetap terpenuhi secara seimbang."
+        )
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = DarkSurface),
@@ -953,6 +1196,23 @@ fun TopicBudgetContent(onTryAction: () -> Unit) {
             }
         }
 
+        IslamicStepByStepCard(
+            title = "Langkah Praktis Mengatur Pagu Anggaran:",
+            steps = listOf(
+                "Buka menu Pagu Anggaran dari tombol di bawah.",
+                "Tinjau pembagian pagu untuk Kebutuhan Pokok (Dharuriyyat), Keinginan (Hajiyyat), dan Tabungan Ibadah (Tahsiniyyat).",
+                "Gunakan 'AI Budget Optimizer' untuk mendapatkan rekomendasi batas belanja ideal berdasarkan riwayat mutasi Anda.",
+                "Aktifkan notifikasi peringatan jika pengeluaran mendekati 80% dari batas pagu bulanan.",
+                "Evaluasi realisasi anggaran setiap akhir bulan untuk menjaga kedisiplinan finansial."
+            )
+        )
+
+        IslamicQACard(
+            question = "Bagaimana fiqih membedakan antara kebutuhan (hajah) dan kemewahan (israf)?",
+            answer = "Imam Asy-Syathibi membagi tingkatan kebutuhan menjadi Dharuriyyat (mutlak untuk kelangsungan agama, jiwa, akal, keturunan, harta), Hajiyyat (memudahkan kesulitan), dan Tahsiniyyat (pelengkap dan etika). Segala pengeluaran di luar ketiga hal ini yang sia-sia dikategorikan sebagai Israf (berlebih-lebihan).",
+            reference = "Al-Muwafaqat fi Ushulisy Syari'ah karya Imam Asy-Syathibi"
+        )
+
         Button(
             onClick = onTryAction,
             colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
@@ -982,6 +1242,13 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
     val zakatSolar = if (isNisabReached) totalSimAsset * 0.02577 else 0.0
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "HR. Abu Dawud & Standar Haul & Nisab",
+            arabicText = "لَيْسَ فِي مَالٍ زَكَاةٌ حَتَّى يَحُولَ عَلَيْهِ الْحَوْلُ",
+            translation = "Tidak ada kewajiban zakat pada suatu harta sampai genap berputar satu tahun (haul).",
+            fiqhNote = "Kewajiban zakat mal berlaku mutlak ketika harta simpanan telah mencapai nisab (setara 85 gram emas) dan bertahan di atas batas tersebut selama satu tahun penuh."
+        )
+
         Text(
             text = "Zakat Mal wajib dikeluarkan sebesar 2.5% apabila total harta simpanan telah mencapai batas Nisab (setara 85 gram emas murni) dan telah mengendap selama 1 tahun (Haul).",
             fontSize = 12.sp,
@@ -1075,6 +1342,23 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
             }
         }
 
+        IslamicStepByStepCard(
+            title = "Langkah Praktis Audit Haul & Nisab:",
+            steps = listOf(
+                "Masukkan total aset lancar simpanan Anda (tabungan, deposito syariah, emas batangan).",
+                "Periksa harga emas terbaru per gram (default otomatis diperbarui).",
+                "Jika total aset ≥ nilai 85 gram emas, mulailah mencatat tanggal dimulainya Haul.",
+                "Setelah genap 1 tahun Hijriyah (354 hari) atau Masehi (365 hari), tunaikan zakat 2.5% atau 2.577%.",
+                "Tekan tombol 'Salurkan ke Zakat Hub' untuk menunaikan kewajiban melalui amil terpercaya."
+            )
+        )
+
+        IslamicQACard(
+            question = "Mengapa tarif zakat kalender Masehi adalah 2.577% bukan 2.5%?",
+            answer = "Tarif standar syariat 2.5% berlaku untuk 1 tahun Hijriyah (354 hari). Satu tahun Masehi berjumlah 365 hari (lebih panjang 11 hari). Berdasarkan standar AAOIFI No. 35 dan Fatwa Ulama, jika menggunakan tahun Masehi maka zakatnya adalah 2.5% × (365 / 354) = 2.577% agar hak fakir miskin tidak terkurangi.",
+            reference = "Standar Syariah AAOIFI No. 35 tentang Zakat"
+        )
+
         Button(
             onClick = onTryAction,
             colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
@@ -1094,6 +1378,13 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
 @Composable
 fun TopicModifyDeleteContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "Kaidah Fiqih Koreksi & Pertanggungjawaban",
+            arabicText = "الرُّجُوعُ إِلَى الْحَقِّ خَيْرٌ مِنَ التَّمَادِي فِي الْبَاطِلِ",
+            translation = "Kembali kepada kebenaran itu jauh lebih baik daripada terus menerus di dalam kekeliruan.",
+            fiqhNote = "Mengoreksi kesalahan pencatatan transaksi sesegera mungkin adalah wujud ketelitian (itqan) dan kejujuran dalam menjaga kebenaran laporan keuangan."
+        )
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = DarkSurface),
@@ -1108,45 +1399,30 @@ fun TopicModifyDeleteContent(onTryAction: () -> Unit) {
                 }
 
                 Text(
-                    text = "Jika Anda salah memasukkan nominal, tanggal, kategori, atau ingin menghapus transaksi yang dibatalkan, Amanah Ledger menyediakan fitur pengelolaan penuh:",
+                    text = "Jika Anda salah memasukkan nominal, tanggal, kategori, atau ingin menghapus transaksi yang dibatalkan, Amanah Ledger menyediakan fitur pengelolaan penuh tanpa merusak integritas neraca:",
                     fontSize = 12.sp,
                     color = Color.White70,
                     lineHeight = 18.sp
                 )
-
-                // Step by step guide
-                Surface(
-                    color = Color(0xFF0A1416),
-                    shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, DarkBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(22.dp).clip(CircleShape).background(EmeraldPrimary), contentAlignment = Alignment.Center) {
-                                Text("1", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("Buka menu Buku Besar Terkini pada Dashboard.", fontSize = 11.sp, color = Color.White)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(22.dp).clip(CircleShape).background(EmeraldPrimary), contentAlignment = Alignment.Center) {
-                                Text("2", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("Ketuk kartu transaksi atau ikon Edit / Hapus.", fontSize = 11.sp, color = Color.White)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(22.dp).clip(CircleShape).background(EmeraldPrimary), contentAlignment = Alignment.Center) {
-                                Text("3", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("Sesuaikan nominal, alokasi infaq, lalu simpan perubahan.", fontSize = 11.sp, color = Color.White)
-                        }
-                    }
-                }
             }
         }
+
+        IslamicStepByStepCard(
+            title = "Langkah Praktis Mengubah atau Menghapus Transaksi:",
+            steps = listOf(
+                "Buka riwayat mutasi pada Buku Besar di Beranda Utama.",
+                "Cari transaksi yang keliru atau ingin dibatalkan.",
+                "Klik ikon Pensil untuk mengedit nominal, tanggal, atau kategori; atau ikon Tempat Sampah untuk menghapus.",
+                "Sistem secara otomatis menyesuaikan kembali saldo rekening kas dan posisi kewajiban Virtual Vault.",
+                "Neraca keuangan kembali akurat dan seimbang secara real-time."
+            )
+        )
+
+        IslamicQACard(
+            question = "Jika saya membatalkan transaksi yang sudah terkena potongan infaq kasab, apa yang terjadi?",
+            answer = "Sistem akuntansi Amanah Ledger secara cerdas akan membatalkan kedua sisi jurnal: saldo kas dikembalikan dan alokasi infaq di Virtual Vault disesuaikan, sehingga tidak timbul selisih pembukuan.",
+            reference = "Prinsip Reversing Entries dalam Akuntansi Syariah"
+        )
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -1178,6 +1454,135 @@ fun TopicModifyDeleteContent(onTryAction: () -> Unit) {
             Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Text("Kembali ke Dashboard Utama", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// ----------------------------------------------------
+// TOPIC 9: DIREKTORI AMIL & REKENING ZISWAF (CRUD)
+// ----------------------------------------------------
+@Composable
+fun TopicAmilDirectoryContent(onTryAction: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "QS. At-Taubah: 103 & Legalitas Amil",
+            arabicText = "خُذْ مِنْ أَمْوَالِهِمْ صَدَقَةً تُطَهِّرُهُمْ وَتُزَكِّيهِم بِهَا وَصَلِّ عَلَيْهِمْ",
+            translation = "Ambillah zakat dari sebagian harta mereka, dengan zakat itu kamu membersihkan dan menyucikan mereka dan berdoalah untuk mereka...",
+            fiqhNote = "Menyalurkan zakat melalui amil yang amanah dan resmi (BAZNAS/LAZ) lebih utama karena memastikan pendistribusian tepat sasaran sesuai skala prioritas syariah."
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.VolunteerActivism, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Kelola Rekening & Lembaga Resmi (CRUD)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Text(
+                    text = "Amanah Ledger menyediakan direktori lembaga amil zakat resmi terakreditasi Kemenag RI (BAZNAS, LAZ Nasional, Lembaga Wakaf). Anda memiliki kendali penuh untuk memperbarui data:",
+                    fontSize = 12.sp,
+                    color = Color.White70,
+                    lineHeight = 18.sp
+                )
+            }
+        }
+
+        IslamicStepByStepCard(
+            title = "Langkah Pengelolaan Direktori Lembaga Amil:",
+            steps = listOf(
+                "Buka menu Direktori Amil ZISWAF.",
+                "Gunakan tombol '+' untuk menambahkan lembaga baru (misal BAZNAS Kota atau DKM Masjid Anda).",
+                "Klik ikon Edit untuk memperbarui nama bank, nomor rekening, atau kontak amil.",
+                "Ketuk tombol Salin untuk meng-copy nomor rekening ke clipboard saat hendak transfer donasi.",
+                "Simpan bukti transfer pada berita acara penyaluran Virtual Vault."
+            )
+        )
+
+        IslamicQACard(
+            question = "Apa kelebihan menyalurkan zakat via Amil dibanding langsung ke fakir miskin?",
+            answer = "Amil zakat memiliki data mustahiq yang komprehensif, mampu memberdayakan fakir miskin secara produktif (tidak hanya konsumtif), serta menjaga kemuliaan (izzah) penerima zakat agar tidak merasa rendah diri.",
+            reference = "Fiqih Sunnah Sayyid Sabiq jilid 1 & Fatwa MUI No. 4 Tahun 2003"
+        )
+
+        Button(
+            onClick = onTryAction,
+            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.VolunteerActivism, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Buka Direktori Lembaga Amil", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// ----------------------------------------------------
+// TOPIC 10: PENYIMPANAN LOKAL ROOM & SINKRONISASI
+// ----------------------------------------------------
+@Composable
+fun TopicRoomPersistenceContent(onTryAction: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "Prinsip Hifzhul Mal (Menjaga Harta)",
+            arabicText = "إِنَّ خَيْرَ مَنِ اسْتَأْجَرْتَ الْقَوِيُّ الْأَمِينُ",
+            translation = "...Sesungguhnya orang yang paling baik yang kamu ambil untuk bekerja ialah orang yang kuat lagi dapat dipercaya (amanah).",
+            fiqhNote = "Menjaga keamanan catatan keuangan dan privasi data finansial keluarga adalah bagian integral dari maqashid syariah (hifzhul mal) agar terhindar dari kebocoran dan penyalahgunaan."
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Storage, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Jaminan Data Tersimpan Permanen (Room SQLite)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+
+                Text(
+                    text = "Amanah Ledger dibangun dengan arsitektur Offline-First yang andal. Seluruh mutasi jurnal, kantong rekening, target ibadah, dan pengaturan langsung disimpan secara permanen di database lokal SQLite Room.",
+                    fontSize = 12.sp,
+                    color = Color.White70,
+                    lineHeight = 18.sp
+                )
+            }
+        }
+
+        IslamicStepByStepCard(
+            title = "Fitur Keamanan & Penyimpanan Data:",
+            steps = listOf(
+                "Semua transaksi otomatis tersimpan ke memori internal perangkat saat tombol simpan diklik.",
+                "Tidak ada data finansial Anda yang dikirim ke server pihak ketiga tanpa izin (100% aman dan privat).",
+                "Aplikasi tetap beroperasi optimal tanpa kuota internet atau saat mode pesawat aktif.",
+                "Gunakan fitur Ekspor Cadangan berkala di menu Pengaturan untuk mem-backup data ke file aman."
+            )
+        )
+
+        IslamicQACard(
+            question = "Apakah data keuangan saya aman jika berganti perangkat hp?",
+            answer = "Aman. Anda dapat membuat file cadangan (backup export) dari menu Pengaturan, lalu memindahkannya ke perangkat baru dan memilih fitur Impor Cadangan untuk memulihkan seluruh mutasi keuangan tanpa ada yang hilang.",
+            reference = "Praktik Manajemen Risiko & Perlindungan Aset Digital"
+        )
+
+        Button(
+            onClick = onTryAction,
+            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Security, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Buka Pengaturan & Status Database", fontWeight = FontWeight.Bold, color = Color.Black)
         }
     }
 }

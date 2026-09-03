@@ -357,6 +357,16 @@ fun AppNavigationDrawerContent(
                 onClick = { onSelectScreen(Screen.FARAIDH_CALCULATOR) }
             )
 
+            SidebarNavigationItem(
+                label = "Fatwa & Fiqih Muamalah DSN-MUI",
+                icon = Icons.Default.MenuBook,
+                selected = currentScreen == Screen.ISLAMIC_GROUNDING,
+                badgeText = "Fatwa & Nisab",
+                badgeColor = EmeraldLight,
+                testTag = "sidebar_nav_islamic_grounding",
+                onClick = { onSelectScreen(Screen.ISLAMIC_GROUNDING) }
+            )
+
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)

@@ -329,7 +329,7 @@ object FinancialPdfGenerator {
         val boxHeight = 52f
         val boxMargin = 8f
 
-        val zakatPayable = state.zakatPayableAmount
+        val zakatPayable = state.zakatObligationLunar
         val nisabStatusText = if (state.isNisabReached) "MENCAPAI NISAB" else "BELUM NISAB"
         val nisabColor = if (state.isNisabReached) goldAccent else textMuted
 
@@ -355,7 +355,7 @@ object FinancialPdfGenerator {
         paint.textSize = 8.5f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         canvas.drawText("• Standar Nisab Emas Murni (85 Gram):", 42f, y + 18f, paint)
-        canvas.drawText("Rp ${formatRp(state.nisabThresholdRupiah)}", 380f, y + 18f, paint)
+        canvas.drawText("Rp ${formatRp(state.nisabThreshold)}", 380f, y + 18f, paint)
 
         canvas.drawText("• Total Aset Wajib Zakat (Kas + Emas + Piutang Lancar):", 42f, y + 36f, paint)
         canvas.drawText("Rp ${formatRp(state.totalAssets)}", 380f, y + 36f, paint)
@@ -368,7 +368,7 @@ object FinancialPdfGenerator {
         paint.color = textMuted
         paint.textSize = 7.5f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
-        val haulNote = if (state.isHaulCompleted) "Haul 1 Tahun Hijriah telah terpenuhi. Dianjurkan segera ditunaikan." else "Periode Haul sedang berjalan dalam pemantauan otomatis."
+        val haulNote = if (state.isNisabReached) "Haul 1 Tahun Hijriah telah terpenuhi. Dianjurkan segera ditunaikan." else "Periode Haul sedang berjalan dalam pemantauan otomatis."
         canvas.drawText(haulNote, 42f, y + 70f, paint)
 
         y += 94f

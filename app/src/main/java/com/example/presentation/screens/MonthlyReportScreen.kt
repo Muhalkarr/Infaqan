@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.VolunteerActivism
@@ -73,7 +74,8 @@ import java.util.Locale
 @Composable
 fun MonthlyReportScreen(
     viewModel: AmanahLedgerViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -130,6 +132,18 @@ fun MonthlyReportScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = onOpenDrawer,
+                        modifier = Modifier.testTag("report_menu_sidebar_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = "Buka Menu Sidebar",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
                     }

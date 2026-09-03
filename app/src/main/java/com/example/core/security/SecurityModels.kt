@@ -45,7 +45,7 @@ data class SecurityConfig(
     val isPinEnabled: Boolean = false,
     val pinHash: String = "", // SHA-256 hash
     val isBiometricEnabled: Boolean = true,
-    val autoLockInterval: AutoLockInterval = AutoLockInterval.MINUTE_1,
+    val autoLockInterval: AutoLockInterval = AutoLockInterval.IMMEDIATE,
     val isMaskBalance: Boolean = false,
     val maskBalanceByDefault: Boolean = false,
     val isScreenshotProtected: Boolean = false,
