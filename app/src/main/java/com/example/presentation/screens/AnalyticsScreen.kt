@@ -128,11 +128,14 @@ fun AnalyticsScreen(
     }
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0E1A1C)
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 navigationIcon = {
                     IconButton(
@@ -142,7 +145,7 @@ fun AnalyticsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -151,7 +154,7 @@ fun AnalyticsScreen(
                         text = "Infografis & Visualisasi Syariah",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 actions = {
@@ -192,7 +195,7 @@ fun AnalyticsScreen(
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Buka Menu Sidebar",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -224,21 +227,21 @@ fun AnalyticsScreen(
             // 3. Sankey Diagram Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Sankey Cashflow Arus Dana",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Visualisasi aliran dari sumber rezeki ke pos belanja, vault infaq, dan akumulasi harta.",
                         fontSize = 11.sp,
-                        color = Color.White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(14.dp))
                     SankeyFlowDiagram(sources = sources, targets = targets)
@@ -248,21 +251,21 @@ fun AnalyticsScreen(
             // 2. Hijri Radial Heatmap Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Hijri Radial Heatmap Infaq",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Intensitas kedermawanan sepanjang 12 bulan kalender Hijriah (Emas = Ramadan & Puncak Berkah).",
                         fontSize = 11.sp,
-                        color = Color.White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(14.dp))
                     HijriRadialHeatmap(entries = state.journalEntries)
@@ -272,9 +275,9 @@ fun AnalyticsScreen(
             // 3. Behavioral Finance Metrics Summary
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -289,7 +292,7 @@ fun AnalyticsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Spiritual Liquidity Index", fontSize = 12.sp, color = Color.White70)
+                        Text("Spiritual Liquidity Index", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             "${String.format("%.1f", state.spiritualLiquidityIndex)}%",
                             fontSize = 13.sp,
@@ -303,12 +306,12 @@ fun AnalyticsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Total Terinfaq (Vault + Disbursed)", fontSize = 12.sp, color = Color.White70)
+                        Text("Total Terinfaq (Vault + Disbursed)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             "Rp ${formatRupiah(state.totalPurifiedInfaq)}",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -317,7 +320,7 @@ fun AnalyticsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Realisasi Disalurkan ke Mustahiq", fontSize = 12.sp, color = Color.White70)
+                        Text("Realisasi Disalurkan ke Mustahiq", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             "Rp ${formatRupiah(state.totalDisbursedInfaq)}",
                             fontSize = 13.sp,
@@ -340,12 +343,12 @@ fun AnalyticsScreen(
 
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
-            containerColor = DarkSurface,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
             title = {
                 Text(
                     text = "Ekspor Buku Besar Syariah",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp
                 )
@@ -362,7 +365,7 @@ fun AnalyticsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(180.dp)
-                            .background(Color(0xFF091012), RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
                             .padding(8.dp)
                             .verticalScroll(rememberScrollState())
                     ) {
@@ -370,7 +373,7 @@ fun AnalyticsScreen(
                             text = csvPreview,
                             fontFamily = FontFamily.Monospace,
                             fontSize = 10.sp,
-                            color = Color.White70
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

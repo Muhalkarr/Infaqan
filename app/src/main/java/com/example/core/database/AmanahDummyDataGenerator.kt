@@ -95,31 +95,15 @@ object AmanahDummyDataGenerator {
             id = "b_living",
             accountId = "acc_living",
             categoryName = "Biaya Hidup & Pangan",
-            monthlyLimit = 3500000.0,
+            monthlyLimit = 4000000.0,
             iconKey = "shopping",
-            alertThresholdPercent = 0.8
-        ),
-        BudgetAllocation(
-            id = "b_transport",
-            accountId = "acc_transport",
-            categoryName = "Transportasi & Bensin",
-            monthlyLimit = 1200000.0,
-            iconKey = "commute",
-            alertThresholdPercent = 0.8
-        ),
-        BudgetAllocation(
-            id = "b_utility",
-            accountId = "acc_utility",
-            categoryName = "Tagihan Listrik, Air & Pulsa",
-            monthlyLimit = 800000.0,
-            iconKey = "bolt",
             alertThresholdPercent = 0.8
         ),
         BudgetAllocation(
             id = "b_education",
             accountId = "acc_education",
             categoryName = "Pendidikan & Majelis Dakwah",
-            monthlyLimit = 1000000.0,
+            monthlyLimit = 1200000.0,
             iconKey = "school",
             alertThresholdPercent = 0.8
         ),
@@ -127,15 +111,39 @@ object AmanahDummyDataGenerator {
             id = "b_health",
             accountId = "acc_health",
             categoryName = "Kesehatan & Pengobatan",
-            monthlyLimit = 750000.0,
+            monthlyLimit = 800000.0,
             iconKey = "medical",
+            alertThresholdPercent = 0.8
+        ),
+        BudgetAllocation(
+            id = "b_transport",
+            accountId = "acc_transport",
+            categoryName = "Transportasi & Bensin",
+            monthlyLimit = 1600000.0,
+            iconKey = "commute",
+            alertThresholdPercent = 0.8
+        ),
+        BudgetAllocation(
+            id = "b_utility",
+            accountId = "acc_utility",
+            categoryName = "Tagihan Listrik, Air & Pulsa",
+            monthlyLimit = 1400000.0,
+            iconKey = "bolt",
+            alertThresholdPercent = 0.8
+        ),
+        BudgetAllocation(
+            id = "b_infaq",
+            accountId = "acc_disbursed",
+            categoryName = "Infaq, Sedekah & Tabungan Ibadah",
+            monthlyLimit = 1200000.0,
+            iconKey = "volunteer_activism",
             alertThresholdPercent = 0.8
         ),
         BudgetAllocation(
             id = "b_other",
             accountId = "acc_other_exp",
-            categoryName = "Kebutuhan Rutin Lainnya",
-            monthlyLimit = 600000.0,
+            categoryName = "Kebutuhan Pelengkap & Rekreasi Halal",
+            monthlyLimit = 1000000.0,
             iconKey = "category",
             alertThresholdPercent = 0.8
         )
@@ -436,55 +444,86 @@ object AmanahDummyDataGenerator {
                     JournalLine("acc_vault", 0.0, 225000.0)
                 )
             ),
-            // 4. Belanja Kebutuhan Pokok Sembako (Expense)
+            // 4. Belanja Kebutuhan Pokok Sembako (Expense - Dharuriyyat)
             makeEntry(
                 id = "j_sample_04",
                 daysAgo = 9,
-                desc = "Belanja Bahan Pangan & Sayur Organik Keluarga (Round-up: Rp 5.000)",
+                desc = "Belanja Bahan Pangan & Sayur Organik Keluarga (Supermarket Halal)",
                 type = "EXPENSE",
                 lines = listOf(
-                    JournalLine("acc_living", 645000.0, 0.0),
-                    JournalLine("acc_disbursed", 5000.0, 0.0),
-                    JournalLine("acc_bank", 0.0, 645000.0),
-                    JournalLine("acc_vault", 0.0, 5000.0)
+                    JournalLine("acc_living", 1850000.0, 0.0),
+                    JournalLine("acc_bank", 0.0, 1850000.0)
                 ),
                 receipt = ReceiptAttachment(
                     title = "Struk Belanja Supermarket Halal",
                     receiptType = ReceiptType.STORE_RECEIPT,
                     merchantName = "Superindo Halal Mart",
                     referenceNumber = "POS-99218",
-                    amount = 650000.0,
+                    amount = 1850000.0,
                     isDigitalVerified = true
                 )
             ),
-            // 5. Pembayaran Listrik PLN & PDAM (Expense)
+            // 4b. Belanja Bulanan Beras & Lauk Dapur (Expense - Dharuriyyat)
+            makeEntry(
+                id = "j_sample_04b",
+                daysAgo = 8,
+                desc = "Belanja Bulanan Beras Ramos, Minyak & Lauk Dapur Halal",
+                type = "EXPENSE",
+                lines = listOf(
+                    JournalLine("acc_living", 1400000.0, 0.0),
+                    JournalLine("acc_bank", 0.0, 1400000.0)
+                )
+            ),
+            // 5. Pembayaran Listrik PLN & PDAM (Expense - Hajiyyat)
             makeEntry(
                 id = "j_sample_05",
                 daysAgo = 8,
                 desc = "Pembayaran Token Listrik PLN & Tagihan PDAM Rumah",
                 type = "EXPENSE",
                 lines = listOf(
-                    JournalLine("acc_utility", 350000.0, 0.0),
-                    JournalLine("acc_bank", 0.0, 350000.0)
+                    JournalLine("acc_utility", 850000.0, 0.0),
+                    JournalLine("acc_bank", 0.0, 850000.0)
                 ),
                 receipt = ReceiptAttachment(
                     title = "Struk Pembayaran PLN & PDAM",
                     receiptType = ReceiptType.DIGITAL_PAYMENT,
                     merchantName = "PLN Mobile / BSI",
                     referenceNumber = "PLN-881920",
-                    amount = 350000.0,
+                    amount = 850000.0,
                     isDigitalVerified = true
                 )
             ),
-            // 6. Transportasi & BBM (Expense)
+            // 6. Transportasi & BBM (Expense - Hajiyyat)
             makeEntry(
                 id = "j_sample_06",
-                daysAgo = 6,
-                desc = "Isi BBM Pertamax & Servis Berkala Motor Harian",
+                daysAgo = 7,
+                desc = "Isi BBM Pertamax & Servis Berkala Kendaraan Harian",
                 type = "EXPENSE",
                 lines = listOf(
-                    JournalLine("acc_transport", 250000.0, 0.0),
-                    JournalLine("acc_cash", 0.0, 250000.0)
+                    JournalLine("acc_transport", 950000.0, 0.0),
+                    JournalLine("acc_cash", 0.0, 950000.0)
+                )
+            ),
+            // 6b. Kuota Internet & Paket Komunikasi (Expense - Hajiyyat)
+            makeEntry(
+                id = "j_sample_06b",
+                daysAgo = 6,
+                desc = "Langganan Paket Internet WiFi Rumah & Komunikasi Dakwah",
+                type = "EXPENSE",
+                lines = listOf(
+                    JournalLine("acc_utility", 450000.0, 0.0),
+                    JournalLine("acc_bank", 0.0, 450000.0)
+                )
+            ),
+            // 6c. Iuran Lingkungan & Operasional (Expense - Hajiyyat)
+            makeEntry(
+                id = "j_sample_06c",
+                daysAgo = 6,
+                desc = "Iuran Kebersihan RT, Keamanan & Pengelolaan Lingkungan",
+                type = "EXPENSE",
+                lines = listOf(
+                    JournalLine("acc_transport", 300000.0, 0.0),
+                    JournalLine("acc_cash", 0.0, 300000.0)
                 )
             ),
             // 7. Hadiah & Hibah Sukarela (Non-Kasab)
@@ -500,29 +539,29 @@ object AmanahDummyDataGenerator {
                     JournalLine("acc_vault", 0.0, 200000.0)
                 )
             ),
-            // 8. Majelis Ilmu & Kitab Tafsir (Expense)
+            // 8. SPP Sekolah Tahfidz Qur'an & Kitab Kajian (Expense - Dharuriyyat)
             makeEntry(
                 id = "j_sample_08",
                 daysAgo = 4,
-                desc = "Infaq Majelis Kajian Fiqih Muamalah & Buku Tafsir",
+                desc = "SPP Sekolah Tahfidz Qur'an Anak & Pembelian Kitab Kajian",
                 type = "EXPENSE",
                 lines = listOf(
-                    JournalLine("acc_education", 150000.0, 0.0),
-                    JournalLine("acc_cash", 0.0, 150000.0)
+                    JournalLine("acc_education", 650000.0, 0.0),
+                    JournalLine("acc_cash", 0.0, 650000.0)
                 )
             ),
-            // 9. Kesehatan & Pengobatan Herbal (Expense)
+            // 9. Kesehatan & Medis Keluarga (Expense - Dharuriyyat)
             makeEntry(
                 id = "j_sample_09",
                 daysAgo = 3,
-                desc = "Beli Vitamin Habbatus Sauda & Pemeriksaan Medis Keluarga",
+                desc = "Beli Vitamin Habbatus Sauda, Madu & Pemeriksaan Medis Keluarga",
                 type = "EXPENSE",
                 lines = listOf(
-                    JournalLine("acc_health", 300000.0, 0.0),
-                    JournalLine("acc_bank", 0.0, 300000.0)
+                    JournalLine("acc_health", 450000.0, 0.0),
+                    JournalLine("acc_bank", 0.0, 450000.0)
                 )
             ),
-            // 10. Penyaluran Infaq Vault 1 (Santunan Sembako Fakir Miskin)
+            // 10. Penyaluran Infaq Vault 1 (Infaq & Tabungan Syariah)
             makeEntry(
                 id = "j_sample_10",
                 daysAgo = 2,
@@ -533,7 +572,7 @@ object AmanahDummyDataGenerator {
                     JournalLine("acc_bank", 0.0, 500000.0)
                 )
             ),
-            // 11. Penyaluran Infaq Vault 2 (Program Da'i BAZNAS)
+            // 11. Penyaluran Infaq Vault 2 (Infaq & Tabungan Syariah)
             makeEntry(
                 id = "j_sample_11",
                 daysAgo = 1,
@@ -542,6 +581,39 @@ object AmanahDummyDataGenerator {
                 lines = listOf(
                     JournalLine("acc_vault", 300000.0, 0.0),
                     JournalLine("acc_cash", 0.0, 300000.0)
+                )
+            ),
+            // 12. Sedekah Subuh Rutin & Santunan Dhuafa (Infaq & Tabungan Syariah)
+            makeEntry(
+                id = "j_sample_12",
+                daysAgo = 1,
+                desc = "Sedekah Subuh Istiqomah & Santunan Dhuafa Sekitar",
+                type = "EXPENSE",
+                lines = listOf(
+                    JournalLine("acc_disbursed", 100000.0, 0.0),
+                    JournalLine("acc_cash", 0.0, 100000.0)
+                )
+            ),
+            // 13. Silaturahmi & Rekreasi Halal (Expense - Tahsiniyyat)
+            makeEntry(
+                id = "j_sample_13",
+                daysAgo = 1,
+                desc = "Jamuan Silaturahmi Keluarga & Kuliner Halal Akhir Pekan",
+                type = "EXPENSE",
+                lines = listOf(
+                    JournalLine("acc_other_exp", 450000.0, 0.0),
+                    JournalLine("acc_bank", 0.0, 450000.0)
+                )
+            ),
+            // 14. Pakaian Muslim & Kebutuhan Halal (Expense - Tahsiniyyat)
+            makeEntry(
+                id = "j_sample_14",
+                daysAgo = 0,
+                desc = "Pembelian Busana Muslim Syar'i & Perlengkapan Sholat Keluarga",
+                type = "EXPENSE",
+                lines = listOf(
+                    JournalLine("acc_other_exp", 250000.0, 0.0),
+                    JournalLine("acc_cash", 0.0, 250000.0)
                 )
             )
         )

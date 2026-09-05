@@ -1,6 +1,7 @@
 package com.example.presentation.screens
 
 import android.app.DatePickerDialog
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,6 +38,10 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AlertDialog
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -319,11 +324,11 @@ fun AddTransactionScreen(
     }
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0E1A1C)
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
                 navigationIcon = {
                     IconButton(
@@ -333,7 +338,7 @@ fun AddTransactionScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -343,7 +348,7 @@ fun AddTransactionScreen(
                             text = if (isEditMode) "Ubah Transaksi Syariah" else "Catat Transaksi Berpasangan",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         if (isEditMode) {
                             Text(
@@ -374,7 +379,7 @@ fun AddTransactionScreen(
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Buka Menu Sidebar",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -394,8 +399,8 @@ fun AddTransactionScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(DarkSurface)
-                    .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
                     .padding(4.dp)
             ) {
                 Box(
@@ -414,7 +419,7 @@ fun AddTransactionScreen(
                         text = "Pemasukan (Rezeki)",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (isIncome) Color.White else Color.White60
+                        color = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -434,7 +439,7 @@ fun AddTransactionScreen(
                         text = "Pengeluaran (Konsumsi)",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (!isIncome) Color.White else Color.White60
+                        color = if (!isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -484,9 +489,9 @@ fun AddTransactionScreen(
                             cal.get(Calendar.DAY_OF_MONTH)
                         ).show()
                     },
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
             ) {
                 Row(
                     modifier = Modifier
@@ -504,7 +509,7 @@ fun AddTransactionScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Masehi: ${dateFormat.format(selectedDate)}",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -532,17 +537,17 @@ fun AddTransactionScreen(
                     amountText = it.filter { char -> char.isDigit() }
                     errorMessage = null
                 },
-                label = { Text("Nominal Transaksi (Rp)", color = Color.White70) },
+                label = { Text("Nominal Transaksi (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 prefix = { Text("Rp ", color = GoldAccent, fontWeight = FontWeight.Bold) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     focusedBorderColor = EmeraldPrimary,
-                    unfocusedBorderColor = DarkBorder,
-                    focusedContainerColor = DarkSurface,
-                    unfocusedContainerColor = DarkSurface
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -567,15 +572,15 @@ fun AddTransactionScreen(
                     value = currentCategory?.name ?: "Pilih Kategori",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Kategori Akun", color = Color.White70) },
+                    label = { Text("Kategori Akun", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryDropdownExpanded) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = DarkSurface,
-                        unfocusedContainerColor = DarkSurface
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     modifier = Modifier
                         .menuAnchor()
@@ -585,14 +590,14 @@ fun AddTransactionScreen(
                 ExposedDropdownMenu(
                     expanded = categoryDropdownExpanded,
                     onDismissRequest = { categoryDropdownExpanded = false },
-                    modifier = Modifier.background(DarkSurface)
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                 ) {
                     availableCategories.forEach { acc ->
                         DropdownMenuItem(
                             text = {
                                 Column {
-                                    Text(acc.name, color = Color.White, fontSize = 13.sp)
-                                    Text(acc.description, color = Color.White60, fontSize = 10.sp)
+                                    Text(acc.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+                                    Text(acc.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                 }
                             },
                             onClick = {
@@ -615,15 +620,15 @@ fun AddTransactionScreen(
                     value = currentAsset?.name ?: "Pilih Akun Aset",
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text(if (isIncome) "Masuk ke Rekening/Kas" else "Sumber Dana (Kas/Bank)", color = Color.White70) },
+                    label = { Text(if (isIncome) "Masuk ke Rekening/Kas" else "Sumber Dana (Kas/Bank)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = assetDropdownExpanded) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = DarkSurface,
-                        unfocusedContainerColor = DarkSurface
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     modifier = Modifier
                         .menuAnchor()
@@ -633,11 +638,11 @@ fun AddTransactionScreen(
                 ExposedDropdownMenu(
                     expanded = assetDropdownExpanded,
                     onDismissRequest = { assetDropdownExpanded = false },
-                    modifier = Modifier.background(DarkSurface)
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                 ) {
                     assetAccounts.forEach { acc ->
                         DropdownMenuItem(
-                            text = { Text(acc.name, color = Color.White, fontSize = 13.sp) },
+                            text = { Text(acc.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp) },
                             onClick = {
                                 selectedAssetAccountId = acc.id
                                 assetDropdownExpanded = false
@@ -651,9 +656,9 @@ fun AddTransactionScreen(
             if (isIncome) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(
@@ -680,7 +685,7 @@ fun AddTransactionScreen(
                             Spacer(modifier = Modifier.height(10.dp))
 
                             // Preset percentage chips
-                            Text("Pilihan Persentase Infaq:", fontSize = 11.sp, color = Color.White70)
+                            Text("Pilihan Persentase Infaq:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(6.dp))
 
                             Row(
@@ -697,8 +702,8 @@ fun AddTransactionScreen(
                                     val isSelected = Math.abs(infaqRate - rate) < 0.001
                                     androidx.compose.material3.Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = if (isSelected) EmeraldPrimary else Color(0xFF0E1A1C),
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) GoldAccent else DarkBorder),
+                                        color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) GoldAccent else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                                         modifier = Modifier
                                             .weight(1f)
                                             .clickable { infaqRate = rate }
@@ -712,7 +717,7 @@ fun AddTransactionScreen(
                                                 text = label,
                                                 fontSize = 11.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) Color.White else Color.White70
+                                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
@@ -726,7 +731,7 @@ fun AddTransactionScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Persentase Kustom:", fontSize = 11.sp, color = Color.White70, modifier = Modifier.weight(1f))
+                                Text("Persentase Kustom:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                                 OutlinedTextField(
                                     value = if (infaqRate == 0.0) "0" else String.format(Locale.US, "%.1f", infaqRate * 100).removeSuffix(".0"),
                                     onValueChange = { input ->
@@ -742,12 +747,12 @@ fun AddTransactionScreen(
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White,
+                                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                         focusedBorderColor = EmeraldPrimary,
-                                        unfocusedBorderColor = DarkBorder,
-                                        focusedContainerColor = Color(0xFF0E1A1C),
-                                        unfocusedContainerColor = Color(0xFF0E1A1C)
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                                     ),
                                     modifier = Modifier
                                         .width(100.dp)
@@ -765,7 +770,7 @@ fun AddTransactionScreen(
                                 colors = SliderDefaults.colors(
                                     thumbColor = EmeraldLight,
                                     activeTrackColor = EmeraldPrimary,
-                                    inactiveTrackColor = DarkBorder
+                                    inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                                 ),
                                 modifier = Modifier.testTag("infaq_slider")
                             )
@@ -781,7 +786,7 @@ fun AddTransactionScreen(
                             Text(
                                 text = "Infaq dialokasikan ke Vault:",
                                 fontSize = 11.sp,
-                                color = Color.White70
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = "Rp ${formatRupiah(calculatedInfaqPreview)}",
@@ -799,7 +804,7 @@ fun AddTransactionScreen(
                                 Text(
                                     text = "Bersih Masuk Rekening:",
                                     fontSize = 11.sp,
-                                    color = Color.White60
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = "Rp ${formatRupiah(netAmount)}",
@@ -822,12 +827,12 @@ fun AddTransactionScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isWillBeOver) Color(0xFF2A1515) else Color(0xFF102421)
+                            containerColor = if (isWillBeOver) Color(0xFF2A1515) else MaterialTheme.colorScheme.surface
                         ),
                         shape = RoundedCornerShape(12.dp),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (isWillBeOver) ExpenseCoral.copy(alpha = 0.7f) else DarkBorder
+                            if (isWillBeOver) ExpenseCoral.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         )
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
@@ -845,7 +850,7 @@ fun AddTransactionScreen(
                                 Text(
                                     text = "Batas: Rp ${formatRupiah(budgetForCategory.monthlyLimit)}",
                                     fontSize = 11.sp,
-                                    color = Color.White60
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Spacer(modifier = Modifier.height(6.dp))
@@ -856,7 +861,7 @@ fun AddTransactionScreen(
                                 Text(
                                     text = "Terpakai: Rp ${formatRupiah(currentSpent)} -> Rp ${formatRupiah(projectedSpent)}",
                                     fontSize = 11.sp,
-                                    color = Color.White70
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = if (isWillBeOver) {
@@ -876,9 +881,9 @@ fun AddTransactionScreen(
                 // Micro-infaq round-up for expense
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(12.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(
@@ -896,7 +901,7 @@ fun AddTransactionScreen(
                                 Text(
                                     text = "Bulatkan belanjaan ke kelipatan Rp ${formatRupiah(roundUpStep)}",
                                     fontSize = 10.sp,
-                                    color = Color.White60
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Switch(
@@ -927,16 +932,16 @@ fun AddTransactionScreen(
             OutlinedTextField(
                 value = descriptionText,
                 onValueChange = { descriptionText = it },
-                label = { Text("Keterangan Transaksi", color = Color.White70) },
-                placeholder = { Text("Contoh: Gaji freelance, Belanja dapur", color = Color.White38) },
+                label = { Text("Keterangan Transaksi", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                placeholder = { Text("Contoh: Gaji freelance, Belanja dapur", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     focusedBorderColor = EmeraldPrimary,
-                    unfocusedBorderColor = DarkBorder,
-                    focusedContainerColor = DarkSurface,
-                    unfocusedContainerColor = DarkSurface
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -946,9 +951,9 @@ fun AddTransactionScreen(
             // 7b. Bukti Transaksi & Kuitansi Digital (Receipt Attachment)
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (attachReceipt) EmeraldPrimary.copy(alpha = 0.5f) else DarkBorder)
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (attachReceipt) EmeraldPrimary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(
@@ -961,12 +966,12 @@ fun AddTransactionScreen(
                                 text = "🧾 Bukti Transaksi / Kuitansi Digital",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (attachReceipt) EmeraldLight else Color.White
+                                color = if (attachReceipt) EmeraldLight else MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Lampirkan nota, bukti transfer, atau struk QRIS",
                                 fontSize = 10.sp,
-                                color = Color.White60
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Switch(
@@ -991,15 +996,15 @@ fun AddTransactionScreen(
                                 value = receiptType.displayName,
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Tipe Bukti", color = Color.White70) },
+                                label = { Text("Tipe Bukti", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = receiptTypeDropdownExpanded) },
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedTextColor = Color.White,
-                                    unfocusedTextColor = Color.White,
+                                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     focusedBorderColor = EmeraldPrimary,
-                                    unfocusedBorderColor = DarkBorder,
-                                    focusedContainerColor = DarkBackground,
-                                    unfocusedContainerColor = DarkBackground
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                                 ),
                                 modifier = Modifier
                                     .menuAnchor()
@@ -1008,11 +1013,11 @@ fun AddTransactionScreen(
                             ExposedDropdownMenu(
                                 expanded = receiptTypeDropdownExpanded,
                                 onDismissRequest = { receiptTypeDropdownExpanded = false },
-                                modifier = Modifier.background(DarkSurface)
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                             ) {
                                 ReceiptType.values().forEach { type ->
                                     DropdownMenuItem(
-                                        text = { Text(type.displayName, color = Color.White, fontSize = 13.sp) },
+                                        text = { Text(type.displayName, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp) },
                                         onClick = {
                                             receiptType = type
                                             receiptTypeDropdownExpanded = false
@@ -1027,16 +1032,16 @@ fun AddTransactionScreen(
                         OutlinedTextField(
                             value = receiptMerchant,
                             onValueChange = { receiptMerchant = it },
-                            label = { Text("Nama Toko / Merchant / Pihak Kedua", color = Color.White70) },
-                            placeholder = { Text("cth: Toko Berkah Barakah, BAZNAS, PT PLN", color = Color.White38) },
+                            label = { Text("Nama Toko / Merchant / Pihak Kedua", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                            placeholder = { Text("cth: Toko Berkah Barakah, BAZNAS, PT PLN", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 focusedBorderColor = EmeraldPrimary,
-                                unfocusedBorderColor = DarkBorder,
-                                focusedContainerColor = DarkBackground,
-                                unfocusedContainerColor = DarkBackground
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1048,16 +1053,16 @@ fun AddTransactionScreen(
                         OutlinedTextField(
                             value = receiptRefNumber,
                             onValueChange = { receiptRefNumber = it },
-                            label = { Text("No. Resi / Invoice / Ref Transaksi", color = Color.White70) },
-                            placeholder = { Text("cth: INV/2026/08/99812", color = Color.White38) },
+                            label = { Text("No. Resi / Invoice / Ref Transaksi", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                            placeholder = { Text("cth: INV/2026/08/99812", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 focusedBorderColor = EmeraldPrimary,
-                                unfocusedBorderColor = DarkBorder,
-                                focusedContainerColor = DarkBackground,
-                                unfocusedContainerColor = DarkBackground
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1154,7 +1159,7 @@ fun AddTransactionScreen(
                     text = "Hapus Transaksi Jurnal Ini?",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
@@ -1162,7 +1167,7 @@ fun AddTransactionScreen(
                     Text(
                         text = "Tindakan ini akan menghapus transaksi dari buku besar syariah. Seluruh saldo kas/bank dan kewajiban vault infaq terkait akan otomatis dikembalikan ke posisi semula.",
                         fontSize = 13.sp,
-                        color = Color.White70,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 18.sp
                     )
                     Text(
@@ -1191,7 +1196,7 @@ fun AddTransactionScreen(
                     onClick = { showDeleteConfirmDialog = false },
                     modifier = Modifier.testTag("cancel_delete_dialog_button")
                 ) {
-                    Text("Batal", color = Color.White70)
+                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             modifier = Modifier.testTag("delete_confirmation_dialog")
@@ -1204,7 +1209,7 @@ fun AddTransactionScreen(
 
         AlertDialog(
             onDismissRequest = { showOverBudgetWarningDialog = false },
-            containerColor = Color(0xFF1E1414),
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
             icon = {
                 Icon(
@@ -1219,7 +1224,7 @@ fun AddTransactionScreen(
                     text = "Peringatan: Anggaran Terlampaui!",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
@@ -1227,29 +1232,29 @@ fun AddTransactionScreen(
                     Text(
                         text = "Transaksi ini akan menyebabkan pos pengeluaran '${budgetForCategory.categoryName}' melampaui batas anggaran bulanan yang telah ditentukan.",
                         fontSize = 13.sp,
-                        color = Color.White70
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF2D1616)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Batas Anggaran:", fontSize = 12.sp, color = Color.White60)
-                                Text("Rp ${formatRupiah(budgetForCategory.monthlyLimit)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("Batas Anggaran:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${formatRupiah(budgetForCategory.monthlyLimit)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Pengeluaran Saat Ini:", fontSize = 12.sp, color = Color.White60)
-                                Text("Rp ${formatRupiah(currentSpent)}", fontSize = 12.sp, color = Color.White)
+                                Text("Pengeluaran Saat Ini:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${formatRupiah(currentSpent)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Nominal Transaksi Ini:", fontSize = 12.sp, color = Color.White60)
+                                Text("Nominal Transaksi Ini:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text("+Rp ${formatRupiah(amountValue)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
                             }
-                            androidx.compose.material3.HorizontalDivider(color = DarkBorder)
+                            androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Total Proyeksi:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White70)
+                                Text("Total Proyeksi:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                                 Text("Rp ${formatRupiah(projectedTotal)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1283,7 +1288,7 @@ fun AddTransactionScreen(
                     onClick = { showOverBudgetWarningDialog = false },
                     modifier = Modifier.testTag("budget_warning_cancel_button")
                 ) {
-                    Text("Batal & Sesuaikan", color = Color.White70)
+                    Text("Batal & Sesuaikan", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             modifier = Modifier.testTag("budget_warning_dialog")
@@ -1362,8 +1367,35 @@ fun OcrReceiptScannerDialog(
     onOpenLiveCamera: () -> Unit = {},
     onApplyParsedData: (com.example.core.ocr.ParsedReceiptData) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var rawText by remember { mutableStateOf("") }
     var parsedPreview by remember { mutableStateOf<com.example.core.ocr.ParsedReceiptData?>(null) }
+    var isOcrProcessing by remember { mutableStateOf(false) }
+
+    val galleryPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            isOcrProcessing = true
+            try {
+                val inputImage = com.google.mlkit.vision.common.InputImage.fromFilePath(context, uri)
+                val recognizer = com.google.mlkit.vision.text.TextRecognition.getClient(
+                    com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS
+                )
+                recognizer.process(inputImage)
+                    .addOnSuccessListener { visionText ->
+                        isOcrProcessing = false
+                        rawText = visionText.text
+                        parsedPreview = SmartReceiptParser.parseReceiptText(visionText.text)
+                    }
+                    .addOnFailureListener {
+                        isOcrProcessing = false
+                    }
+            } catch (e: Exception) {
+                isOcrProcessing = false
+            }
+        }
+    }
 
     val sampleReceipts = remember {
         listOf(
@@ -1410,6 +1442,9 @@ fun OcrReceiptScannerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -1419,7 +1454,7 @@ fun OcrReceiptScannerDialog(
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Pemindai Struk & Mutasi Otomatis", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Pemindai Struk & Mutasi Otomatis", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         text = {
@@ -1429,24 +1464,55 @@ fun OcrReceiptScannerDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Live Camera Button
-                Button(
-                    onClick = onOpenLiveCamera,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("open_live_camerax_button"),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                // Live Camera and Gallery Buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Buka Kamera Langsung (CameraX)", color = Color.White, fontWeight = FontWeight.Bold)
+                    Button(
+                        onClick = onOpenLiveCamera,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("open_live_camerax_button"),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    ) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Kamera", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+
+                    Button(
+                        onClick = {
+                            galleryPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("open_gallery_picker_button"),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldDark)
+                    ) {
+                        Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Galeri Foto", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
+
+                if (isOcrProcessing) {
+                    Text(
+                        text = "⏳ Memindai teks struk dengan Google ML Kit OCR...",
+                        fontSize = 12.sp,
+                        color = GoldAccent,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
 
                 Text(
                     text = "Atau tempel teks struk / OCR atau pilih sampel mutasi di bawah untuk ekstraksi otomatis nominal, toko, dan kategori akun syariah.",
                     fontSize = 12.sp,
-                    color = Color.White70
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 // Quick sample buttons
@@ -1481,23 +1547,25 @@ fun OcrReceiptScannerDialog(
                         rawText = it
                         parsedPreview = SmartReceiptParser.parseReceiptText(it)
                     },
-                    label = { Text("Teks Hasil Scan Struk / Mutasi") },
-                    placeholder = { Text("Paste teks struk minimarket, mutasi m-banking, kwitansi di sini...") },
+                    label = { Text("Teks Hasil Scan Struk / Mutasi", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    placeholder = { Text("Paste teks struk minimarket, mutasi m-banking, kwitansi di sini...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(130.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = RoundedCornerShape(10.dp)
                 )
 
                 parsedPreview?.let { preview ->
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = DarkBackground),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                         border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f)),
                         shape = RoundedCornerShape(10.dp)
                     ) {
@@ -1508,15 +1576,15 @@ fun OcrReceiptScannerDialog(
                                 fontWeight = FontWeight.Bold,
                                 color = EmeraldLight
                             )
-                            Text("• Nominal: Rp ${preview.amount.toLong()}", fontSize = 12.sp, color = Color.White)
+                            Text("• Nominal: Rp ${preview.amount.toLong()}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
                             if (preview.merchantName.isNotBlank()) {
-                                Text("• Merchant/Pihak: ${preview.merchantName}", fontSize = 12.sp, color = Color.White70)
+                                Text("• Merchant/Pihak: ${preview.merchantName}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             if (preview.referenceNumber.isNotBlank()) {
-                                Text("• No. Ref: ${preview.referenceNumber}", fontSize = 12.sp, color = Color.White70)
+                                Text("• No. Ref: ${preview.referenceNumber}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Text("• Jenis: ${if (preview.isIncome) "Pemasukan (Rezeki)" else "Pengeluaran (Konsumsi)"}", fontSize = 12.sp, color = Color.White70)
-                            Text("• Kategori Akun: ${preview.suggestedCategoryAccountId}", fontSize = 12.sp, color = Color.White70)
+                            Text("• Jenis: ${if (preview.isIncome) "Pemasukan (Rezeki)" else "Pengeluaran (Konsumsi)"}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("• Kategori Akun: ${preview.suggestedCategoryAccountId}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -1535,7 +1603,7 @@ fun OcrReceiptScannerDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal", color = Color.White70)
+                Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )

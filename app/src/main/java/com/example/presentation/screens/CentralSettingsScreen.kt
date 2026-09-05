@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
@@ -117,7 +118,8 @@ import java.util.Locale
 private enum class SettingsCategory(val label: String, val icon: ImageVector) {
     ALL("Semua", Icons.Default.Tune),
     LEDGER("Kas & Identitas", Icons.Default.AccountBalance),
-    THEME("Tema & Tampilan", Icons.Default.Palette),
+    THEME("Tema & Kontras", Icons.Default.Palette),
+    TEXT_SCALE("Skala Teks", Icons.Default.FormatSize),
     INFAQ("Infaq & Shadaqah", Icons.Default.Savings),
     ZAKAT("Zakat & Emas", Icons.Default.VolunteerActivism),
     BUDGET("Anggaran & Israf", Icons.Default.PieChart),
@@ -504,12 +506,12 @@ fun CentralSettingsScreen(
                 }
 
                 // ==========================================
-                // 2. TEMA & TAMPILAN VISUAL
+                // 2. TEMA & KONTRAS TAMPILAN
                 // ==========================================
                 if (selectedCategory == SettingsCategory.ALL || selectedCategory == SettingsCategory.THEME) {
                     SettingsSectionCard(
-                        title = "Tema & Tampilan Antarmuka",
-                        subtitle = "Preferensi warna, kontras tinggi, dan privasi tampilan",
+                        title = "Tema & Kontras Tampilan",
+                        subtitle = "Preferensi mode visual terang/gelap dan privasi tampilan",
                         icon = Icons.Default.Palette
                     ) {
                         Text(
@@ -574,110 +576,6 @@ fun CentralSettingsScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
-                        // Skala Tampilan UI & Ukuran Keterbacaan
-                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = "Skala Tampilan & Ukuran Teks",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Atur kepadatan antarmuka & kenyamanan membaca",
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                Surface(
-                                    color = EmeraldPrimary.copy(alpha = 0.15f),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = "${(state.uiScaleFactor * 100).toInt()}%",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = EmeraldLight,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // 4 preset mode buttons
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                val modes = listOf(
-                                    com.example.ui.theme.UiScaleMode.COMPACT to "85%",
-                                    com.example.ui.theme.UiScaleMode.DEFAULT to "100%",
-                                    com.example.ui.theme.UiScaleMode.LARGE to "115%",
-                                    com.example.ui.theme.UiScaleMode.EXTRA_LARGE to "130%"
-                                )
-
-                                modes.forEach { (m, pctLabel) ->
-                                    val isSelected = state.uiScaleMode == m
-                                    Surface(
-                                        onClick = { viewModel.setUiScaleMode(m) },
-                                        color = if (isSelected) EmeraldPrimary.copy(alpha = 0.25f) else DarkSurfaceVariant.copy(alpha = 0.5f),
-                                        shape = RoundedCornerShape(8.dp),
-                                        border = androidx.compose.foundation.BorderStroke(
-                                            width = 1.dp,
-                                            color = if (isSelected) EmeraldPrimary else Color.Transparent
-                                        ),
-                                        modifier = Modifier.weight(1f).testTag("btn_ui_scale_${m.name.lowercase()}")
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Text(
-                                                text = pctLabel,
-                                                fontSize = 13.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if (isSelected) EmeraldLight else Color.White
-                                            )
-                                            Text(
-                                                text = when(m) {
-                                                    com.example.ui.theme.UiScaleMode.COMPACT -> "Ringkas"
-                                                    com.example.ui.theme.UiScaleMode.DEFAULT -> "Standar"
-                                                    com.example.ui.theme.UiScaleMode.LARGE -> "Besar"
-                                                    com.example.ui.theme.UiScaleMode.EXTRA_LARGE -> "Ekstra"
-                                                },
-                                                fontSize = 9.sp,
-                                                color = if (isSelected) EmeraldLight else Color.White.copy(alpha = 0.6f)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            // Fine slider control
-                            Slider(
-                                value = state.uiScaleFactor,
-                                onValueChange = { viewModel.setUiScaleFactor(it) },
-                                valueRange = 0.80f..1.35f,
-                                steps = 10,
-                                colors = SliderDefaults.colors(
-                                    thumbColor = EmeraldLight,
-                                    activeTrackColor = EmeraldPrimary,
-                                    inactiveTrackColor = DarkBorder
-                                ),
-                                modifier = Modifier.fillMaxWidth().testTag("slider_ui_scale_factor")
-                            )
-                        }
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-
                         // Switch: Samarkan Saldo Bawaan
                         SettingsSwitchRow(
                             title = "Samarkan Nilai Saldo secara Bawaan",
@@ -697,6 +595,164 @@ fun CentralSettingsScreen(
                             testTag = "settings_screenshot_protection_switch",
                             onCheckedChange = { viewModel.setScreenshotProtection(it) }
                         )
+                    }
+                }
+
+                // ==========================================
+                // 2B. SKALA TAMPILAN & UKURAN TEKS
+                // ==========================================
+                if (selectedCategory == SettingsCategory.ALL || selectedCategory == SettingsCategory.THEME || selectedCategory == SettingsCategory.TEXT_SCALE) {
+                    SettingsSectionCard(
+                        title = "Skala Tampilan & Ukuran Teks",
+                        subtitle = "Pengaturan ukuran font, keterbacaan, dan kenyamanan visual",
+                        icon = Icons.Default.FormatSize
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Ukuran Huruf & Skala Antarmuka",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Mode: ${state.uiScaleMode.displayName} (${(state.uiScaleFactor * 100).toInt()}%)",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Surface(
+                                color = EmeraldPrimary.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text(
+                                    text = "${(state.uiScaleFactor * 100).toInt()}%",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EmeraldLight,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // 4 preset mode buttons
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val modes = listOf(
+                                com.example.ui.theme.UiScaleMode.COMPACT to "85%",
+                                com.example.ui.theme.UiScaleMode.DEFAULT to "100%",
+                                com.example.ui.theme.UiScaleMode.LARGE to "115%",
+                                com.example.ui.theme.UiScaleMode.EXTRA_LARGE to "130%"
+                            )
+
+                            modes.forEach { (m, pctLabel) ->
+                                val isSelected = state.uiScaleMode == m
+                                Surface(
+                                    onClick = { viewModel.setUiScaleMode(m) },
+                                    color = if (isSelected) EmeraldPrimary.copy(alpha = 0.22f) else MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        width = 1.dp,
+                                        color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                    ),
+                                    modifier = Modifier.weight(1f).testTag("btn_ui_scale_${m.name.lowercase()}")
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = pctLabel,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isSelected) EmeraldLight else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = when(m) {
+                                                com.example.ui.theme.UiScaleMode.COMPACT -> "Ringkas"
+                                                com.example.ui.theme.UiScaleMode.DEFAULT -> "Standar"
+                                                com.example.ui.theme.UiScaleMode.LARGE -> "Besar"
+                                                com.example.ui.theme.UiScaleMode.EXTRA_LARGE -> "Ekstra"
+                                            },
+                                            fontSize = 9.sp,
+                                            color = if (isSelected) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Penyesuaian Halus Skala:",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        // Fine slider control
+                        Slider(
+                            value = state.uiScaleFactor,
+                            onValueChange = { viewModel.setUiScaleFactor(it) },
+                            valueRange = 0.80f..1.35f,
+                            steps = 10,
+                            colors = SliderDefaults.colors(
+                                thumbColor = EmeraldLight,
+                                activeTrackColor = EmeraldPrimary,
+                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            modifier = Modifier.fillMaxWidth().testTag("slider_ui_scale_factor")
+                        )
+
+                        // Interactive live text preview
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                            shape = RoundedCornerShape(10.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.FormatSize, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Pratinjau Keterbacaan Teks Skala ${(state.uiScaleFactor * 100).toInt()}%:",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = EmeraldLight
+                                    )
+                                }
+                                Text(
+                                    text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = GoldAccent
+                                )
+                                Text(
+                                    text = "Buku Besar Syariah Amanah: Catatan Transaksi Keuangan Halal & Berkah",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Kas Tunai: Rp 1.500.000 (Kasab) • Infaq Rutin: Rp 37.500",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
 

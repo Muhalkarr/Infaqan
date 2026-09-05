@@ -940,13 +940,18 @@ class AmanahLedgerViewModel : ViewModel() {
     }
 
     fun setThemeMode(mode: com.example.ui.theme.AppThemeMode) {
+        val (isDark, isHigh) = when (mode) {
+            com.example.ui.theme.AppThemeMode.ELEGANT_DARK -> true to false
+            com.example.ui.theme.AppThemeMode.LIGHT_MODE -> false to false
+            com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_LIGHT -> false to true
+            com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_DARK -> true to true
+        }
         _uiState.update { state ->
-            when (mode) {
-                com.example.ui.theme.AppThemeMode.ELEGANT_DARK -> state.copy(isDarkMode = true, isHighContrast = false)
-                com.example.ui.theme.AppThemeMode.LIGHT_MODE -> state.copy(isDarkMode = false, isHighContrast = false)
-                com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_LIGHT -> state.copy(isDarkMode = false, isHighContrast = true)
-                com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_DARK -> state.copy(isDarkMode = true, isHighContrast = true)
-            }
+            state.copy(isDarkMode = isDark, isHighContrast = isHigh)
+        }
+        viewModelScope.launch {
+            repository?.saveDarkMode(isDark)
+            repository?.saveHighContrast(isHigh)
         }
     }
 
@@ -2236,42 +2241,72 @@ class AmanahLedgerViewModel : ViewModel() {
             viewModelScope.launch {
                 try {
                     val isCleared = db.settingsDao().getSettingByKey("user_has_cleared_dummy_data")?.value == "true"
-                    val localEntries = db.journalDao().getAllEntries().map { EntityMappers.toDomain(it) }
-                    val localWallets = db.walletDao().getAllWallets().map { EntityMappers.toDomain(it) }
-                    val localGoals = db.ibadahGoalDao().getAllGoals().map { EntityMappers.toDomain(it) }
-                    val localQardh = db.qardhDao().getAllRecords().map { EntityMappers.toDomain(it) }
-                    val localBudgets = db.budgetDao().getAllBudgets().map { EntityMappers.toDomain(it) }
-                    val localSedekah = repository?.getSedekahSubuh()
+                    val dummyVersion = db.settingsDao().getSettingByKey("dummy_data_version")?.value
 
-                    if (isCleared) {
-                        // Pengguna telah memilih menghapus data dummy
+                    if (!isCleared && dummyVersion != "v2_proportional") {
+                        // Refresh dummy data to ensure proportional Sharia Maqashid budget 50/30/10/10
+                        db.budgetDao().clearAll()
+                        db.journalDao().clearAll()
+                        val freshEntries = AmanahDummyDataGenerator.getSampleJournalEntries()
+                        val freshBudgets = AmanahDummyDataGenerator.getSampleBudgets()
+                        db.journalDao().insertAll(freshEntries.map { EntityMappers.toEntity(it) })
+                        db.budgetDao().insertAll(freshBudgets.map { EntityMappers.toEntity(it) })
+                        db.settingsDao().insertOrUpdate(SettingsEntity("dummy_data_version", "v2_proportional"))
+
+                        val localWallets = db.walletDao().getAllWallets().map { EntityMappers.toDomain(it) }
+                        val localGoals = db.ibadahGoalDao().getAllGoals().map { EntityMappers.toDomain(it) }
+                        val localQardh = db.qardhDao().getAllRecords().map { EntityMappers.toDomain(it) }
+                        val localSedekah = repository?.getSedekahSubuh()
+
                         _uiState.update { current ->
                             current.copy(
-                                journalEntries = localEntries,
-                                wallets = localWallets,
-                                ibadahGoals = localGoals,
-                                qardhRecords = localQardh,
-                                budgets = localBudgets,
-                                recurringTransactions = emptyList(),
-                                infaqDistributions = emptyList(),
-                                sedekahSubuhState = localSedekah ?: SedekahSubuhStreakEngine.calculateStreak(emptyMap())
-                            )
-                        }
-                    } else if (localEntries.isNotEmpty() || localWallets.isNotEmpty()) {
-                        // Data telah tersimpan di Room
-                        _uiState.update { current ->
-                            current.copy(
-                                journalEntries = localEntries,
-                                wallets = localWallets,
+                                journalEntries = freshEntries,
+                                budgets = freshBudgets,
+                                wallets = if (localWallets.isNotEmpty()) localWallets else current.wallets,
                                 ibadahGoals = if (localGoals.isNotEmpty()) localGoals else current.ibadahGoals,
                                 qardhRecords = if (localQardh.isNotEmpty()) localQardh else current.qardhRecords,
-                                budgets = if (localBudgets.isNotEmpty()) localBudgets else current.budgets,
                                 sedekahSubuhState = localSedekah ?: current.sedekahSubuhState
                             )
                         }
                     } else {
-                        // Pengguna baru pertama kali membuka aplikasi: Tanam data dummy ke Room
-                        seedDummyDataToRoom(db)
+                        val localEntries = db.journalDao().getAllEntries().map { EntityMappers.toDomain(it) }
+                        val localWallets = db.walletDao().getAllWallets().map { EntityMappers.toDomain(it) }
+                        val localGoals = db.ibadahGoalDao().getAllGoals().map { EntityMappers.toDomain(it) }
+                        val localQardh = db.qardhDao().getAllRecords().map { EntityMappers.toDomain(it) }
+                        val localBudgets = db.budgetDao().getAllBudgets().map { EntityMappers.toDomain(it) }
+                        val localSedekah = repository?.getSedekahSubuh()
+
+                        if (isCleared) {
+                            // Pengguna telah memilih menghapus data dummy
+                            _uiState.update { current ->
+                                current.copy(
+                                    journalEntries = localEntries,
+                                    wallets = localWallets,
+                                    ibadahGoals = localGoals,
+                                    qardhRecords = localQardh,
+                                    budgets = localBudgets,
+                                    recurringTransactions = emptyList(),
+                                    infaqDistributions = emptyList(),
+                                    sedekahSubuhState = localSedekah ?: SedekahSubuhStreakEngine.calculateStreak(emptyMap())
+                                )
+                            }
+                        } else if (localEntries.isNotEmpty() || localWallets.isNotEmpty()) {
+                            // Data telah tersimpan di Room
+                            _uiState.update { current ->
+                                current.copy(
+                                    journalEntries = localEntries,
+                                    wallets = localWallets,
+                                    ibadahGoals = if (localGoals.isNotEmpty()) localGoals else current.ibadahGoals,
+                                    qardhRecords = if (localQardh.isNotEmpty()) localQardh else current.qardhRecords,
+                                    budgets = if (localBudgets.isNotEmpty()) localBudgets else current.budgets,
+                                    sedekahSubuhState = localSedekah ?: current.sedekahSubuhState
+                                )
+                            }
+                        } else {
+                            // Pengguna baru pertama kali membuka aplikasi: Tanam data dummy ke Room
+                            seedDummyDataToRoom(db)
+                            db.settingsDao().insertOrUpdate(SettingsEntity("dummy_data_version", "v2_proportional"))
+                        }
                     }
                 } catch (e: Exception) {
                     android.util.Log.e("AmanahVM", "Room init load: ${e.message}")

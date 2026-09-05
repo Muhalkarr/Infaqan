@@ -29,6 +29,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -85,7 +86,7 @@ fun DisburseInfaqDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = DarkSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(18.dp),
         icon = {
             Icon(
@@ -98,7 +99,7 @@ fun DisburseInfaqDialog(
         title = {
             Text(
                 text = "Salurkan Dana Infaq & Titipan Amanah",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 fontSize = 17.sp
             )
@@ -125,7 +126,7 @@ fun DisburseInfaqDialog(
                         Text(
                             text = "Saldo Vault Tersedia",
                             fontSize = 12.sp,
-                            color = Color.White70
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "Rp ${formatRupiah(vaultBalance)}",
@@ -167,17 +168,17 @@ fun DisburseInfaqDialog(
                         amountText = it.filter { char -> char.isDigit() }
                         errorMessage = null
                     },
-                    label = { Text("Nominal Penyaluran (Rp)", color = Color.White70) },
+                    label = { Text("Nominal Penyaluran (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     prefix = { Text("Rp ", color = GoldAccent, fontWeight = FontWeight.Bold) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = Color(0xFF0E1A1C),
-                        unfocusedContainerColor = Color(0xFF0E1A1C)
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("disburse_amount_input")
                 )
@@ -189,16 +190,16 @@ fun DisburseInfaqDialog(
                         recipientName = it
                         errorMessage = null
                     },
-                    label = { Text("Nama Penerima / Mustahiq / Lembaga", color = Color.White70) },
-                    placeholder = { Text("Contoh: Panti Yatim Nurul Huda / Pak Joko", color = Color.White38) },
+                    label = { Text("Nama Penerima / Mustahiq / Lembaga", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    placeholder = { Text("Contoh: Panti Yatim Nurul Huda / Pak Joko", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = Color(0xFF0E1A1C),
-                        unfocusedContainerColor = Color(0xFF0E1A1C)
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("disburse_recipient_input")
                 )
@@ -208,7 +209,7 @@ fun DisburseInfaqDialog(
                     text = "Golongan Asnaf / Target Mustahiq",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White70
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -218,15 +219,15 @@ fun DisburseInfaqDialog(
                         val isSelected = selectedAsnaf == asnaf
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) EmeraldPrimary else Color(0xFF0E1A1C),
-                            border = BorderStroke(1.dp, if (isSelected) GoldAccent else DarkBorder),
+                            color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, if (isSelected) GoldAccent else MaterialTheme.colorScheme.outlineVariant),
                             modifier = Modifier.clickable { selectedAsnaf = asnaf }
                         ) {
                             Text(
                                 text = asnaf.displayName,
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else Color.White70,
+                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
@@ -238,7 +239,7 @@ fun DisburseInfaqDialog(
                     text = "Keluarkan Dana Dari Rekening/Kas",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White70
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -255,8 +256,8 @@ fun DisburseInfaqDialog(
                                 .weight(1f)
                                 .clickable { selectedSourceAccount = accId },
                             shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) EmeraldPrimary.copy(alpha = 0.2f) else Color(0xFF0E1A1C),
-                            border = BorderStroke(1.dp, if (isSelected) EmeraldLight else DarkBorder)
+                            color = if (isSelected) EmeraldPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, if (isSelected) EmeraldLight else MaterialTheme.colorScheme.outlineVariant)
                         ) {
                             Row(
                                 modifier = Modifier.padding(8.dp),
@@ -265,14 +266,14 @@ fun DisburseInfaqDialog(
                                 Icon(
                                     imageVector = pair.second,
                                     contentDescription = null,
-                                    tint = if (isSelected) EmeraldLight else Color.White60,
+                                    tint = if (isSelected) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = pair.first,
                                     fontSize = 11.sp,
-                                    color = if (isSelected) Color.White else Color.White70,
+                                    color = if (isSelected) EmeraldLight else MaterialTheme.colorScheme.onSurface,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
@@ -284,16 +285,16 @@ fun DisburseInfaqDialog(
                 OutlinedTextField(
                     value = programName,
                     onValueChange = { programName = it },
-                    label = { Text("Nama Program / Keterangan Penyaluran", color = Color.White70) },
-                    placeholder = { Text("Contoh: Santunan Paket Sembako Bulanan", color = Color.White38) },
+                    label = { Text("Nama Program / Keterangan Penyaluran", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    placeholder = { Text("Contoh: Santunan Paket Sembako Bulanan", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = Color(0xFF0E1A1C),
-                        unfocusedContainerColor = Color(0xFF0E1A1C)
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("disburse_program_input")
                 )
@@ -343,7 +344,7 @@ fun DisburseInfaqDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(contentColor = Color.White70)
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
             ) {
                 Text("Batal")
             }

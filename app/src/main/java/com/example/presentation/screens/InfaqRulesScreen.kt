@@ -1,5 +1,6 @@
 package com.example.presentation.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +37,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -92,11 +94,14 @@ fun InfaqRulesScreen(
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0E1A1C)
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 navigationIcon = {
                     IconButton(
@@ -106,7 +111,7 @@ fun InfaqRulesScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -115,7 +120,7 @@ fun InfaqRulesScreen(
                         text = "Aturan Otomasi Infaq & Penyucian",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 actions = {
@@ -126,7 +131,7 @@ fun InfaqRulesScreen(
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Buka Menu Sidebar",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -154,7 +159,7 @@ fun InfaqRulesScreen(
                 Text(
                     text = "Konfigurasi IFTTT Ibadah Finansial",
                     fontSize = 13.sp,
-                    color = Color.White60
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -187,9 +192,9 @@ fun InfaqRuleItemCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
     ) {
         Row(
             modifier = Modifier
@@ -211,13 +216,13 @@ fun InfaqRuleItemCard(
                     text = rule.title,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "Target: ${rule.targetCategory.displayName}",
                     fontSize = 10.sp,
-                    color = Color.White60
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = "Tipe: ${rule.calculationType.displayName}",
@@ -230,7 +235,7 @@ fun InfaqRuleItemCard(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Hapus Aturan",
-                    tint = Color.White38,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -258,14 +263,16 @@ fun AddRuleDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = DarkSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         shape = RoundedCornerShape(16.dp),
         title = {
             Text(
                 text = "Tambah Aturan Infaq Baru",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSurface
             )
         },
         text = {
@@ -276,16 +283,16 @@ fun AddRuleDialog(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Nama Aturan", color = Color.White70) },
-                    placeholder = { Text("Contoh: Infaq Freelance 7%", color = Color.White38) },
+                    label = { Text("Nama Aturan", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    placeholder = { Text("Contoh: Infaq Freelance 7%", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = Color(0xFF0E1A1C),
-                        unfocusedContainerColor = Color(0xFF0E1A1C)
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("rule_title_input")
                 )
@@ -299,26 +306,26 @@ fun AddRuleDialog(
                         value = selectedCategory.displayName,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Kategori Target", color = Color.White70) },
+                        label = { Text("Kategori Target", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             focusedBorderColor = EmeraldPrimary,
-                            unfocusedBorderColor = DarkBorder,
-                            focusedContainerColor = Color(0xFF0E1A1C),
-                            unfocusedContainerColor = Color(0xFF0E1A1C)
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         ),
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(
                         expanded = categoryExpanded,
                         onDismissRequest = { categoryExpanded = false },
-                        modifier = Modifier.background(DarkSurface)
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                     ) {
                         listOf(AccountCategory.INCOME_KASAB, AccountCategory.INCOME_NON_KASAB, AccountCategory.EXPENSE).forEach { cat ->
                             DropdownMenuItem(
-                                text = { Text(cat.displayName, color = Color.White, fontSize = 12.sp) },
+                                text = { Text(cat.displayName, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp) },
                                 onClick = {
                                     selectedCategory = cat
                                     categoryExpanded = false
@@ -337,26 +344,26 @@ fun AddRuleDialog(
                         value = selectedCalcType.displayName,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Formula Perhitungan", color = Color.White70) },
+                        label = { Text("Formula Perhitungan", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = calcTypeExpanded) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             focusedBorderColor = EmeraldPrimary,
-                            unfocusedBorderColor = DarkBorder,
-                            focusedContainerColor = Color(0xFF0E1A1C),
-                            unfocusedContainerColor = Color(0xFF0E1A1C)
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         ),
                         modifier = Modifier.menuAnchor().fillMaxWidth()
                     )
                     ExposedDropdownMenu(
                         expanded = calcTypeExpanded,
                         onDismissRequest = { calcTypeExpanded = false },
-                        modifier = Modifier.background(DarkSurface)
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                     ) {
                         InfaqCalculationType.entries.forEach { ct ->
                             DropdownMenuItem(
-                                text = { Text(ct.displayName, color = Color.White, fontSize = 12.sp) },
+                                text = { Text(ct.displayName, color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp) },
                                 onClick = {
                                     selectedCalcType = ct
                                     calcTypeExpanded = false
@@ -374,7 +381,7 @@ fun AddRuleDialog(
                     ) {
                         Text(
                             text = "Persentase Infaq:",
-                            color = Color.White70,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                         Text(
@@ -393,8 +400,8 @@ fun AddRuleDialog(
                             val isSel = Math.abs(percentageRate - rate) < 0.001
                             androidx.compose.material3.Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = if (isSel) EmeraldPrimary else Color(0xFF142426),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, if (isSel) GoldAccent else DarkBorder),
+                                color = if (isSel) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isSel) GoldAccent else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable { percentageRate = rate }
@@ -404,7 +411,7 @@ fun AddRuleDialog(
                                         text = label,
                                         fontSize = 10.sp,
                                         fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSel) Color.White else Color.White70
+                                        color = if (isSel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -418,7 +425,7 @@ fun AddRuleDialog(
                         colors = SliderDefaults.colors(
                             thumbColor = EmeraldLight,
                             activeTrackColor = EmeraldPrimary,
-                            inactiveTrackColor = DarkBorder
+                            inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         )
                     )
                 }
@@ -449,7 +456,7 @@ fun AddRuleDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal", color = Color.White60)
+                Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )

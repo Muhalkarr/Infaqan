@@ -433,13 +433,13 @@ fun RecoveryPinDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = DarkSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(18.dp),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Shield, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Pemulihan PIN Keamanan", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Pemulihan PIN Keamanan", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         text = {
@@ -447,17 +447,17 @@ fun RecoveryPinDialog(
                 Text(
                     text = "Jawab pertanyaan verifikasi keamanan di bawah ini untuk mengatur ulang PIN Anda.",
                     fontSize = 12.sp,
-                    color = White70
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = DarkBackground),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     shape = RoundedCornerShape(10.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.3f))
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text("Pertanyaan Keamanan:", fontSize = 10.sp, color = EmeraldLight)
-                        Text(question, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Text(question, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
@@ -467,12 +467,14 @@ fun RecoveryPinDialog(
                         answerInput = it
                         recoveryError = null
                     },
-                    label = { Text("Jawaban Keamanan") },
+                    label = { Text("Jawaban Keamanan", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("recovery_answer_field")
@@ -486,12 +488,14 @@ fun RecoveryPinDialog(
                             recoveryError = null
                         }
                     },
-                    label = { Text("PIN Baru (6 Digit Angka)") },
+                    label = { Text("PIN Baru (6 Digit Angka)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("recovery_new_pin_field")
@@ -505,12 +509,14 @@ fun RecoveryPinDialog(
                             recoveryError = null
                         }
                     },
-                    label = { Text("Konfirmasi PIN Baru") },
+                    label = { Text("Konfirmasi PIN Baru", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("recovery_confirm_pin_field")
@@ -558,7 +564,7 @@ fun RecoveryPinDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("cancel_recovery_button")
             ) {
-                Text("Batal", color = White70)
+                Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },
         modifier = Modifier.testTag("recovery_pin_dialog")

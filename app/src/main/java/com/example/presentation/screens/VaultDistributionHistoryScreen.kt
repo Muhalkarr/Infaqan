@@ -186,9 +186,9 @@ fun VaultDistributionHistoryScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Cari mustahiq, lembaga, atau no. resi...", color = White38, fontSize = 12.sp) },
+                    placeholder = { Text("Cari mustahiq, lembaga, atau no. resi...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f), fontSize = 12.sp) },
                     leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = White60, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                     },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
@@ -205,12 +205,12 @@ fun VaultDistributionHistoryScreen(
                     },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = DarkSurface,
-                        unfocusedContainerColor = DarkSurface
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().testTag("vault_history_search_input")
@@ -229,7 +229,7 @@ fun VaultDistributionHistoryScreen(
                             text = "Filter Kategori Asnaf",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = White70
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         if (selectedAsnafFilter != null) {
                             Text(
@@ -248,15 +248,15 @@ fun VaultDistributionHistoryScreen(
                             val isAll = selectedAsnafFilter == null
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = if (isAll) EmeraldPrimary else DarkSurface,
-                                border = BorderStroke(1.dp, if (isAll) GoldAccent else DarkBorder),
+                                color = if (isAll) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isAll) GoldAccent else MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.clickable { selectedAsnafFilter = null }
                             ) {
                                 Text(
                                     text = "Semua (${state.infaqDistributions.size})",
                                     fontSize = 11.sp,
                                     fontWeight = if (isAll) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isAll) Color.White else White70,
+                                    color = if (isAll) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 )
                             }
@@ -267,15 +267,15 @@ fun VaultDistributionHistoryScreen(
                             val count = state.infaqDistributions.count { it.asnafCategory == asnaf }
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = if (isSelected) EmeraldPrimary else DarkSurface,
-                                border = BorderStroke(1.dp, if (isSelected) GoldAccent else DarkBorder),
+                                color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isSelected) GoldAccent else MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.clickable { selectedAsnafFilter = asnaf }
                             ) {
                                 Text(
                                     text = "${asnaf.displayName} ($count)",
                                     fontSize = 11.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else White70,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 )
                             }
@@ -295,7 +295,7 @@ fun VaultDistributionHistoryScreen(
                         text = "Daftar Penyaluran (${filteredDistributions.size})",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = White70
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Terverifikasi Sesuai Syariat",
@@ -318,20 +318,20 @@ fun VaultDistributionHistoryScreen(
                             Icon(
                                 imageVector = Icons.Default.VolunteerActivism,
                                 contentDescription = null,
-                                tint = White38,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                 modifier = Modifier.size(48.dp)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = "Belum ada riwayat penyaluran infaq",
-                                color = White70,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Salurkan dana yang telah terkumpul di Virtual Infaq Vault kepada mustahiq yang berhak.",
-                                color = White38,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(horizontal = 24.dp)
                             )
@@ -348,9 +348,9 @@ fun VaultDistributionHistoryScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0C2420)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, EmeraldDark)
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -372,7 +372,7 @@ fun VaultDistributionHistoryScreen(
                         Text(
                             text = "\"Sesungguhnya zakat itu hanyalah untuk orang-orang fakir, orang miskin, amil zakat, yang dilunakkan hatinya (mualaf), untuk (memerdekakan) hamba sahaya, untuk (membebaskan) orang yang berutang, untuk jalan Allah dan untuk orang yang sedang dalam perjalanan.\" (QS. At-Taubah: 60)",
                             fontSize = 11.sp,
-                            color = White70,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
                         )
                     }
@@ -470,7 +470,7 @@ fun VaultDistributionSummaryCard(
                     Text(
                         text = "Saldo Vault Tersedia",
                         fontSize = 11.sp,
-                        color = White60
+                        color = Color.White.copy(alpha = 0.7f)
                     )
                     Text(
                         text = "Rp ${formatRupiah(vaultBalance)}",
@@ -484,7 +484,7 @@ fun VaultDistributionSummaryCard(
                     Text(
                         text = "Total Telah Disalurkan",
                         fontSize = 11.sp,
-                        color = White60
+                        color = Color.White.copy(alpha = 0.7f)
                     )
                     Text(
                         text = "Rp ${formatRupiah(totalDisbursed)}",
@@ -522,9 +522,9 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
         modifier = Modifier
             .fillMaxWidth()
             .testTag("distribution_card_${record.id}"),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, DarkBorder)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Top Row: Recipient and Amount
@@ -560,12 +560,12 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
                             text = record.recipientName,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = record.programName,
                             fontSize = 11.sp,
-                            color = White60
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -599,7 +599,7 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF0E1A1C))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -617,7 +617,7 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
                             text = formattedDate,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = record.hijriDateString,
@@ -631,14 +631,14 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
                     Icon(
                         imageVector = Icons.Default.ReceiptLong,
                         contentDescription = null,
-                        tint = White60,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = record.receiptNumber.ifBlank { "VERIFIED" },
                         fontSize = 10.sp,
-                        color = White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -648,7 +648,7 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
                 Text(
                     text = "Catatan: ${record.notes}",
                     fontSize = 10.sp,
-                    color = White60,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 2.dp)
                 )
             }

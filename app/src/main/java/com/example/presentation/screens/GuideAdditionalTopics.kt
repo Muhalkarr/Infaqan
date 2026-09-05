@@ -34,6 +34,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,7 +61,7 @@ fun IslamicDalilCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1E20)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.6f))
     ) {
@@ -86,7 +87,7 @@ fun IslamicDalilCard(
                     text = arabicText,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 22.sp
                 )
             }
@@ -95,12 +96,12 @@ fun IslamicDalilCard(
                 text = "“$translation”",
                 fontSize = 11.sp,
                 fontStyle = FontStyle.Italic,
-                color = Color.White80,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 17.sp
             )
 
             if (!fiqhNote.isNullOrBlank()) {
-                HorizontalDivider(color = DarkBorder)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                 Row(verticalAlignment = Alignment.Top) {
                     Text("💡 ", fontSize = 11.sp)
                     Text(
@@ -125,9 +126,9 @@ fun IslamicHikmahBox(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, DarkBorder)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -155,7 +156,7 @@ fun IslamicHikmahBox(
                     Text(
                         text = point,
                         fontSize = 11.sp,
-                        color = Color.White70,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp
                     )
                 }
@@ -174,7 +175,7 @@ fun IslamicStepByStepCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F1E20)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
     ) {
@@ -202,7 +203,7 @@ fun IslamicStepByStepCard(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = EmeraldPrimary.copy(alpha = 0.3f),
+                        color = EmeraldPrimary.copy(alpha = 0.2f),
                         modifier = Modifier.size(20.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -217,7 +218,7 @@ fun IslamicStepByStepCard(
                     Text(
                         text = step,
                         fontSize = 11.sp,
-                        color = Color.White80,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp
                     )
                 }
@@ -237,9 +238,9 @@ fun IslamicQACard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161522)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, Color(0xFF5E35B1).copy(alpha = 0.6f))
+        border = BorderStroke(1.dp, Color(0xFF5E35B1).copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.Top) {
@@ -248,7 +249,7 @@ fun IslamicQACard(
                     text = question,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     lineHeight = 16.sp
                 )
             }
@@ -257,7 +258,7 @@ fun IslamicQACard(
                 Text(
                     text = answer,
                     fontSize = 11.sp,
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 16.sp
                 )
             }
@@ -283,9 +284,9 @@ fun IslamicAdabCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, DarkBorder)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -309,7 +310,7 @@ fun IslamicAdabCard(
                     Text(
                         text = adab,
                         fontSize = 11.sp,
-                        color = Color.White70,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 16.sp
                     )
                 }

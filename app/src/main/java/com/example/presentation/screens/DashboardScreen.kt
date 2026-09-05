@@ -536,15 +536,15 @@ fun DashboardScreen(
                         modifier = Modifier
                             .weight(1f)
                             .testTag("sli_card"),
-                        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         shape = RoundedCornerShape(14.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Text(
                                 text = "Spiritual Liquidity (SLI)",
                                 fontSize = 11.sp,
-                                color = Color.White60
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
@@ -569,11 +569,11 @@ fun DashboardScreen(
                             .weight(1f)
                             .clickable { onNavigateToHaulNisab() }
                             .testTag("nisab_card"),
-                        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         shape = RoundedCornerShape(14.dp),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (state.isNisabReached) GoldAccent else DarkBorder
+                            if (state.isNisabReached) GoldAccent else MaterialTheme.colorScheme.outline
                         )
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
@@ -585,12 +585,12 @@ fun DashboardScreen(
                                 Text(
                                     text = "Status Nisab (85g)",
                                     fontSize = 11.sp,
-                                    color = Color.White60
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Icon(
                                     imageVector = Icons.Default.ArrowForwardIos,
                                     contentDescription = null,
-                                    tint = Color.White38,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(10.dp)
                                 )
                             }
@@ -599,13 +599,13 @@ fun DashboardScreen(
                                 text = if (state.isNisabReached) "Nisab Tercapai" else "Dibawah Nisab",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (state.isNisabReached) GoldAccent else Color.White70
+                                color = if (state.isNisabReached) GoldAccent else MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = if (state.securityConfig.isMaskBalance) "Aset: Rp ••••••••" else "Aset: Rp ${formatRupiah(state.totalAssets)}",
                                 fontSize = 10.sp,
-                                color = Color.White38
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -987,7 +987,7 @@ fun DashboardScreen(
                     text = "Hapus Transaksi Jurnal?",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
@@ -995,7 +995,7 @@ fun DashboardScreen(
                     Text(
                         text = "Apakah Anda yakin ingin menghapus transaksi '${target.description}'? Buku besar akan memulihkan saldo akun kas/bank dan membatalkan alokasi infaq terkait.",
                         fontSize = 13.sp,
-                        color = Color.White70,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 18.sp
                     )
                     Text(
@@ -1024,7 +1024,7 @@ fun DashboardScreen(
                     onClick = { entryToDelete = null },
                     modifier = Modifier.testTag("dashboard_cancel_delete_button")
                 ) {
-                    Text("Batal", color = Color.White70)
+                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             },
             modifier = Modifier.testTag("dashboard_delete_dialog")
@@ -1208,7 +1208,7 @@ fun DashboardSedekahSubuhWidget(
             .fillMaxWidth()
             .clickable { onClick() }
             .testTag("dashboard_subuh_widget"),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -1238,7 +1238,7 @@ fun DashboardSedekahSubuhWidget(
                             text = "Sedekah Subuh Streak",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "${subuhState.currentStreak} Hari Berturut-turut • ${subuhState.badges.count { it.isUnlocked }} Lencana",
@@ -1277,7 +1277,7 @@ fun DashboardSedekahSubuhWidget(
                 Text(
                     text = if (isTodayDone) "Istiqomah hari ini terjaga!" else "Sedekah subuh kilat:",
                     fontSize = 11.sp,
-                    color = Color.White60
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1354,7 +1354,7 @@ fun VirtualInfaqVaultCard(
                     Text(
                         text = "Hutang Ibadah / Titipan",
                         fontSize = 9.sp,
-                        color = Color.White70,
+                        color = Color.White.copy(alpha = 0.85f),
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                     )
                 }
@@ -1391,7 +1391,7 @@ fun VirtualInfaqVaultCard(
             Text(
                 text = "Dana siap disalurkan ke Mustahiq, Amil, atau Fasilitas Umum",
                 fontSize = 11.sp,
-                color = Color.White60
+                color = Color.White.copy(alpha = 0.75f)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -1451,16 +1451,16 @@ fun IncomeBreakdownCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Struktur Arus Rezeki Masuk",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White70
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(12.dp))
             Row(
@@ -1480,7 +1480,7 @@ fun IncomeBreakdownCard(
                         Text(
                             text = "Kasab (Active/Gaji)",
                             fontSize = 11.sp,
-                            color = Color.White60
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1488,7 +1488,7 @@ fun IncomeBreakdownCard(
                         text = "Rp ${formatRupiah(incomeKasab)}",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -1505,7 +1505,7 @@ fun IncomeBreakdownCard(
                         Text(
                             text = "Non-Kasab (Windfall)",
                             fontSize = 11.sp,
-                            color = Color.White60
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
@@ -1513,7 +1513,7 @@ fun IncomeBreakdownCard(
                         text = "Rp ${formatRupiah(incomeNonKasab)}",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -1552,9 +1552,9 @@ fun JournalEntryItemCard(
             .fillMaxWidth()
             .clickable { onClick() }
             .testTag("journal_entry_card_${entry.id}"),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder.copy(alpha = 0.5f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
     ) {
         Row(
             modifier = Modifier
@@ -1584,13 +1584,13 @@ fun JournalEntryItemCard(
                     text = entry.description,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "${entry.hijriDay}/${entry.hijriMonth}/${entry.hijriYear} H • ∑Debit=∑Kredit Seimbang",
                     fontSize = 10.sp,
-                    color = Color.White38
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -1599,7 +1599,7 @@ fun JournalEntryItemCard(
                     text = "${if (isIncome) "+" else "-"}Rp ${formatRupiah(primaryAmount)}",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isIncome) EmeraldLight else if (isPayout) GoldAccent else Color.White70
+                    color = if (isIncome) EmeraldLight else if (isPayout) GoldAccent else MaterialTheme.colorScheme.onSurface
                 )
                 Row(
                     modifier = Modifier.padding(top = 2.dp),
@@ -1718,9 +1718,9 @@ fun TransactionDetailDialog(
                 )
 
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     shape = RoundedCornerShape(10.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         entry.lines.forEach { line ->
@@ -1731,7 +1731,7 @@ fun TransactionDetailDialog(
                                 Text(
                                     text = getAccountDisplayName(line.accountId),
                                     fontSize = 11.sp,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (line.debit > 0) {
@@ -1822,11 +1822,11 @@ fun DashboardBudgetAllocationCard(
             .fillMaxWidth()
             .clickable { onClick() }
             .testTag("dashboard_budget_card"),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (overBudgetCount > 0) ExpenseCoral.copy(alpha = 0.6f) else DarkBorder
+            if (overBudgetCount > 0) ExpenseCoral.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -1856,12 +1856,12 @@ fun DashboardBudgetAllocationCard(
                             text = "Pemisahan Anggaran Bulanan",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "${state.budgets.size} Kategori Pengeluaran",
                             fontSize = 10.sp,
-                            color = Color.White60
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -1883,7 +1883,7 @@ fun DashboardBudgetAllocationCard(
                     Icon(
                         imageVector = Icons.Default.ArrowForwardIos,
                         contentDescription = "Kelola Anggaran",
-                        tint = Color.White38,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(12.dp)
                     )
                 }
@@ -1899,7 +1899,7 @@ fun DashboardBudgetAllocationCard(
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                 color = progressColor,
-                trackColor = DarkSurfaceVariant,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 strokeCap = StrokeCap.Round
             )
 
@@ -1912,7 +1912,7 @@ fun DashboardBudgetAllocationCard(
                 Text(
                     text = "Terpakai: Rp ${formatRupiah(totalSpent)} / Rp ${formatRupiah(totalLimit)}",
                     fontSize = 11.sp,
-                    color = Color.White70
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = if (overBudgetCount > 0) "$overBudgetCount Over-Budget!" else "Sisa: Rp ${formatRupiah(remainingBudget)}",
@@ -1968,7 +1968,7 @@ fun DashboardOverBudgetAlertBanner(
                 Text(
                     text = "Pengeluaran melampaui batas bulanan. Klik untuk sesuaikan.",
                     fontSize = 11.sp,
-                    color = Color.White70
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Icon(
@@ -1999,7 +1999,7 @@ fun DashboardCategoryBudgetsSection(
                 text = "Pengeluaran & Anggaran per Pos",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White70
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = "Kelola Anggaran",
@@ -2015,9 +2015,9 @@ fun DashboardCategoryBudgetsSection(
         if (state.budgets.isEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Box(
                     modifier = Modifier
@@ -2028,7 +2028,7 @@ fun DashboardCategoryBudgetsSection(
                     Text(
                         text = "Belum ada batas anggaran yang ditentukan",
                         fontSize = 12.sp,
-                        color = Color.White38
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -2053,11 +2053,11 @@ fun DashboardCategoryBudgetsSection(
                             .fillMaxWidth()
                             .clickable { onManageClick() }
                             .testTag("dashboard_category_budget_${budget.accountId}"),
-                        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                         shape = RoundedCornerShape(12.dp),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (isOver) ExpenseCoral.copy(alpha = 0.5f) else DarkBorder
+                            if (isOver) ExpenseCoral.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
                         )
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
@@ -2087,12 +2087,12 @@ fun DashboardCategoryBudgetsSection(
                                             text = budget.categoryName,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color.White
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = "Batas: Rp ${formatRupiah(budget.monthlyLimit)}",
                                             fontSize = 10.sp,
-                                            color = Color.White60
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
@@ -2127,7 +2127,7 @@ fun DashboardCategoryBudgetsSection(
                                     .height(5.dp)
                                     .clip(RoundedCornerShape(3.dp)),
                                 color = barColor,
-                                trackColor = DarkSurfaceVariant,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                                 strokeCap = StrokeCap.Round
                             )
 
@@ -2140,7 +2140,7 @@ fun DashboardCategoryBudgetsSection(
                                 Text(
                                     text = "Terpakai: Rp ${formatRupiah(spent)}",
                                     fontSize = 10.sp,
-                                    color = Color.White60
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 if (isOver) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {

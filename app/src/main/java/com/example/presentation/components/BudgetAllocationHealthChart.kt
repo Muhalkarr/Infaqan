@@ -65,7 +65,7 @@ fun BudgetAllocationHealthChart(
             .testTag("budget_health_chart_card"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -86,7 +86,7 @@ fun BudgetAllocationHealthChart(
                     Text(
                         text = "Pemantauan Disiplin Pengeluaran Bulanan",
                         fontSize = 11.sp,
-                        color = White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -119,7 +119,7 @@ fun BudgetAllocationHealthChart(
                     Text(
                         text = "Belum ada alokasi anggaran yang dikonfigurasi.",
                         fontSize = 12.sp,
-                        color = White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             } else {
@@ -162,7 +162,7 @@ fun BudgetAllocationHealthChart(
                                 text = "Rp ${numberFormat.format(spent)} / Rp ${numberFormat.format(budget.monthlyLimit)} (${(ratio * 100).toInt()}%)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = if (isOver) ExpenseCoral else White70
+                                color = if (isOver) ExpenseCoral else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
@@ -172,7 +172,7 @@ fun BudgetAllocationHealthChart(
                                 .fillMaxWidth()
                                 .height(8.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(DarkBorder)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             Box(
                                 modifier = Modifier

@@ -114,10 +114,10 @@ fun DualCalendarCard(
             .fillMaxWidth()
             .testTag("dual_calendar_card"),
         colors = CardDefaults.cardColors(
-            containerColor = DarkSurface
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier
@@ -154,7 +154,7 @@ fun DualCalendarCard(
                             text = "Dual-Kalender Masehi & Hijriah",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Sinkronisasi Tarikh Ibadah & Muamalah",
@@ -168,9 +168,9 @@ fun DualCalendarCard(
 
                 // Date Navigator Steppers (Fixed-structure pill container)
                 Surface(
-                    color = DarkSurfaceVariant,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(20.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -184,7 +184,7 @@ fun DualCalendarCard(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Hari Sebelumnya",
-                                tint = Color.White.copy(alpha = 0.85f),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(15.dp)
                             )
                         }
@@ -202,7 +202,7 @@ fun DualCalendarCard(
                                 },
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (currentDateOffsetDays != 0) EmeraldLight else Color.White.copy(alpha = 0.7f),
+                                color = if (currentDateOffsetDays != 0) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
                             )
                         }
@@ -214,7 +214,7 @@ fun DualCalendarCard(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = "Hari Berikutnya",
-                                tint = Color.White.copy(alpha = 0.85f),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(15.dp)
                             )
                         }
@@ -237,12 +237,12 @@ fun DualCalendarCard(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    DarkSurfaceVariant,
-                                    Color(0xFF162529)
+                                    MaterialTheme.colorScheme.surfaceVariant,
+                                    MaterialTheme.colorScheme.surface
                                 )
                             )
                         )
-                        .border(1.dp, Color(0xFF264653).copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                         .padding(12.dp)
                 ) {
                     Column(
@@ -274,20 +274,20 @@ fun DualCalendarCard(
                             text = masehiDayNum,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Text(
                             text = masehiDayName,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White.copy(alpha = 0.9f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
                         )
 
                         Text(
                             text = masehiMonthYear,
                             fontSize = 11.sp,
-                            color = Color.White.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -300,8 +300,8 @@ fun DualCalendarCard(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    EmeraldDark.copy(alpha = 0.35f),
-                                    Color(0xFF0D251D)
+                                    EmeraldPrimary.copy(alpha = 0.15f),
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                                 )
                             )
                         )
@@ -344,7 +344,7 @@ fun DualCalendarCard(
                             text = hijriDate.monthName,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.White.copy(alpha = 0.9f)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Text(
@@ -363,7 +363,7 @@ fun DualCalendarCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(10.dp))
-                    .background(DarkSurfaceVariant.copy(alpha = 0.5f))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -373,7 +373,7 @@ fun DualCalendarCard(
                         text = hijriDayArabic,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = when {
@@ -383,7 +383,7 @@ fun DualCalendarCard(
                             else -> "Ketetapan Haul & Zakat Maal mengikuti tarikh Hijriah"
                         },
                         fontSize = 10.sp,
-                        color = if (isFriday || isAyyamulBidh || isMondayOrThursday) GoldLight else Color.White.copy(alpha = 0.6f)
+                        color = if (isFriday || isAyyamulBidh || isMondayOrThursday) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 

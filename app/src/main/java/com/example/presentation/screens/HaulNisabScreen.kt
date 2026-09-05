@@ -33,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -87,11 +88,14 @@ fun HaulNisabScreen(
     val animatedProgress by animateFloatAsState(targetValue = progress, label = "nisab_progress")
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0E1A1C)
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 navigationIcon = {
                     IconButton(
@@ -101,7 +105,7 @@ fun HaulNisabScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -110,7 +114,7 @@ fun HaulNisabScreen(
                         text = "Kalkulator Haul & Nisab Zakat",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 actions = {
@@ -121,7 +125,7 @@ fun HaulNisabScreen(
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Buka Menu Sidebar",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -139,11 +143,11 @@ fun HaulNisabScreen(
             // 1. Status Nisab Progress Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(14.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    if (state.isNisabReached) GoldAccent else DarkBorder
+                    if (state.isNisabReached) GoldAccent else MaterialTheme.colorScheme.outline
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -156,7 +160,7 @@ fun HaulNisabScreen(
                             Text(
                                 text = "Batas Nisab Emas (85 Gram)",
                                 fontSize = 12.sp,
-                                color = Color.White60
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = "Rp ${formatRupiah(state.nisabThreshold)}",
@@ -168,14 +172,14 @@ fun HaulNisabScreen(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (state.isNisabReached) GoldAccent.copy(alpha = 0.2f) else Color.White12)
+                                .background(if (state.isNisabReached) GoldAccent.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant)
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = if (state.isNisabReached) "WAJIB ZAKAT (Jika Haul)" else "BELUM WAJIB",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (state.isNisabReached) GoldAccent else Color.White60
+                                color = if (state.isNisabReached) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -185,7 +189,7 @@ fun HaulNisabScreen(
                     Text(
                         text = "Total Harta Aset Terdata: Rp ${formatRupiah(state.totalAssets)} (${(progress * 100).toInt()}% Nisab)",
                         fontSize = 12.sp,
-                        color = Color.White70
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -197,7 +201,7 @@ fun HaulNisabScreen(
                             .height(8.dp)
                             .clip(RoundedCornerShape(4.dp)),
                         color = if (state.isNisabReached) GoldAccent else EmeraldPrimary,
-                        trackColor = Color(0xFF0E1A1C)
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
             }
@@ -205,21 +209,21 @@ fun HaulNisabScreen(
             // 2. Haul Method Comparison (Lunar Hijri vs Solar Gregorian)
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Metode Haul Zakat Maal",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Kewajiban zakat jika harta bertahan diatas nisab selama 1 tahun haul penuh.",
                         fontSize = 11.sp,
-                        color = Color.White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(14.dp))
 
@@ -232,7 +236,7 @@ fun HaulNisabScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF0E2220))
+                                .background(EmeraldPrimary.copy(alpha = 0.12f))
                                 .border(1.dp, EmeraldPrimary, RoundedCornerShape(10.dp))
                                 .padding(12.dp)
                         ) {
@@ -242,13 +246,13 @@ fun HaulNisabScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = EmeraldLight
                             )
-                            Text("354 Hari • Tarif 2,500%", fontSize = 10.sp, color = Color.White60)
+                            Text("354 Hari • Tarif 2,500%", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Rp ${formatRupiah(state.zakatObligationLunar)}",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
@@ -257,23 +261,23 @@ fun HaulNisabScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF161F24))
-                                .border(1.dp, DarkBorder, RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
                                 .padding(12.dp)
                         ) {
                             Text(
                                 text = "Tahun Masehi (Syamsiyah)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White70
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-                            Text("365 Hari • Tarif 2,577%", fontSize = 10.sp, color = Color.White60)
+                            Text("365 Hari • Tarif 2,577%", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Rp ${formatRupiah(state.zakatObligationSolar)}",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -283,21 +287,21 @@ fun HaulNisabScreen(
             // 3. Konfigurasi Harga Emas Pasar
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "Pengaturan Harga Emas Terkini",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Sesuaikan harga emas per gram untuk memperbarui kalkulasi nisab secara otomatis.",
                         fontSize = 11.sp,
-                        color = Color.White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -310,17 +314,17 @@ fun HaulNisabScreen(
                                 viewModel.updateGoldPrice(newP)
                             }
                         },
-                        label = { Text("Harga Emas per Gram (Rp)", color = Color.White70) },
+                        label = { Text("Harga Emas per Gram (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         prefix = { Text("Rp ", color = GoldAccent, fontWeight = FontWeight.Bold) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                             focusedBorderColor = EmeraldPrimary,
-                            unfocusedBorderColor = DarkBorder,
-                            focusedContainerColor = Color(0xFF0E1A1C),
-                            unfocusedContainerColor = Color(0xFF0E1A1C)
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                         ),
                         modifier = Modifier
                             .fillMaxWidth()

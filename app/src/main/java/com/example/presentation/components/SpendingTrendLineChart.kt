@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -144,6 +145,8 @@ fun SpendingTrendLineChart(
     }
 
     var selectedPointIndex by remember { mutableStateOf<Int?>(null) }
+    val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    val chartPointInnerColor = MaterialTheme.colorScheme.surface
 
     Card(
         modifier = modifier
@@ -151,7 +154,7 @@ fun SpendingTrendLineChart(
             .testTag("spending_trend_line_chart_card"),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -173,7 +176,7 @@ fun SpendingTrendLineChart(
                     Text(
                         text = "Visualisasi 6 Bulan Terakhir & Batas Anggaran",
                         fontSize = 11.sp,
-                        color = White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -201,17 +204,17 @@ fun SpendingTrendLineChart(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(EmeraldPrimary))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Pendapatan", fontSize = 11.sp, color = White70)
+                    Text("Pendapatan", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(ExpenseCoral))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Pengeluaran", fontSize = 11.sp, color = White70)
+                    Text("Pengeluaran", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(GoldAccent))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Batas Anggaran", fontSize = 11.sp, color = White70)
+                    Text("Batas Anggaran", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
@@ -220,7 +223,7 @@ fun SpendingTrendLineChart(
                 val point = monthlyData[selectedPointIndex!!]
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = DarkSurface,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -253,6 +256,9 @@ fun SpendingTrendLineChart(
                 }
             }
 
+            val axisTextColorArgb = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+            val canvasGridColorArgb = gridColor.toArgb()
+
             // Interactive Line Chart Canvas
             Box(
                 modifier = Modifier
@@ -280,11 +286,11 @@ fun SpendingTrendLineChart(
 
                     // 1. Draw Grid Lines & Y-Axis values
                     val gridPaint = android.graphics.Paint().apply {
-                        color = android.graphics.Color.argb(40, 255, 255, 255)
+                        color = canvasGridColorArgb
                         strokeWidth = 1f
                     }
                     val labelPaint = android.graphics.Paint().apply {
-                        color = android.graphics.Color.argb(140, 255, 255, 255)
+                        color = axisTextColorArgb
                         textSize = 24f
                         textAlign = android.graphics.Paint.Align.CENTER
                     }
@@ -293,7 +299,7 @@ fun SpendingTrendLineChart(
                     for (i in 0..yLines) {
                         val y = paddingTop + (chartHeight / yLines) * i
                         drawLine(
-                            color = DarkBorder.copy(alpha = 0.5f),
+                            color = gridColor,
                             start = Offset(0f, y),
                             end = Offset(width, y),
                             strokeWidth = 1.dp.toPx(),
@@ -381,7 +387,7 @@ fun SpendingTrendLineChart(
                         for ((idx, p) in points.withIndex()) {
                             val isSelected = selectedPointIndex == idx
                             drawCircle(
-                                color = DarkSurface,
+                                color = chartPointInnerColor,
                                 radius = if (isSelected) 6.dp.toPx() else 4.dp.toPx(),
                                 center = p
                             )

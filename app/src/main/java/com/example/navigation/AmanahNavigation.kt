@@ -407,9 +407,19 @@ fun AmanahNavHost(
 
         // 21. Central Settings
         composable(AmanahRoutes.CENTRAL_SETTINGS) {
-            SettingsScreen(
+            CentralSettingsScreen(
                 viewModel = viewModel,
                 onNavigateBack = handleSmartBack,
+                onNavigateToSecuritySettings = { navController.navigate(AmanahRoutes.SECURITY_SETTINGS) },
+                onNavigateToInteractiveGuide = { navController.navigate(AmanahRoutes.INTERACTIVE_GUIDE) },
+                onNavigateToMultiWallet = { navController.navigate(AmanahRoutes.MULTI_WALLET) },
+                onNavigateToIbadahGoals = { navController.navigate(AmanahRoutes.IBADAH_GOALS) },
+                onNavigateToZakatHub = { navController.navigate(AmanahRoutes.ZAKAT_HUB) },
+                onNavigateToBackupRestore = { navController.navigate(AmanahRoutes.BACKUP_RESTORE) },
+                onNavigateToQardh = { navController.navigate(AmanahRoutes.QARDH) },
+                onNavigateToAmilDirectory = { navController.navigate(AmanahRoutes.AMIL_DIRECTORY) },
+                onNavigateToFaraidh = { navController.navigate(AmanahRoutes.FARAIDH) },
+                onNavigateToExportReport = { navController.navigate(AmanahRoutes.EXPORT_REPORT) },
                 onOpenDrawer = onOpenDrawer
             )
         }

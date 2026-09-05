@@ -90,13 +90,16 @@ fun BudgetCategoryAllocationChart(
         val expenseEntries = journalEntries.filter { it.transactionType == "EXPENSE" }
 
         // 1. Dharuriyyat (Pokok: Makanan, Kesehatan, Rumah, Pendidikan)
-        val dharuriyyatSpent = expenseEntries.filter { e ->
-            e.lines.any { it.accountId in listOf("acc_food", "acc_health", "acc_education", "acc_home") }
-        }.sumOf { it.lines.firstOrNull { l -> l.debit > 0 && l.accountId != "acc_disbursed" }?.debit ?: 0.0 }
+        val dharuriyyatAccountIds = setOf("acc_living", "acc_food", "acc_health", "acc_education", "acc_home")
+        val dharuriyyatSpent = expenseEntries.sumOf { entry ->
+            entry.lines.filter { it.accountId in dharuriyyatAccountIds && it.debit > 0 }.sumOf { it.debit }
+        }
 
         val dharuriyyatBudget = budgetCategories.filter {
-            it.accountId in listOf("acc_food", "acc_health", "acc_education", "acc_home") ||
+            it.accountId in dharuriyyatAccountIds ||
             it.categoryName.contains("Pokok", ignoreCase = true) ||
+            it.categoryName.contains("Pangan", ignoreCase = true) ||
+            it.categoryName.contains("Hidup", ignoreCase = true) ||
             it.categoryName.contains("Makan", ignoreCase = true) ||
             it.categoryName.contains("Kesehatan", ignoreCase = true) ||
             it.categoryName.contains("Pendidikan", ignoreCase = true) ||
@@ -104,26 +107,33 @@ fun BudgetCategoryAllocationChart(
         }.sumOf { it.monthlyLimit }
 
         // 2. Hajiyyat (Penunjang: Transportasi, Utilitas, Komunikasi, Tagihan)
-        val hajiyyatSpent = expenseEntries.filter { e ->
-            e.lines.any { it.accountId in listOf("acc_transport", "acc_utilities", "acc_bills", "acc_operational") }
-        }.sumOf { it.lines.firstOrNull { l -> l.debit > 0 && l.accountId != "acc_disbursed" }?.debit ?: 0.0 }
+        val hajiyyatAccountIds = setOf("acc_transport", "acc_utility", "acc_utilities", "acc_bills", "acc_operational")
+        val hajiyyatSpent = expenseEntries.sumOf { entry ->
+            entry.lines.filter { it.accountId in hajiyyatAccountIds && it.debit > 0 }.sumOf { it.debit }
+        }
 
         val hajiyyatBudget = budgetCategories.filter {
-            it.accountId in listOf("acc_transport", "acc_utilities", "acc_bills", "acc_operational") ||
+            it.accountId in hajiyyatAccountIds ||
             it.categoryName.contains("Transport", ignoreCase = true) ||
             it.categoryName.contains("Listrik", ignoreCase = true) ||
             it.categoryName.contains("Tagihan", ignoreCase = true) ||
-            it.categoryName.contains("Utilitas", ignoreCase = true)
+            it.categoryName.contains("Utilitas", ignoreCase = true) ||
+            it.categoryName.contains("Bensin", ignoreCase = true) ||
+            it.categoryName.contains("Pulsa", ignoreCase = true) ||
+            it.categoryName.contains("Operasional", ignoreCase = true)
         }.sumOf { it.monthlyLimit }
 
         // 3. Infaq Kasab & Tabungan Ibadah (Investasi Akhirat: Vault, Sedekah, Zakat)
-        val infaqSpent = journalEntries.filter {
-            it.transactionType in listOf("DISBURSE", "SEDEKAH", "INFAQ_PAYOUT") ||
-            it.lines.any { l -> l.accountId in listOf("acc_vault", "acc_zakat_payable", "acc_disbursed", "acc_infaq_exp") }
-        }.sumOf { it.lines.firstOrNull { l -> l.debit > 0 }?.debit ?: 0.0 }
+        val infaqAccountIds = setOf("acc_vault", "acc_zakat_payable", "acc_disbursed", "acc_infaq_exp", "acc_charity")
+        val infaqSpent = journalEntries.sumOf { entry ->
+            entry.lines.filter { line ->
+                (line.accountId in setOf("acc_disbursed", "acc_infaq_exp", "acc_zakat_payable", "acc_charity") && line.debit > 0) ||
+                (entry.transactionType in listOf("DISBURSE", "SEDEKAH", "INFAQ_PAYOUT") && line.accountId == "acc_vault" && line.debit > 0)
+            }.sumOf { it.debit }
+        }
 
         val infaqBudget = budgetCategories.filter {
-            it.accountId in listOf("acc_vault", "acc_zakat_payable", "acc_disbursed", "acc_infaq_exp") ||
+            it.accountId in infaqAccountIds ||
             it.categoryName.contains("Infaq", ignoreCase = true) ||
             it.categoryName.contains("Sedekah", ignoreCase = true) ||
             it.categoryName.contains("Tabungan", ignoreCase = true) ||
@@ -131,16 +141,20 @@ fun BudgetCategoryAllocationChart(
         }.sumOf { it.monthlyLimit }
 
         // 4. Tahsiniyyat (Pelengkap/Gaya Hidup Halal: Rekreasi, Hiburan, Belanja)
-        val tahsiniyyatSpent = expenseEntries.filter { e ->
-            e.lines.any { it.accountId in listOf("acc_lifestyle", "acc_entertainment", "acc_hobby", "acc_shopping", "acc_other_exp") }
-        }.sumOf { it.lines.firstOrNull { l -> l.debit > 0 && l.accountId != "acc_disbursed" }?.debit ?: 0.0 }
+        val tahsiniyyatAccountIds = setOf("acc_lifestyle", "acc_entertainment", "acc_hobby", "acc_shopping", "acc_other_exp")
+        val tahsiniyyatSpent = expenseEntries.sumOf { entry ->
+            entry.lines.filter { it.accountId in tahsiniyyatAccountIds && it.debit > 0 }.sumOf { it.debit }
+        }
 
         val tahsiniyyatBudget = budgetCategories.filter {
-            it.accountId in listOf("acc_lifestyle", "acc_entertainment", "acc_hobby", "acc_shopping", "acc_other_exp") ||
+            it.accountId in tahsiniyyatAccountIds ||
             it.categoryName.contains("Gaya Hidup", ignoreCase = true) ||
             it.categoryName.contains("Hiburan", ignoreCase = true) ||
             it.categoryName.contains("Belanja", ignoreCase = true) ||
-            it.categoryName.contains("Hobi", ignoreCase = true)
+            it.categoryName.contains("Hobi", ignoreCase = true) ||
+            it.categoryName.contains("Pelengkap", ignoreCase = true) ||
+            it.categoryName.contains("Lainnya", ignoreCase = true) ||
+            it.categoryName.contains("Rekreasi", ignoreCase = true)
         }.sumOf { it.monthlyLimit }
 
         listOf(
@@ -259,10 +273,10 @@ fun BudgetCategoryAllocationChart(
             .fillMaxWidth()
             .testTag("budget_allocation_category_chart_card"),
         colors = CardDefaults.cardColors(
-            containerColor = DarkSurface
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(
             modifier = Modifier
@@ -298,7 +312,7 @@ fun BudgetCategoryAllocationChart(
                             text = "Proporsi Anggaran Syariah",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Kaidah Maqashid Syariah 50 / 30 / 10 / 10",
@@ -347,7 +361,7 @@ fun BudgetCategoryAllocationChart(
 
                     // Draw base background ring
                     drawCircle(
-                        color = Color.White.copy(alpha = 0.08f),
+                        color = Color.Gray.copy(alpha = 0.15f),
                         radius = radius,
                         center = center,
                         style = Stroke(width = strokeWidth)
@@ -421,7 +435,7 @@ fun BudgetCategoryAllocationChart(
                             text = if (hasSpentData) "${((selected.actualSpent / realTotalSpent) * 100).toInt()}%" else "0%",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
                         )
                         Spacer(modifier = Modifier.height(2.dp))
@@ -429,7 +443,7 @@ fun BudgetCategoryAllocationChart(
                             text = "$currencySymbol ${nf.format(selected.actualSpent.toLong())}",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.85f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -437,7 +451,7 @@ fun BudgetCategoryAllocationChart(
                         Text(
                             text = if (hasSpentData) "Realisasi Kas" else "Kas Keluar",
                             fontSize = 9.sp,
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1
                         )
                         Spacer(modifier = Modifier.height(2.dp))
@@ -445,7 +459,7 @@ fun BudgetCategoryAllocationChart(
                             text = "$currencySymbol ${nf.format(realTotalSpent.toLong())}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
@@ -503,7 +517,7 @@ fun BudgetCategoryAllocationChart(
                         Text(
                             text = complianceStatus.detail,
                             fontSize = 10.sp,
-                            color = Color.White.copy(alpha = 0.75f),
+                            color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 13.sp
                         )
                     }
@@ -527,7 +541,7 @@ fun BudgetCategoryAllocationChart(
                             .clip(RoundedCornerShape(10.dp))
                             .background(
                                 if (isSelected) summary.partition.color.copy(alpha = 0.14f)
-                                else DarkSurfaceVariant.copy(alpha = 0.45f)
+                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                             )
                             .border(
                                 width = 1.dp,
@@ -561,7 +575,7 @@ fun BudgetCategoryAllocationChart(
                                         text = summary.partition.title,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -577,7 +591,7 @@ fun BudgetCategoryAllocationChart(
                                 Text(
                                     text = "$currencySymbol ${nf.format(summary.actualSpent.toLong())}  •  Target: ${summary.partition.targetPercent.toInt()}%",
                                     fontSize = 10.sp,
-                                    color = Color.White.copy(alpha = 0.65f),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )

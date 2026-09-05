@@ -19,6 +19,7 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
@@ -174,7 +175,7 @@ fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
             bottomBar = {
                 if (showBottomBar) {
                     NavigationBar(
-                        containerColor = DarkSurface,
+                        containerColor = MaterialTheme.colorScheme.surface,
                         tonalElevation = 8.dp
                     ) {
                         bottomNavItems.forEach { item ->
@@ -206,11 +207,11 @@ fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
                                     )
                                 },
                                 colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = EmeraldLight,
-                                    selectedTextColor = EmeraldLight,
-                                    indicatorColor = EmeraldPrimary.copy(alpha = 0.2f),
-                                    unselectedIconColor = Color.White.copy(alpha = 0.6f),
-                                    unselectedTextColor = Color.White.copy(alpha = 0.6f)
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 ),
                                 modifier = Modifier.testTag(item.testTag)
                             )

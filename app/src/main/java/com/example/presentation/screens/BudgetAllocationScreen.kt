@@ -57,6 +57,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -989,7 +990,7 @@ fun SpendingPatternOptimizerSection(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("budget_optimizer_section"),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.4f))
     ) {
@@ -1022,7 +1023,7 @@ fun SpendingPatternOptimizerSection(
                             text = "Analisis Pola & Optimasi Pagu",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Rekomendasi Cerdas Bebas Riba & Israf",
@@ -1056,7 +1057,7 @@ fun SpendingPatternOptimizerSection(
                     text = "Pilih Target Finansial Syariah",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White70
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -1068,8 +1069,8 @@ fun SpendingPatternOptimizerSection(
                         val isSelected = selectedGoalMode == mode
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) EmeraldPrimary else Color(0xFF0E1A1C),
-                            border = BorderStroke(1.dp, if (isSelected) GoldAccent else DarkBorder),
+                            color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, if (isSelected) GoldAccent else MaterialTheme.colorScheme.outlineVariant),
                             modifier = Modifier
                                 .weight(1f)
                                 .clickable { onSelectGoalMode(mode) }
@@ -1083,13 +1084,13 @@ fun SpendingPatternOptimizerSection(
                                     text = mode.title.split("(").first().trim(),
                                     fontSize = 10.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else Color.White70,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1
                                 )
                                 Text(
                                     text = "${(mode.essentialWeight * 100).toInt()}/${(mode.discretionaryWeight * 100).toInt()}/${(mode.savingsInfaqWeight * 100).toInt()}",
                                     fontSize = 8.sp,
-                                    color = if (isSelected) GoldLight else Color.White38
+                                    color = if (isSelected) GoldLight else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                             }
                         }
@@ -1100,7 +1101,7 @@ fun SpendingPatternOptimizerSection(
 
                 // Current Pattern Breakdown Bar
                 Surface(
-                    color = Color(0xFF0E1A1C),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -1109,7 +1110,7 @@ fun SpendingPatternOptimizerSection(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Distribusi Pola Belanja Saat Ini", fontSize = 10.sp, color = Color.White60)
+                            Text("Distribusi Pola Belanja Saat Ini", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Total: Rp ${formatRupiah(analysis.totalMonthlyBurnRate)}/bln", fontSize = 10.sp, color = GoldAccent, fontWeight = FontWeight.SemiBold)
                         }
 
@@ -1140,17 +1141,17 @@ fun SpendingPatternOptimizerSection(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF29B6F6)))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Esensial ${(analysis.essentialRatio * 100).toInt()}%", fontSize = 9.sp, color = Color.White70)
+                                Text("Esensial ${(analysis.essentialRatio * 100).toInt()}%", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFFFFB74D)))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Gaya Hidup ${(analysis.discretionaryRatio * 100).toInt()}%", fontSize = 9.sp, color = Color.White70)
+                                Text("Gaya Hidup ${(analysis.discretionaryRatio * 100).toInt()}%", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(EmeraldLight))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Spiritual/Tab ${(analysis.spiritualRatio * 100).toInt()}%", fontSize = 9.sp, color = Color.White70)
+                                Text("Spiritual/Tab ${(analysis.spiritualRatio * 100).toInt()}%", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -1163,7 +1164,7 @@ fun SpendingPatternOptimizerSection(
                     text = "Saran Pagu Optimal per Kategori",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White70
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1212,9 +1213,9 @@ fun SuggestionItemCard(
     onApply: () -> Unit
 ) {
     Surface(
-        color = Color(0xFF0E1A1C),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, DarkBorder),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = Modifier.fillMaxWidth().testTag("suggestion_card_${suggestion.accountId}")
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
@@ -1235,7 +1236,7 @@ fun SuggestionItemCard(
                         text = suggestion.categoryName,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -1273,11 +1274,11 @@ fun SuggestionItemCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text("Pagu Saat Ini", fontSize = 9.sp, color = Color.White60)
-                    Text("Rp ${formatRupiah(suggestion.currentLimit)}", fontSize = 11.sp, color = Color.White70)
+                    Text("Pagu Saat Ini", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Rp ${formatRupiah(suggestion.currentLimit)}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
                 Column {
-                    Text("Rata-rata Belanja", fontSize = 9.sp, color = Color.White60)
+                    Text("Rata-rata Belanja", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Rp ${formatRupiah(suggestion.actualMonthlyAverage)}", fontSize = 11.sp, color = GoldLight)
                 }
                 Column(horizontalAlignment = Alignment.End) {
@@ -1291,7 +1292,7 @@ fun SuggestionItemCard(
             Text(
                 text = suggestion.reasoning,
                 fontSize = 10.sp,
-                color = Color.White60,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 14.sp
             )
 

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -117,11 +118,14 @@ fun SedekahSubuhScreen(
     val daysToNextBadge = subuhState.getDaysUntilNextBadge()
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0E1A1C)
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 navigationIcon = {
                     IconButton(
@@ -131,7 +135,7 @@ fun SedekahSubuhScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -141,7 +145,7 @@ fun SedekahSubuhScreen(
                             text = "Sedekah Subuh Streak",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Konsistensi Kebaikan di Awal Fajar",
@@ -239,7 +243,7 @@ fun SedekahSubuhScreen(
                         text = "Pencapaian & Lencana Istiqomah",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = White70
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "${subuhState.badges.count { it.isUnlocked }} / ${subuhState.badges.size} Terbuka",
@@ -259,9 +263,9 @@ fun SedekahSubuhScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0C2420)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, EmeraldDark)
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -283,14 +287,14 @@ fun SedekahSubuhScreen(
                         Text(
                             text = "مَا مِنْ يَوْمٍ يُصْبِحُ الْعِبَادُ فِيهِ إِلاَّ مَلَكَانِ يَنْزِلاَنِ فَيَقُولُ أَحَدُهُمَا اللَّهُمَّ أَعْطِ مُنْفِقًا خَلَفًا",
                             fontSize = 13.sp,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 20.sp
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "\"Tidak ada satu subuh pun yang dialami hamba-hamba Allah kecuali turun dua malaikat. Salah satu di antaranya berdoa: 'Ya Allah, berikanlah ganti bagi orang yang berinfak...'\" (HR. Bukhari no. 1442 & Muslim no. 1010)",
                             fontSize = 11.sp,
-                            color = White70,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp
                         )
                     }
@@ -322,7 +326,7 @@ fun SedekahSubuhScreen(
         val badge = celebrationBadge!!
         AlertDialog(
             onDismissRequest = { celebrationBadge = null },
-            containerColor = DarkSurface,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(18.dp),
             title = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -340,14 +344,14 @@ fun SedekahSubuhScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = badge.title,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = badge.description,
-                        color = White70,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
@@ -527,16 +531,16 @@ fun SubuhStreakHeroCard(
 fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, DarkBorder)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Text(
                 text = "Kalender Istiqomah 7 Hari Terakhir",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = White70
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -553,7 +557,7 @@ fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>
                         Text(
                             text = item.dayName,
                             fontSize = 10.sp,
-                            color = if (item.isToday) GoldAccent else White60,
+                            color = if (item.isToday) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = if (item.isToday) FontWeight.Bold else FontWeight.Normal
                         )
 
@@ -566,8 +570,8 @@ fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>
                                 .background(
                                     when {
                                         item.isCompleted -> EmeraldPrimary
-                                        item.isToday -> Color(0xFF2C2411)
-                                        else -> Color(0xFF141F1C)
+                                        item.isToday -> GoldAccent.copy(alpha = 0.25f)
+                                        else -> MaterialTheme.colorScheme.surfaceVariant
                                     }
                                 )
                                 .border(
@@ -575,7 +579,7 @@ fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>
                                     when {
                                         item.isCompleted -> GoldAccent
                                         item.isToday -> GoldAccent
-                                        else -> DarkBorder
+                                        else -> MaterialTheme.colorScheme.outlineVariant
                                     },
                                     CircleShape
                                 ),
@@ -592,7 +596,7 @@ fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>
                                 Text(
                                     text = item.dayNumber,
                                     fontSize = 11.sp,
-                                    color = if (item.isToday) GoldAccent else White60,
+                                    color = if (item.isToday) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = if (item.isToday) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
@@ -618,7 +622,7 @@ fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>
                             Text(
                                 text = "-",
                                 fontSize = 8.sp,
-                                color = White38
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                             )
                         }
                     }
@@ -636,9 +640,9 @@ fun QuickGiveSubuhPanel(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, if (isGivenToday) DarkBorder else EmeraldPrimary.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, if (isGivenToday) MaterialTheme.colorScheme.outline else EmeraldPrimary.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -730,12 +734,12 @@ fun SubuhBadgeCard(badge: StreakBadge, currentStreak: Int) {
             .fillMaxWidth()
             .testTag("badge_card_${badge.id}"),
         colors = CardDefaults.cardColors(
-            containerColor = if (badge.isUnlocked) DarkSurface else Color(0xFF101918)
+            containerColor = if (badge.isUnlocked) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant
         ),
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(
             1.dp,
-            if (badge.isUnlocked) GoldAccent.copy(alpha = 0.6f) else DarkBorder
+            if (badge.isUnlocked) GoldAccent.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline
         )
     ) {
         Row(
@@ -749,11 +753,11 @@ fun SubuhBadgeCard(badge: StreakBadge, currentStreak: Int) {
                     .size(46.dp)
                     .clip(CircleShape)
                     .background(
-                        if (badge.isUnlocked) GoldAccent.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.4f)
+                        if (badge.isUnlocked) GoldAccent.copy(alpha = 0.2f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                     )
                     .border(
                         1.dp,
-                        if (badge.isUnlocked) GoldAccent else DarkBorder,
+                        if (badge.isUnlocked) GoldAccent else MaterialTheme.colorScheme.outline,
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -764,7 +768,7 @@ fun SubuhBadgeCard(badge: StreakBadge, currentStreak: Int) {
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = null,
-                        tint = White38,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -778,7 +782,7 @@ fun SubuhBadgeCard(badge: StreakBadge, currentStreak: Int) {
                         text = badge.title,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (badge.isUnlocked) Color.White else White60
+                        color = if (badge.isUnlocked) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (badge.isUnlocked) {
                         Spacer(modifier = Modifier.width(6.dp))
@@ -794,23 +798,23 @@ fun SubuhBadgeCard(badge: StreakBadge, currentStreak: Int) {
                 Text(
                     text = badge.description,
                     fontSize = 11.sp,
-                    color = White60
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             Surface(
-                color = if (badge.isUnlocked) EmeraldPrimary.copy(alpha = 0.2f) else Color(0xFF0E1A1C),
+                color = if (badge.isUnlocked) EmeraldPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(
                     1.dp,
-                    if (badge.isUnlocked) EmeraldLight.copy(alpha = 0.5f) else DarkBorder
+                    if (badge.isUnlocked) EmeraldLight.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant
                 )
             ) {
                 Text(
                     text = if (badge.isUnlocked) "Terbuka" else "${badge.requiredDays} Hari",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (badge.isUnlocked) EmeraldLight else White60,
+                    color = if (badge.isUnlocked) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                 )
             }
@@ -829,12 +833,12 @@ fun CustomSedekahSubuhDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = DarkSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(16.dp),
         title = {
             Text(
                 text = "Sedekah Subuh Khusus",
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold,
                 fontSize = 17.sp
             )
@@ -850,17 +854,17 @@ fun CustomSedekahSubuhDialog(
                         amountText = it.filter { ch -> ch.isDigit() }
                         errorMessage = null
                     },
-                    label = { Text("Nominal Sedekah (Rp)", color = White70) },
+                    label = { Text("Nominal Sedekah (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     prefix = { Text("Rp ", color = GoldAccent, fontWeight = FontWeight.Bold) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = Color(0xFF0E1A1C),
-                        unfocusedContainerColor = Color(0xFF0E1A1C)
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("custom_subuh_amount_input")
                 )
@@ -868,17 +872,17 @@ fun CustomSedekahSubuhDialog(
                 OutlinedTextField(
                     value = noteText,
                     onValueChange = { noteText = it },
-                    label = { Text("Hajat Doa / Catatan Keberkahan", color = White70) },
-                    placeholder = { Text("Contoh: Doa kelancaran rezeki & kesembuhan orang tua", color = White38) },
+                    label = { Text("Hajat Doa / Catatan Keberkahan", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    placeholder = { Text("Contoh: Doa kelancaran rezeki & kesembuhan orang tua", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
                     singleLine = false,
                     maxLines = 3,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = Color(0xFF0E1A1C),
-                        unfocusedContainerColor = Color(0xFF0E1A1C)
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     modifier = Modifier.fillMaxWidth().testTag("custom_subuh_note_input")
                 )
@@ -905,7 +909,7 @@ fun CustomSedekahSubuhDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal", color = White70)
+                Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )

@@ -117,7 +117,7 @@ fun AppNavigationDrawerContent(
                         brush = Brush.verticalGradient(
                             colors = listOf(
                                 EmeraldDark,
-                                MaterialTheme.colorScheme.surfaceVariant
+                                EmeraldPrimary.copy(alpha = 0.95f)
                             )
                         )
                     )
