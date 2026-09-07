@@ -103,6 +103,16 @@ interface AmanahRepository {
     fun getAllCustomSettingsFlow(): Flow<List<SettingsEntity>>
     suspend fun saveCustomSetting(key: String, value: String)
     suspend fun getCustomSetting(key: String): String?
+
+    // Shariah Rulings & Rules Engine
+    fun getAllRulingsFlow(): Flow<List<com.example.core.shariah.ShariahRuling>>
+    fun getActiveRulingsFlow(): Flow<List<com.example.core.shariah.ShariahRuling>>
+    suspend fun saveRuling(ruling: com.example.core.shariah.ShariahRuling)
+    suspend fun saveAllRulings(rulings: List<com.example.core.shariah.ShariahRuling>)
+    suspend fun deleteRuling(id: String)
+    suspend fun clearCustomRulings()
+    suspend fun saveShariahRulesConfig(config: com.example.core.shariah.ShariahRulesConfig)
+    suspend fun getShariahRulesConfig(): com.example.core.shariah.ShariahRulesConfig?
 }
 
 class AmanahRepositoryImpl(
@@ -237,6 +247,10 @@ class AmanahRepositoryImpl(
         database.settingsDao().insertOrUpdate(SettingsEntity("security_is_biometric_enabled", config.isBiometricEnabled.toString()))
         database.settingsDao().insertOrUpdate(SettingsEntity("security_is_mask_balance", config.isMaskBalance.toString()))
         database.settingsDao().insertOrUpdate(SettingsEntity("security_auto_lock_interval", config.autoLockInterval.name))
+        database.settingsDao().insertOrUpdate(SettingsEntity("security_question", config.securityQuestion))
+        database.settingsDao().insertOrUpdate(SettingsEntity("security_answer_hash", config.securityAnswerHash))
+        database.settingsDao().insertOrUpdate(SettingsEntity("security_mask_balance_by_default", config.maskBalanceByDefault.toString()))
+        database.settingsDao().insertOrUpdate(SettingsEntity("security_is_screenshot_protected", config.isScreenshotProtected.toString()))
     }
 
     override suspend fun saveMaskBalance(isMasked: Boolean) = withContext(ioDispatcher) {
@@ -441,5 +455,74 @@ class AmanahRepositoryImpl(
 
     override suspend fun getCustomSetting(key: String): String? = withContext(ioDispatcher) {
         database.settingsDao().getSettingByKey(key)?.value
+    }
+
+    // Shariah Rulings Implementation
+    override fun getAllRulingsFlow(): Flow<List<com.example.core.shariah.ShariahRuling>> =
+        database.rulingDao().getAllRulingsFlow().map { list ->
+            list.map { EntityMappers.toDomain(it) }
+        }.flowOn(ioDispatcher)
+
+    override fun getActiveRulingsFlow(): Flow<List<com.example.core.shariah.ShariahRuling>> =
+        database.rulingDao().getActiveRulingsFlow().map { list ->
+            list.map { EntityMappers.toDomain(it) }
+        }.flowOn(ioDispatcher)
+
+    override suspend fun saveRuling(ruling: com.example.core.shariah.ShariahRuling) = withContext(ioDispatcher) {
+        database.rulingDao().insertOrUpdate(EntityMappers.toEntity(ruling))
+    }
+
+    override suspend fun saveAllRulings(rulings: List<com.example.core.shariah.ShariahRuling>) = withContext(ioDispatcher) {
+        database.rulingDao().insertAll(rulings.map { EntityMappers.toEntity(it) })
+    }
+
+    override suspend fun deleteRuling(id: String) = withContext(ioDispatcher) {
+        database.rulingDao().deleteById(id)
+    }
+
+    override suspend fun clearCustomRulings() = withContext(ioDispatcher) {
+        database.rulingDao().clearCustomRulings()
+    }
+
+    override suspend fun saveShariahRulesConfig(config: com.example.core.shariah.ShariahRulesConfig) = withContext(ioDispatcher) {
+        database.settingsDao().insertOrUpdate(SettingsEntity("shariah_gold_nisab", config.goldNisabGram.toString()))
+        database.settingsDao().insertOrUpdate(SettingsEntity("shariah_silver_nisab", config.silverNisabGram.toString()))
+        database.settingsDao().insertOrUpdate(SettingsEntity("shariah_zakat_percentage", config.zakatPercentage.toString()))
+        database.settingsDao().insertOrUpdate(SettingsEntity("shariah_zakat_profesi_formula", config.zakatProfesiFormula.name))
+        database.settingsDao().insertOrUpdate(SettingsEntity("shariah_haul_calculation_method", config.haulCalculationMethod.name))
+        database.settingsDao().insertOrUpdate(SettingsEntity("shariah_selected_mazhab", config.selectedMazhab.name))
+        database.settingsDao().insertOrUpdate(SettingsEntity("shariah_custom_formula", config.customCalculationFormula))
+        database.settingsDao().insertOrUpdate(SettingsEntity("shariah_is_custom_formula_active", config.isCustomFormulaActive.toString()))
+        database.settingsDao().insertOrUpdate(SettingsEntity("shariah_custom_formula_name", config.customFormulaName))
+    }
+
+    override suspend fun getShariahRulesConfig(): com.example.core.shariah.ShariahRulesConfig? = withContext(ioDispatcher) {
+        val goldStr = database.settingsDao().getSettingByKey("shariah_gold_nisab")?.value ?: return@withContext null
+        val silverStr = database.settingsDao().getSettingByKey("shariah_silver_nisab")?.value
+        val zakatPctStr = database.settingsDao().getSettingByKey("shariah_zakat_percentage")?.value
+        val profesiFormulaStr = database.settingsDao().getSettingByKey("shariah_zakat_profesi_formula")?.value
+        val haulMethodStr = database.settingsDao().getSettingByKey("shariah_haul_calculation_method")?.value
+        val mazhabStr = database.settingsDao().getSettingByKey("shariah_selected_mazhab")?.value
+        val formulaStr = database.settingsDao().getSettingByKey("shariah_custom_formula")?.value
+        val isCustomActiveStr = database.settingsDao().getSettingByKey("shariah_is_custom_formula_active")?.value
+        val formulaNameStr = database.settingsDao().getSettingByKey("shariah_custom_formula_name")?.value
+
+        com.example.core.shariah.ShariahRulesConfig(
+            goldNisabGram = goldStr.toDoubleOrNull() ?: 85.0,
+            silverNisabGram = silverStr?.toDoubleOrNull() ?: 595.0,
+            zakatPercentage = zakatPctStr?.toDoubleOrNull() ?: 2.5,
+            zakatProfesiFormula = try {
+                com.example.core.shariah.ZakatProfesiFormula.valueOf(profesiFormulaStr ?: "BRUTO")
+            } catch (_: Exception) { com.example.core.shariah.ZakatProfesiFormula.BRUTO },
+            haulCalculationMethod = try {
+                com.example.core.shariah.HaulCalculationMethod.valueOf(haulMethodStr ?: "HIJRIAH")
+            } catch (_: Exception) { com.example.core.shariah.HaulCalculationMethod.HIJRIAH },
+            selectedMazhab = try {
+                com.example.core.shariah.ShariahMazhab.valueOf(mazhabStr ?: "SYAFII")
+            } catch (_: Exception) { com.example.core.shariah.ShariahMazhab.SYAFII },
+            customCalculationFormula = formulaStr ?: "",
+            isCustomFormulaActive = isCustomActiveStr?.toBooleanStrictOrNull() ?: false,
+            customFormulaName = formulaNameStr ?: "Formula Pribadi"
+        )
     }
 }

@@ -129,28 +129,39 @@ fun FaraidhScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(top = 12.dp, bottom = 40.dp)
         ) {
-            // Dalil Card
+            // Dalil Card Lengkap Fiqih Waris (Al-Qur'an & As-Sunnah)
             item {
+                var isDalilExpanded by remember { mutableStateOf(false) }
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Balance,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Ketetapan Hukum Waris Islam",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleSmall
-                            )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Balance,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Ketetapan Dalil Hukum Waris Islam",
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                            }
+                            TextButton(onClick = { isDalilExpanded = !isDalilExpanded }) {
+                                Text(if (isDalilExpanded) "Ringkas" else "Buka Dalil Lengkap", fontSize = 11.sp)
+                            }
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
@@ -158,6 +169,93 @@ fun FaraidhScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        if (isDalilExpanded) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // 1. QS. An-Nisa: 11 (Hak Anak & Orang Tua)
+                            Text("1. QS. An-Nisa: 11 (Hak Anak & Orang Tua)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "يُوصِيكُمُ اللَّهُ فِي أَوْلَادِكُمْ ۖ لِلذَّكَرِ مِثْلُ حَظِّ الْأُنثَيَيْنِ ۚ فَإِن كُنَّ نِسَاءً فَوْقَ اثْنَتَيْنِ فَلَهُنَّ ثُلُثَا مَا تَرَكَ ۖ وَإِن كَانَتْ وَاحِدَةً فَلَهَا النِّصْفُ ۚ وَلِأَبَوَيْهِ لِكُلِّ وَاحِدٍ مِّنْهُمَا السُّدُسُ مِمَّا تَرَكَ إِن كَانَ لَهُ وَلَدٌ",
+                                fontSize = 12.sp,
+                                lineHeight = 20.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "\"Allah mensyariatkan bagimu tentang pembagian warisan untuk anak-anakmu: bagian seorang anak laki-laki sama dengan bagian dua orang anak perempuan. Dan jika anak itu semuanya perempuan lebih dari dua, maka bagi mereka dua pertiga dari harta yang ditinggalkan. Jika dia seorang anak perempuan saja, maka dia memperoleh separuh. Dan untuk kedua ibu-bapak, masing-masing mendapat seperenam jika dia mempunyai anak...\"",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 16.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 2. QS. An-Nisa: 12 (Hak Pasangan Hidup)
+                            Text("2. QS. An-Nisa: 12 (Hak Suami & Istri)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "وَلَكُمْ نِصْفُ مَا تَرَكَ أَزْوَاجُكُمْ إِن لَّمْ يَكُن لَّهُنَّ وَلَدٌ ۚ فَإِن كَانَ لَهُنَّ وَلَدٌ فَلَكُمُ الرُّبُعُ مِمَّا تَرَكْنَ ۚ ... وَلَهُنَّ الرُّبُعُ مِمَّا تَرَكْتُمْ إِن لَّمْ يَكُن لَّكُمْ وَلَدٌ ۚ فَإِن كَانَ لَكُمْ وَلَدٌ فَلَهُنَّ الثُّمنُ مِمَّا تَرَكْتُم",
+                                fontSize = 12.sp,
+                                lineHeight = 20.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "\"Dan bagianmu (suami-suami) adalah seperdua dari harta yang ditinggalkan oleh istri-istrimu jika mereka tidak mempunyai anak. Jika mereka mempunyai anak, maka kamu mendapat seperempat... Para istri memperoleh seperempat jika kamu tidak mempunyai anak. Jika kamu mempunyai anak, maka para istri memperoleh seperdelapan...\"",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 16.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 3. QS. An-Nisa: 176 (Hak Saudara & Kalalah)
+                            Text("3. QS. An-Nisa: 176 (Ayat Kalalah & Ashabah Saudara)", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "يَسْتَفْتُونَكَ قُلِ اللَّهُ يُفْتِيكُمْ فِي الْكَلَالَةِ ۚ إِنِ امْرُؤٌ هَلَكَ لَيْسَ لَهُ وَلَدٌ وَلَهُ أُخْتٌ فَلَهَا نِصْفُ مَا تَرَكَ ۚ وَهُوَ يَرِثُهَا إِن لَّمْ يَكُن لَّهَا وَلَدٌ ۚ فَإِن كَانَتَا اثْنَتَيْنِ فَلَهُمَا الثُّلُثَانِ مِمَّا تَرَكَ ۚ وَإِن كَانُوا إِخْوَةً رِّجَالًا وَنِسَاءً فَلِلذَّكَرِ مِثْلُ حَظِّ الْأُنثَيَيْنِ",
+                                fontSize = 12.sp,
+                                lineHeight = 20.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "\"Mereka meminta fatwa kepadamu tentang kalalah. Katakanlah: Allah memberi fatwa kepadamu: Jika seseorang meninggal tanpa anak dan mempunyai seorang saudara perempuan, maka bagiannya adalah separuh dari harta yang ditinggalkan. Dan saudaranya yang laki-laki mewarisi seluruh hartanya jika dia tidak mempunyai anak. Tetapi jika saudara perempuan itu dua orang, bagi mereka dua pertiga. Dan jika mereka sekumpulan saudara laki-laki dan perempuan, maka bagian seorang saudara laki-laki sebanyak bagian dua orang saudara perempuan...\"",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 16.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 4. Hadits Shahih Bukhari & Muslim tentang Ashabah
+                            Text("4. As-Sunnah: Kaidah Pembagian Ashabah", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "أَلْحِقُوا الْفَرَائِضَ بِأَهْلِهَا فَمَا بَقِيَ فَهُوَ لِأَوْلَى رَجُلٍ ذَكَرٍ",
+                                fontSize = 12.sp,
+                                lineHeight = 20.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                "\"Bagikanlah bagian-bagian warisan yang ditentukan (fardh) kepada mereka yang berhak. Adapun sisanya, maka berikanlah kepada kerabat laki-laki yang paling dekat.\" (HR. Al-Bukhari No. 6732 & Muslim No. 1614)",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                "\"اجْعَلُوا الأَخَوَاتِ مَعَ البَنَاتِ عَصَبَةً\" (Jadikanlah saudara-saudara perempuan bersama anak-anak perempuan sebagai 'ashabah) — HR. Al-Bukhari No. 6742.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 16.sp
+                            )
+                        }
                     }
                 }
             }
@@ -296,7 +394,17 @@ fun FaraidhScreen(
                             Switch(checked = hasMother, onCheckedChange = { hasMother = it })
                         }
 
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            "Keturunan (Anak Kandung):",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         // Counter Anak
                         CounterRow(
@@ -313,19 +421,79 @@ fun FaraidhScreen(
                             onDecrement = { if (daughterCount > 0) daughterCount-- }
                         )
 
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Kelompok Saudara (Ashabah)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Saudara Kandung (Ashabah):",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            val siblingStatusText = when {
+                                sonCount > 0 -> "Terhijab Anak Laki-Laki"
+                                hasFather -> "Terhijab Ayah"
+                                else -> "Berhak (Ashabah)"
+                            }
+                            val isBlocked = sonCount > 0 || hasFather
+                            Surface(
+                                color = if (isBlocked) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = siblingStatusText,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isBlocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         CounterRow(
-                            label = "Saudara Laki-Laki Kandung",
+                            label = "Saudara Laki-Laki Kandung (Ashabah)",
                             count = brotherCount,
                             onIncrement = { brotherCount++ },
                             onDecrement = { if (brotherCount > 0) brotherCount-- }
                         )
 
                         CounterRow(
-                            label = "Saudara Perempuan Kandung",
+                            label = "Saudara Perempuan Kandung (Ashabah)",
                             count = sisterCount,
                             onIncrement = { sisterCount++ },
                             onDecrement = { if (sisterCount > 0) sisterCount-- }
                         )
+                    }
+                }
+            }
+
+            // Explanation Notes if any
+            if (calculationResult.explanationNotes.isNotEmpty()) {
+                item {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Catatan Kaidah Hukum Fiqih", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            calculationResult.explanationNotes.forEach { note ->
+                                Text("• $note", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(modifier = Modifier.height(3.dp))
+                            }
+                        }
                     }
                 }
             }

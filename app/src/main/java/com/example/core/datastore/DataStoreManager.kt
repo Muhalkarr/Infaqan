@@ -84,6 +84,10 @@ class DataStoreManager(private val context: Context) {
         val IS_PIN_ENABLED = booleanPreferencesKey("security_is_pin_enabled")
         val IS_BIOMETRIC_ENABLED = booleanPreferencesKey("security_is_biometric_enabled")
         val IS_MASK_BALANCE = booleanPreferencesKey("security_is_mask_balance")
+        val MASK_BALANCE_BY_DEFAULT = booleanPreferencesKey("security_mask_balance_by_default")
+        val IS_SCREENSHOT_PROTECTED = booleanPreferencesKey("security_is_screenshot_protected")
+        val SECURITY_QUESTION = stringPreferencesKey("security_question")
+        val SECURITY_ANSWER_HASH = stringPreferencesKey("security_answer_hash")
         val AUTO_LOCK_INTERVAL = stringPreferencesKey("security_auto_lock_interval")
     }
 
@@ -140,8 +144,12 @@ class DataStoreManager(private val context: Context) {
 
             val pinHash = preferences[PreferencesKeys.PIN_HASH] ?: ""
             val isPinEnabled = preferences[PreferencesKeys.IS_PIN_ENABLED] ?: false
-            val isBiometricEnabled = preferences[PreferencesKeys.IS_BIOMETRIC_ENABLED] ?: false
+            val isBiometricEnabled = preferences[PreferencesKeys.IS_BIOMETRIC_ENABLED] ?: true
             val isMaskBalance = preferences[PreferencesKeys.IS_MASK_BALANCE] ?: false
+            val maskBalanceByDefault = preferences[PreferencesKeys.MASK_BALANCE_BY_DEFAULT] ?: false
+            val isScreenshotProtected = preferences[PreferencesKeys.IS_SCREENSHOT_PROTECTED] ?: false
+            val securityQuestion = preferences[PreferencesKeys.SECURITY_QUESTION] ?: "Nama kota kelahiran Anda?"
+            val securityAnswerHash = preferences[PreferencesKeys.SECURITY_ANSWER_HASH] ?: ""
             val autoLockStr = preferences[PreferencesKeys.AUTO_LOCK_INTERVAL] ?: AutoLockInterval.IMMEDIATE.name
             val autoLock = try {
                 AutoLockInterval.valueOf(autoLockStr)
@@ -154,6 +162,10 @@ class DataStoreManager(private val context: Context) {
                 pinHash = pinHash,
                 isBiometricEnabled = isBiometricEnabled,
                 isMaskBalance = isMaskBalance,
+                maskBalanceByDefault = maskBalanceByDefault,
+                isScreenshotProtected = isScreenshotProtected,
+                securityQuestion = securityQuestion,
+                securityAnswerHash = securityAnswerHash,
                 autoLockInterval = autoLock
             )
 
@@ -331,6 +343,10 @@ class DataStoreManager(private val context: Context) {
             preferences[PreferencesKeys.IS_PIN_ENABLED] = config.isPinEnabled
             preferences[PreferencesKeys.IS_BIOMETRIC_ENABLED] = config.isBiometricEnabled
             preferences[PreferencesKeys.IS_MASK_BALANCE] = config.isMaskBalance
+            preferences[PreferencesKeys.MASK_BALANCE_BY_DEFAULT] = config.maskBalanceByDefault
+            preferences[PreferencesKeys.IS_SCREENSHOT_PROTECTED] = config.isScreenshotProtected
+            preferences[PreferencesKeys.SECURITY_QUESTION] = config.securityQuestion
+            preferences[PreferencesKeys.SECURITY_ANSWER_HASH] = config.securityAnswerHash
             preferences[PreferencesKeys.AUTO_LOCK_INTERVAL] = config.autoLockInterval.name
         }
     }

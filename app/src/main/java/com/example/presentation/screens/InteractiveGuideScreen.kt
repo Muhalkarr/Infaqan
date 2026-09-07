@@ -628,9 +628,9 @@ fun TopicHeaderCard(topic: GuideTopic, stepNumber: Int, totalSteps: Int) {
 fun TopicDoubleEntryContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "QS. Al-Baqarah: 282 & Kaidah Amanah",
-            arabicText = "وَلَا تَسْأَمُوا أَن تَكْتُبُوهُ صَغِيرًا أَوْ كَبِيرًا إِلَىٰ أَجَلِهِ ۚ ذَٰلِكُمْ أَقْسَطُ عِندَ اللَّهِ",
-            translation = "Dan janganlah kamu jemu menuliskannya, baik kecil maupun besar sampai batas waktu pembayarannya. Yang demikian itu lebih adil di sisi Allah dan lebih dapat menguatkan persaksian...",
+            source = "QS. Al-Baqarah: 282",
+            arabicText = "يَا أَيُّهَا الَّذِينَ آمَنُوا إِذَا تَدَايَنتُم بِدَيْنٍ إِلَىٰ أَجَلٍ مُّسَمًّى فَاكْتُبُوهُ ۚ وَلْيَكْتُب بَّيْنَكُمْ كَاتِبٌ بِالْعَدْلِ ۚ وَلَا يَأْبَ كَاتِبٌ أَن يَكْتُبَ كَمَا عَلَّمَهُ اللَّهُ ۚ فَلْيَكْتُبْ وَلْيُمْلِلِ الَّذِي عَلَيْهِ الْحَقُّ وَلْيَتَّقِ اللَّهَ رَبَّهُ وَلَا يَبْخَسْ مِنْهُ شَيْئًا ۚ فَإِن كَانَ الَّذِي عَلَيْهِ الْحَقُّ سَفِيهًا أَوْ ضَعِيفًا أَوْ لَا يَسْتَطِيعُ أَن يُمِلَّ هُوَ فَلْيُمْلِلْ وَلِيُّهُ بِالْعَدْلِ ۚ وَاسْتَشْهِدُوا شَهِيدَيْنِ مِن رِّجَالِكُمْ ۖ فَإِن لَّمْ يَكُونَا رَجُلَيْنِ فَرَجُلٌ وَامْرَأَتَانِ مِمَّن تَرْضَوْنَ مِنَ الشُّهَدَاءِ أَن تَضِلَّ إِحْدَاهُمَا فَتُذَكِّرَ إِحْدَاهُمَا الْأُخْرَىٰ ۚ وَلَا يَأْبَ الشُّهَدَاءُ إِذَا مَا دُعُوا ۚ وَلَا تَسْأَمُوا أَن تَكْتُبُوهُ صَغِيرًا أَوْ كَبِيرًا إِلَىٰ أَجَلِهِ ۚ ذَٰلِكُمْ أَقْسَطُ عِندَ اللَّهِ وَأَقْوَمُ لِلشَّهَادَةِ وَأَدْنَىٰ أَلَّا تَرْتَابُوا ۖ إِلَّا أَن تَكُونَ تِجَارَةً حَاضِرَةً تُدِيرُونَهَا بَيْنَكُمْ فَلَيْسَ عَلَيْكُمْ جُنَاحٌ أَلَّا تَكْتُبُوهَا ۗ وَأَشْهِدُوا إِذَا تَبَايَعْتُمْ ۚ وَلَا يُضَارَّ كَاتِبٌ وَلَا شَهِيدٌ ۚ وَإِن تَفْعَلُوا فَإِنَّهُ فُسُوقٌ بِكُمْ ۗ وَاتَّقُوا اللَّهَ ۖ وَيُعَلِّمُكُمُ اللَّهُ ۗ وَاللَّهُ بِكُلِّ شَيْءٍ عَلِيمٌ",
+            translation = "Wahai orang-orang yang beriman! Apabila kamu melakukan utang piutang untuk waktu yang ditentukan, hendaklah kamu menuliskannya. Dan hendaklah seorang penulis di antara kamu menuliskannya dengan benar. Janganlah penulis menolak untuk menuliskannya sebagaimana Allah telah mengajarkan kepadanya, maka hendaklah dia menuliskan. Dan hendaklah orang yang berutang itu mendiktekan, dan hendaklah dia bertakwa kepada Allah Tuhannya, dan janganlah dia mengurangi sedikit pun daripadanya. Jika yang berutang itu orang yang kurang akalnya atau lemah (keadaannya), atau tidak mampu mendiktekan sendiri, maka hendaklah walinya mendiktekan dengan benar. Dan persaksikanlah dengan dua orang saksi laki-laki di antara kamu. Jika tidak ada (dua orang laki-laki), maka (boleh) seorang laki-laki dan dua orang perempuan di antara orang-orang yang kamu sukai dari para saksi (yang ada), agar jika yang seorang lupa maka yang seorang lagi mengingatkannya. Dan janganlah saksi-saksi itu menolak apabila dipanggil. Dan janganlah kamu jemu menuliskannya, baik kecil maupun besar sampai batas waktu pembayarannya. Yang demikian itu lebih adil di sisi Allah, lebih dapat menguatkan kesaksian, dan lebih mendekatkan kamu kepada ketidakraguan, kecuali jika hal itu merupakan perdagangan tunai yang kamu jalankan di antara kamu, maka tidak ada dosa bagi kamu jika kamu tidak menuliskannya. Dan ambillah saksi apabila kamu berjual beli, dan janganlah penulis dipersulit dan jangan pula saksi. Jika kamu lakukan (yang demikian), maka sungguh, hal itu suatu kefasikan pada kamu. Dan bertakwalah kepada Allah, Allah memberikan pengajaran kepadamu, dan Allah Maha Mengetahui segala sesuatu.",
             fiqhNote = "Sistem pencatatan berpasangan (Double-Entry) menjamin akuntabilitas mutlak: setiap rupiah ada sumbernya (kredit) dan jelas penempatannya (debit), selaras dengan prinsip kejujuran (shiddiq) dan amanah."
         )
 
@@ -720,9 +720,9 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "QS. Al-Baqarah: 267 & Pensucian Harta",
-            arabicText = "يَا أَيُّهَا الَّذِينَ آمَنُوا أَنفِقُوا مِن طَيِّبَاتِ مَا كَسَبْتُمْ",
-            translation = "Wahai orang-orang yang beriman! Infakkanlah sebagian dari hasil usahamu yang baik-baik...",
+            source = "QS. Al-Baqarah: 267",
+            arabicText = "يَا أَيُّهَا الَّذِينَ آمَنُوا أَنفِقُوا مِن طَيِّبَاتِ مَا كَسَبْتُمْ وَمِمَّا أَخْرَجْنَا لَكُم مِّنَ الْأَرْضِ ۖ وَلَا تَيَمَّمُوا الْخَبِيثَ مِنْهُ تُنفِقُونَ وَلَسْتُم بِآخِذِيهِ إِلَّا أَن تُغْمِضُوا فِيهِ ۚ وَاعْلَمُوا أَنَّ اللَّهَ غَنِيٌّ حَمِيدٌ",
+            translation = "Wahai orang-orang yang beriman! Infakkanlah sebagian dari hasil usahamu yang baik-baik dan sebagian dari apa yang Kami keluarkan dari bumi untuk kamu. Janganlah kamu memilih yang buruk untuk kamu keluarkan, padahal kamu sendiri tidak mau mengambilnya melainkan dengan memicingkan mata (enggan) terhadapnya. Dan ketahuilah bahwa Allah Mahakaya, Maha Terpuji.",
             fiqhNote = "Infaq kasab adalah wujud syukur atas rezeki halal yang kita peroleh dengan menyisihkan sebagian nominal secara langsung saat penerimaan dana, menjaga harta tetap bersih dan penuh barokah."
         )
 
@@ -868,9 +868,9 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "HR. Bukhari & Muslim (Sedekah Walau Sedikit)",
-            arabicText = "اتَّقُوا النَّارَ وَلَوْ بِشِقِّ تَمْرَةٍ",
-            translation = "Jagalah diri kalian dari api neraka walaupun hanya dengan bersedekah separuh butir kurma.",
+            source = "HR. Bukhari (No. 1417) & Muslim (No. 1016)",
+            arabicText = "مَا مِنْكُمْ مِنْ أَحَدٍ إِلَّا سَيُكَلِّمُهُ رَبُّهُ، لَيْسَ بَيْنَهُ وَبَيْنَهُ تُرْجُمَانٌ، فَيَنْظُرُ أَيْمَنَ مِنْهُ فَلَا يَرَى إِلَّا مَا قَدَّمَ مِنْ عَمَلِهِ، وَيَنْظُرُ أَشْأَمَ مِنْهُ فَلَا يَرَى إِلَّا مَا قَدَّمَ، وَيَنْظُرُ بَيْنَ يَدَيْهِ فَلَا يَرَى إِلَّا النَّارَ تِلْقَاءَ وَجْهِهِ، فَاتَّقُوا النَّارَ وَلَوْ بِشِقِّ تَمْرَةٍ، فَمَنْ لَمْ يَجِدْ فَبِكَلِمَةٍ طَيِّبَةٍ",
+            translation = "Tidak ada seorang pun di antara kalian melainkan Tuhannya akan berbicara langsung kepadanya tanpa ada perantara penerjemah antara dirinya dan Allah. Lalu dia melihat ke arah kanannya, dan tidak ada yang dilihatnya kecuali amal yang telah dia perbuat. Dia melihat ke arah kirinya, dan tidak ada yang dilihatnya kecuali amal yang telah dia perbuat. Dan dia melihat ke arah depannya, maka tidak ada yang dilihatnya melainkan neraka di hadapan wajahnya. Maka jagalah diri kalian dari api neraka walaupun hanya dengan menyedekahkan separuh butir kurma. Dan barangsiapa tidak mendapatinya, maka dengan tutur kata yang baik.",
             fiqhNote = "Sedekah receh melalui pembulatan transaksi belanja membiasakan jiwa kita untuk senantiasa dermawan dalam setiap aktivitas konsumsi harian."
         )
 
@@ -998,9 +998,9 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
 fun TopicVaultContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "QS. At-Taubah: 60 & Amanah 8 Asnaf",
-            arabicText = "إِنَّمَا الصَّدَقَاتُ لِلْفُقَرَاءِ وَالْمَسَاكِينِ وَالْعَامِلِينَ عَلَيْهَا وَالْمُؤَلَّفَةِ قُلُوبُهُمْ وَفِي الرِّقَابِ وَالْغَارِمِينَ وَفِي سَبِيلِ اللَّهِ وَابْنِ السَّبِيلِ",
-            translation = "Sesungguhnya zakat itu hanyalah untuk orang-orang fakir, orang miskin, amil zakat yang mengurusnya, para mualaf yang dibujuk hatinya, untuk memerdekakan budak, orang-orang yang berhutang, untuk jalan Allah, dan untuk orang yang sedang dalam perjalanan...",
+            source = "QS. At-Taubah: 60",
+            arabicText = "إِنَّمَا الصَّدَقَاتُ لِلْفُقَرَاءِ وَالْمَسَاكِينِ وَالْعَامِلِينَ عَلَيْهَا وَالْمُؤَلَّفَةِ قُلُوبُهُمْ وَفِي الرِّقَابِ وَالْغَارِمِينَ وَفِي سَبِيلِ اللَّهِ وَابْنِ السَّبِيلِ ۖ فَرِيضَةً مِّنَ اللَّهِ ۗ وَاللَّهُ عَلِيمٌ حَكِيمٌ",
+            translation = "Sesungguhnya zakat itu hanyalah untuk orang-orang fakir, orang miskin, amil zakat, orang yang dilunakkan hatinya (mualaf), untuk (memerdekakan) hamba sahaya, untuk (membebaskan) orang yang berutang, untuk jalan Allah dan untuk orang yang sedang dalam perjalanan, sebagai kewajiban dari Allah. Dan Allah Maha Mengetahui, Maha Bijaksana.",
             fiqhNote = "Virtual Vault menampung amanah dana umat dan memastikan penyalurannya strictly terarah kepada asnaf yang telah ditetapkan syariat secara akuntabel."
         )
 
@@ -1155,9 +1155,9 @@ fun TopicSedekahSubuhContent(onTryAction: () -> Unit) {
 fun TopicBudgetContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "QS. Al-Isra: 26-27 & Larangan Tabdzir/Israf",
-            arabicText = "وَلَا تُبَذِّرْ تَبْذِيرًا إِنَّ الْمُبَذِّرِينَ كَانُوا إِخْوَانَ الشَّيَاطِينِ",
-            translation = "Dan janganlah kamu menghambur-hamburkan (hartamu) secara boros. Sesungguhnya pemboros-pemboros itu adalah saudara-saudara setan...",
+            source = "QS. Al-Isra: 26-27",
+            arabicText = "وَآتِ ذَا الْقُرْبَىٰ حَقَّهُ وَالْمِسْكِينَ وَابْنَ السَّبِيلِ وَلَا تُبَذِّرْ تَبْذِيرًا ۝ إِنَّ الْمُبَذِّرِينَ كَانُوا إِخْوَانَ الشَّيَاطِينِ ۖ وَكَانَ الشَّيْطَانُ لِرَبِّهِ كَفُورًا",
+            translation = "Dan berikanlah haknya kepada kerabat dekat, juga kepada orang miskin dan orang yang dalam perjalanan; dan janganlah kamu menghambur-hamburkan (hartamu) secara boros. Sesungguhnya orang-orang yang pemboros itu adalah saudara-saudara setan dan setan itu sangat ingkar kepada Tuhannya.",
             fiqhNote = "Mengatur anggaran adalah kewajiban syar'i untuk mencegah perilaku konsumtif yang berlebihan dan menjamin nafkah keluarga tetap terpenuhi secara seimbang."
         )
 
@@ -1478,9 +1478,9 @@ fun TopicModifyDeleteContent(onTryAction: () -> Unit) {
 fun TopicAmilDirectoryContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "QS. At-Taubah: 103 & Legalitas Amil",
-            arabicText = "خُذْ مِنْ أَمْوَالِهِمْ صَدَقَةً تُطَهِّرُهُمْ وَتُزَكِّيهِم بِهَا وَصَلِّ عَلَيْهِمْ",
-            translation = "Ambillah zakat dari sebagian harta mereka, dengan zakat itu kamu membersihkan dan menyucikan mereka dan berdoalah untuk mereka...",
+            source = "QS. At-Taubah: 103",
+            arabicText = "خُذْ مِنْ أَمْوَالِهِمْ صَدَقَةً تُطَهِّرُهُمْ وَتُزَكِّيهِم بِهَا وَصَلِّ عَلَيْهِمْ ۖ إِنَّ صَلَاتَكَ سَكَنٌ لَّهُمْ ۗ وَاللَّهُ سَمِيعٌ عَلِيمٌ",
+            translation = "Ambillah zakat dari sebagian harta mereka, dengan zakat itu kamu membersihkan dan menyucikan mereka dan berdoalah untuk mereka. Sesungguhnya doa kamu itu (menumbuhkan) ketenteraman jiwa bagi mereka. Dan Allah Maha Mendengar, Maha Mengetahui.",
             fiqhNote = "Menyalurkan zakat melalui amil yang amanah dan resmi (BAZNAS/LAZ) lebih utama karena memastikan pendistribusian tepat sasaran sesuai skala prioritas syariah."
         )
 

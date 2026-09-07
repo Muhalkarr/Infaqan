@@ -743,7 +743,12 @@ fun AddTransactionScreen(
                                             infaqRate = 0.0
                                         }
                                     },
-                                    trailingIcon = { Text("%", color = GoldAccent, fontSize = 12.sp, modifier = Modifier.padding(end = 8.dp)) },
+                                    textStyle = androidx.compose.ui.text.TextStyle(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Start
+                                    ),
+                                    trailingIcon = { Text("%", color = GoldAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 6.dp)) },
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -755,8 +760,8 @@ fun AddTransactionScreen(
                                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
                                     ),
                                     modifier = Modifier
-                                        .width(100.dp)
-                                        .height(48.dp)
+                                        .width(105.dp)
+                                        .height(44.dp)
                                         .testTag("custom_infaq_percent_input")
                                 )
                             }

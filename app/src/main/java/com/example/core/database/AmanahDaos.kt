@@ -151,5 +151,29 @@ interface SettingsDao {
     suspend fun clearAll()
 }
 
+@Dao
+interface RulingDao {
+    @Query("SELECT * FROM custom_rulings ORDER BY updatedAtMillis DESC")
+    fun getAllRulingsFlow(): Flow<List<CustomRulingEntity>>
+
+    @Query("SELECT * FROM custom_rulings WHERE isEnabled = 1 ORDER BY updatedAtMillis DESC")
+    fun getActiveRulingsFlow(): Flow<List<CustomRulingEntity>>
+
+    @Query("SELECT * FROM custom_rulings WHERE id = :id LIMIT 1")
+    suspend fun getRulingById(id: String): CustomRulingEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(ruling: CustomRulingEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(rulings: List<CustomRulingEntity>)
+
+    @Query("DELETE FROM custom_rulings WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM custom_rulings WHERE isCustom = 1")
+    suspend fun clearCustomRulings()
+}
+
 typealias TransactionDao = JournalEntryDao
 

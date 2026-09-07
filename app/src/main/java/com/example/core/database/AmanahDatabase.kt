@@ -30,9 +30,10 @@ import java.util.Date
         QardhRecordEntity::class,
         BudgetAllocationEntity::class,
         SedekahSubuhEntity::class,
-        SettingsEntity::class
+        SettingsEntity::class,
+        CustomRulingEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AmanahDatabase : RoomDatabase() {
@@ -44,6 +45,7 @@ abstract class AmanahDatabase : RoomDatabase() {
     abstract fun budgetDao(): BudgetDao
     abstract fun sedekahSubuhDao(): SedekahSubuhDao
     abstract fun settingsDao(): SettingsDao
+    abstract fun rulingDao(): RulingDao
 
     companion object {
         @Volatile
@@ -291,6 +293,44 @@ object EntityMappers {
             monthlyLimit = e.monthlyLimit,
             iconKey = e.iconKey,
             alertThresholdPercent = e.alertThresholdPercent
+        )
+    }
+
+    fun toEntity(r: com.example.core.shariah.ShariahRuling): CustomRulingEntity {
+        return CustomRulingEntity(
+            id = r.id,
+            title = r.title,
+            category = r.category,
+            authority = r.authority,
+            referenceNumber = r.referenceNumber,
+            summary = r.summary,
+            detailedRuling = r.detailedRuling,
+            calculationFormula = r.calculationFormula,
+            dalilSource = r.dalilSource,
+            dalilArabic = r.dalilArabic,
+            dalilTranslation = r.dalilTranslation,
+            isCustom = r.isCustom,
+            isEnabled = r.isEnabled,
+            updatedAtMillis = r.updatedAtMillis
+        )
+    }
+
+    fun toDomain(e: CustomRulingEntity): com.example.core.shariah.ShariahRuling {
+        return com.example.core.shariah.ShariahRuling(
+            id = e.id,
+            title = e.title,
+            category = e.category,
+            authority = e.authority,
+            referenceNumber = e.referenceNumber,
+            summary = e.summary,
+            detailedRuling = e.detailedRuling,
+            calculationFormula = e.calculationFormula,
+            dalilSource = e.dalilSource,
+            dalilArabic = e.dalilArabic,
+            dalilTranslation = e.dalilTranslation,
+            isCustom = e.isCustom,
+            isEnabled = e.isEnabled,
+            updatedAtMillis = e.updatedAtMillis
         )
     }
 }

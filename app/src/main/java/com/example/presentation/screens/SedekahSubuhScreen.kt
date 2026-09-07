@@ -185,7 +185,7 @@ fun SedekahSubuhScreen(
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Buka Menu Sidebar",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -285,17 +285,25 @@ fun SedekahSubuhScreen(
                         }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "مَا مِنْ يَوْمٍ يُصْبِحُ الْعِبَادُ فِيهِ إِلاَّ مَلَكَانِ يَنْزِلاَنِ فَيَقُولُ أَحَدُهُمَا اللَّهُمَّ أَعْطِ مُنْفِقًا خَلَفًا",
+                            text = "مَا مِنْ يَوْمٍ يُصْبِحُ الْعِبَادُ فِيهِ إِلاَّ مَلَكَانِ يَنْزِلاَنِ فَيَقُولُ أَحَدُهُمَا: اللَّهُمَّ أَعْطِ مُنْفِقًا خَلَفًا، وَيَقُولُ الآخَرُ: اللَّهُمَّ أَعْطِ مُمْسِكًا تَلَفًا",
                             fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = 20.sp
+                            lineHeight = 22.sp
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "\"Tidak ada satu subuh pun yang dialami hamba-hamba Allah kecuali turun dua malaikat. Salah satu di antaranya berdoa: 'Ya Allah, berikanlah ganti bagi orang yang berinfak...'\" (HR. Bukhari no. 1442 & Muslim no. 1010)",
+                            text = "\"Tidak ada satu hari pun di mana seorang hamba berada di pagi hari melainkan dua malaikat turun kepadanya. Salah satu di antaranya berdoa: 'Ya Allah, berikanlah ganti (keberkahan rizki) bagi orang yang berinfak.' Sedangkan malaikat yang satu lagi berdoa: 'Ya Allah, berikanlah kebinasaan/kehancuran bagi orang yang menahan hartanya (kikir).'\"",
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            lineHeight = 16.sp
+                            lineHeight = 17.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "— HR. Al-Bukhari No. 1442 & Muslim No. 1010, dari Abu Hurairah RA",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = GoldAccent
                         )
                     }
                 }
@@ -662,7 +670,7 @@ fun QuickGiveSubuhPanel(
                         text = "Sedekah Subuh Kilat",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -674,7 +682,7 @@ fun QuickGiveSubuhPanel(
                         Text(
                             text = "+ Tambah Lagi",
                             fontSize = 10.sp,
-                            color = EmeraldLight,
+                            color = EmeraldPrimary,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -700,10 +708,10 @@ fun QuickGiveSubuhPanel(
                         shape = RoundedCornerShape(10.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF0F2620),
-                            contentColor = EmeraldLight
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                            contentColor = MaterialTheme.colorScheme.primary
                         ),
-                        border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.4f))
+                        border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.35f))
                     ) {
                         Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     }

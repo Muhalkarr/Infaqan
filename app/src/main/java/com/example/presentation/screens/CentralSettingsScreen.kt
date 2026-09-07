@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -143,6 +144,7 @@ fun CentralSettingsScreen(
     onNavigateToAmilDirectory: () -> Unit = {},
     onNavigateToFaraidh: () -> Unit = {},
     onNavigateToExportReport: () -> Unit = {},
+    onNavigateToDebugTerminal: () -> Unit = {},
     onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -1346,6 +1348,22 @@ fun CentralSettingsScreen(
                             Icon(imageVector = Icons.Default.Security, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Pencadangan & Pemulihan Terenkripsi", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Terminal Log & Diagnostik Sistem
+                        OutlinedButton(
+                            onClick = onNavigateToDebugTerminal,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color(0xFF38BDF8)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth().testTag("settings_debug_terminal_button")
+                        ) {
+                            Icon(imageVector = Icons.Default.Terminal, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Terminal Log Debug & Rekam Galat", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
 
                         Spacer(modifier = Modifier.height(6.dp))

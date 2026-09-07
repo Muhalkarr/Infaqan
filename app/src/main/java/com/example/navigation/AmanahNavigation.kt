@@ -18,6 +18,7 @@ import com.example.presentation.screens.BackupRestoreScreen
 import com.example.presentation.screens.BudgetAllocationScreen
 import com.example.presentation.screens.CentralSettingsScreen
 import com.example.presentation.screens.DashboardScreen
+import com.example.presentation.screens.DebugTerminalScreen
 import com.example.presentation.screens.ExportReportScreen
 import com.example.presentation.screens.FaraidhScreen
 import com.example.presentation.screens.HaulNisabScreen
@@ -61,6 +62,7 @@ object AmanahRoutes {
     const val APP_LOCK = "app_lock"
     const val INTERACTIVE_GUIDE = "interactive_guide"
     const val ISLAMIC_GROUNDING = "islamic_grounding"
+    const val DEBUG_TERMINAL = "debug_terminal"
 }
 
 @Composable
@@ -420,6 +422,7 @@ fun AmanahNavHost(
                 onNavigateToAmilDirectory = { navController.navigate(AmanahRoutes.AMIL_DIRECTORY) },
                 onNavigateToFaraidh = { navController.navigate(AmanahRoutes.FARAIDH) },
                 onNavigateToExportReport = { navController.navigate(AmanahRoutes.EXPORT_REPORT) },
+                onNavigateToDebugTerminal = { navController.navigate(AmanahRoutes.DEBUG_TERMINAL) },
                 onOpenDrawer = onOpenDrawer
             )
         }
@@ -437,6 +440,14 @@ fun AmanahNavHost(
         composable(AmanahRoutes.APP_LOCK) {
             AppLockScreen(
                 viewModel = viewModel
+            )
+        }
+
+        // 24. Debug Terminal & System Diagnostics
+        composable(AmanahRoutes.DEBUG_TERMINAL) {
+            DebugTerminalScreen(
+                onNavigateBack = handleSmartBack,
+                onOpenDrawer = onOpenDrawer
             )
         }
     }

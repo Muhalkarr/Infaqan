@@ -240,6 +240,56 @@ object FaraidhEngine {
                     )
                 )
                 allocatedFraction = 1.0
+            } else if (!input.hasFather && (input.fullBrotherCount > 0 || input.fullSisterCount > 0)) {
+                // Ashabah Saudara saat ada anak perempuan (tanpa anak laki-laki & tanpa ayah)
+                val remainingFraction = (1.0 - allocatedFraction).coerceAtLeast(0.0)
+                if (input.fullBrotherCount > 0) {
+                    val totalParts = (input.fullBrotherCount * 2) + input.fullSisterCount
+                    val brFraction = remainingFraction * (2.0 * input.fullBrotherCount / totalParts)
+                    val brNominal = netDistributable * brFraction
+                    sharesList.add(
+                        FaraidhShare(
+                            heirGroup = "Saudara Laki-Laki Kandung (${input.fullBrotherCount} Orang)",
+                            heirCount = input.fullBrotherCount,
+                            portionFractionText = "Ashabah Bil Ghair (2 Bagian)",
+                            portionPercentage = brFraction * 100,
+                            totalNominal = brNominal,
+                            perPersonNominal = brNominal / input.fullBrotherCount,
+                            dalilSyariah = "QS. An-Nisa: 176 & HR. Bukhari (Mewarisi sisa bersama saudara perempuan bersama anak perempuan)"
+                        )
+                    )
+                    if (input.fullSisterCount > 0) {
+                        val sisFraction = remainingFraction * (1.0 * input.fullSisterCount / totalParts)
+                        val sisNominal = netDistributable * sisFraction
+                        sharesList.add(
+                            FaraidhShare(
+                                heirGroup = "Saudara Perempuan Kandung (${input.fullSisterCount} Orang)",
+                                heirCount = input.fullSisterCount,
+                                portionFractionText = "Ashabah Bil Ghair (1 Bagian)",
+                                portionPercentage = sisFraction * 100,
+                                totalNominal = sisNominal,
+                                perPersonNominal = sisNominal / input.fullSisterCount,
+                                dalilSyariah = "QS. An-Nisa: 176 (Mewarisi sisa bersama saudara laki-laki dengan rasio 1:2)"
+                            )
+                        )
+                    }
+                } else if (input.fullSisterCount > 0) {
+                    // Ashabah Ma'a Al-Ghair (Saudara perempuan bersama anak perempuan)
+                    val sisFraction = remainingFraction
+                    val sisNominal = netDistributable * sisFraction
+                    sharesList.add(
+                        FaraidhShare(
+                            heirGroup = "Saudara Perempuan Kandung (${input.fullSisterCount} Orang)",
+                            heirCount = input.fullSisterCount,
+                            portionFractionText = "Ashabah Ma'al Ghair (Sisa)",
+                            portionPercentage = sisFraction * 100,
+                            totalNominal = sisNominal,
+                            perPersonNominal = sisNominal / input.fullSisterCount,
+                            dalilSyariah = "HR. Al-Bukhari No. 6742: 'Jadikanlah saudara-saudara perempuan bersama anak-anak perempuan sebagai ashabah'"
+                        )
+                    )
+                }
+                allocatedFraction = 1.0
             }
         } else {
             // Tidak ada anak sama sekali
@@ -259,7 +309,7 @@ object FaraidhEngine {
                 )
                 allocatedFraction = 1.0
             } else if (input.fullBrotherCount > 0 || input.fullSisterCount > 0) {
-                // Saudara mewarisi jika tidak ada anak laki-laki & ayah
+                // Kalalah: Saudara mewarisi jika tidak ada anak & tidak ada ayah
                 val remainingFraction = (1.0 - allocatedFraction).coerceAtLeast(0.0)
                 val totalParts = (input.fullBrotherCount * 2) + input.fullSisterCount
                 if (totalParts > 0) {
@@ -270,32 +320,45 @@ object FaraidhEngine {
                             FaraidhShare(
                                 heirGroup = "Saudara Laki-Laki Kandung (${input.fullBrotherCount} Orang)",
                                 heirCount = input.fullBrotherCount,
-                                portionFractionText = "Ashabah (2 Bagian)",
+                                portionFractionText = "Ashabah Bi Nafsih / Bil Ghair",
                                 portionPercentage = brFraction * 100,
                                 totalNominal = brNominal,
                                 perPersonNominal = brNominal / input.fullBrotherCount,
-                                dalilSyariah = "QS. An-Nisa: 176 (Kalalah - Saudara laki-laki mewarisi sisa)"
+                                dalilSyariah = "QS. An-Nisa: 176 (Ayat Kalalah: Saudara laki-laki mewarisi seluruh sisa)"
                             )
                         )
                     }
                     if (input.fullSisterCount > 0) {
-                        val sisFraction = remainingFraction * (1.0 * input.fullSisterCount / totalParts)
+                        val sisFraction = if (input.fullBrotherCount > 0) {
+                            remainingFraction * (1.0 * input.fullSisterCount / totalParts)
+                        } else {
+                            // Hanya saudara perempuan tanpa saudara laki-laki & tanpa anak & tanpa ayah
+                            // 1 org: 1/2, >1 org: 2/3
+                            if (input.fullSisterCount == 1) 0.50.coerceAtMost(remainingFraction) else (2.0 / 3.0).coerceAtMost(remainingFraction)
+                        }
                         val sisNominal = netDistributable * sisFraction
                         sharesList.add(
                             FaraidhShare(
-                                heirGroup = "Saudara Perempuan Kandung (${input.fullSisterCount} Orang)",
+                                heirGroup = if (input.fullSisterCount == 1) "Saudara Perempuan Tunggal" else "Saudara Perempuan (${input.fullSisterCount} Orang)",
                                 heirCount = input.fullSisterCount,
-                                portionFractionText = "Ashabah (1 Bagian)",
+                                portionFractionText = if (input.fullBrotherCount > 0) "Ashabah Bil Ghair (1 Bagian)" else (if (input.fullSisterCount == 1) "1/2" else "2/3"),
                                 portionPercentage = sisFraction * 100,
                                 totalNominal = sisNominal,
                                 perPersonNominal = sisNominal / input.fullSisterCount,
-                                dalilSyariah = "QS. An-Nisa: 176 (Saudara perempuan bersama saudara laki-laki dengan rasio 1:2)"
+                                dalilSyariah = "QS. An-Nisa: 176 (Jika satu saudara perempuan maka 1/2, jika dua atau lebih maka 2/3)"
                             )
                         )
                     }
                 }
                 allocatedFraction = 1.0
             }
+        }
+
+        // Catatan hijab jika ada
+        if (hasSons && (input.fullBrotherCount > 0 || input.fullSisterCount > 0)) {
+            notes.add("Pemberitahuan Hijab: Saudara kandung terhijab (terhalang penuh) dari warisan karena adanya anak laki-laki pewaris.")
+        } else if (input.hasFather && (input.fullBrotherCount > 0 || input.fullSisterCount > 0)) {
+            notes.add("Pemberitahuan Hijab: Saudara kandung terhijab (terhalang penuh) dari warisan karena adanya ayah kandung pewaris.")
         }
 
         notes.add("Perhitungan faraidh disusun berdasarkan dalil syar'i Al-Qur'an (Surah An-Nisa: 11-12, 176) dan Sunnah Rasulullah SAW.")

@@ -100,6 +100,7 @@ fun SecuritySettingsScreen(
     var showEnablePinDialog by remember { mutableStateOf(false) }
     var showDisablePinDialog by remember { mutableStateOf(false) }
     var showChangePinDialog by remember { mutableStateOf(false) }
+    var showUpdateRecoveryDialog by remember { mutableStateOf(false) }
     var showAutoLockDialog by remember { mutableStateOf(false) }
     var showClearLogsDialog by remember { mutableStateOf(false) }
 
@@ -301,6 +302,34 @@ fun SecuritySettingsScreen(
                                     }
                                 }
                                 Icon(Icons.Default.LockReset, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(20.dp))
+                            }
+
+                            HorizontalDivider(color = DarkBorder)
+
+                            // Pertanyaan Pemulihan Darurat PIN
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showUpdateRecoveryDialog = true }
+                                    .padding(vertical = 4.dp)
+                                    .testTag("update_recovery_question_row"),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                    Icon(Icons.Default.Shield, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text("Pertanyaan Pemulihan PIN", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                                        Text(
+                                            text = if (securityConfig.securityQuestion.isNotBlank()) securityConfig.securityQuestion else "Belum disetel (Ketuk untuk atur)",
+                                            fontSize = 11.sp,
+                                            color = EmeraldLight,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                                Icon(Icons.Default.VpnKey, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
                             }
 
                             HorizontalDivider(color = DarkBorder)
@@ -549,6 +578,18 @@ fun SecuritySettingsScreen(
             onConfirm = { oldPin, newPin ->
                 val ok = viewModel.changePin(oldPin, newPin)
                 if (ok) showChangePinDialog = false
+                ok
+            }
+        )
+    }
+
+    if (showUpdateRecoveryDialog) {
+        UpdateRecoveryQuestionDialog(
+            currentQuestion = securityConfig.securityQuestion,
+            onDismiss = { showUpdateRecoveryDialog = false },
+            onConfirm = { pin, question, answer ->
+                val ok = viewModel.updateSecurityRecovery(pin, question, answer)
+                if (ok) showUpdateRecoveryDialog = false
                 ok
             }
         )
@@ -918,6 +959,144 @@ fun ChangePinDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Batal", color = White70) }
+        }
+    )
+}
+
+@Composable
+fun UpdateRecoveryQuestionDialog(
+    currentQuestion: String,
+    onDismiss: () -> Unit,
+    onConfirm: (pin: String, newQuestion: String, newAnswer: String) -> Boolean
+) {
+    var pin by remember { mutableStateOf("") }
+    var selectedQuestion by remember { mutableStateOf(if (currentQuestion.isNotBlank()) currentQuestion else "Apa nama kota kelahiran Anda?") }
+    var customQuestion by remember { mutableStateOf("") }
+    var isCustom by remember { mutableStateOf(false) }
+    var answer by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    val presetQuestions = listOf(
+        "Apa nama kota kelahiran Anda?",
+        "Siapa nama guru mengaji pertama Anda?",
+        "Apa nama masjid terdekat di masa kecil?",
+        "Apa nama jalan tempat tinggal pertama Anda?",
+        "Pertanyaan Kustom Sendiri..."
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(18.dp),
+        title = {
+            Text(
+                "Atur Pertanyaan Pemulihan PIN",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "Digunakan untuk mereset PIN jika Anda lupa kombinasi angka.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) pin = it },
+                    label = { Text("Verifikasi PIN Saat Ini") },
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().testTag("recovery_current_pin_field")
+                )
+
+                Text("Pilih Pertanyaan Keamanan:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+
+                presetQuestions.forEach { q ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (q == "Pertanyaan Kustom Sendiri...") {
+                                    isCustom = true
+                                } else {
+                                    isCustom = false
+                                    selectedQuestion = q
+                                }
+                            }
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = if (isCustom) q == "Pertanyaan Kustom Sendiri..." else selectedQuestion == q,
+                            onClick = {
+                                if (q == "Pertanyaan Kustom Sendiri...") {
+                                    isCustom = true
+                                } else {
+                                    isCustom = false
+                                    selectedQuestion = q
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(q, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+
+                if (isCustom) {
+                    OutlinedTextField(
+                        value = customQuestion,
+                        onValueChange = { customQuestion = it },
+                        label = { Text("Tulis Pertanyaan Anda Sendiri") },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth().testTag("custom_recovery_question_field")
+                    )
+                }
+
+                OutlinedTextField(
+                    value = answer,
+                    onValueChange = { answer = it },
+                    label = { Text("Kunci Jawaban Rahasia") },
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth().testTag("recovery_answer_field")
+                )
+
+                if (error != null) {
+                    Text(error ?: "", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (pin.length < 4) {
+                        error = "Masukkan PIN otentikasi saat ini"
+                        return@Button
+                    }
+                    val finalQ = if (isCustom) customQuestion.trim() else selectedQuestion.trim()
+                    if (finalQ.isBlank()) {
+                        error = "Pertanyaan tidak boleh kosong"
+                        return@Button
+                    }
+                    if (answer.trim().isBlank()) {
+                        error = "Kunci jawaban rahasia tidak boleh kosong"
+                        return@Button
+                    }
+                    val ok = onConfirm(pin, finalQ, answer.trim())
+                    if (!ok) {
+                        error = "PIN otentikasi salah!"
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                modifier = Modifier.testTag("submit_update_recovery_button")
+            ) {
+                Text("Simpan", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Batal") }
         }
     )
 }

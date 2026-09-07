@@ -326,10 +326,10 @@ fun IslamicAdabCard(
 fun TopicFaraidhContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "QS. An-Nisa: 11 & HR. Ibnu Majah",
-            arabicText = "يُوصِيكُمُ اللَّهُ فِي أَوْلَادِكُمْ ۖ لِلذَّكَرِ مِثْلُ حَظِّ الْأُنثَيَيْنِ",
-            translation = "Allah mensyariatkan (mewajibkan) kepadamu tentang pembagian warisan untuk anak-anakmu, yaitu bagian seorang anak laki-laki sama dengan bagian dua orang anak perempuan...",
-            fiqhNote = "Rasulullah SAW bersabda: 'Pelajarilah faraidh dan ajarkanlah, karena ia adalah setengah dari ilmu dan ilmu yang pertama kali dicabut dari umatku.' (HR. Ibnu Majah)."
+            source = "QS. An-Nisa: 11",
+            arabicText = "يُوصِيكُمُ اللَّهُ فِي أَوْلَادِكُمْ ۖ لِلذَّكَرِ مِثْلُ حَظِّ الْأُنثَيَيْنِ ۚ فَإِن كُنَّ نِسَاءً فَوْقَ اثْنَتَيْنِ فَلَهُنَّ ثُلُثَا مَا تَرَكَ ۖ وَإِن كَانَتْ وَاحِدَةً فَلَهَا النِّصْفُ ۚ وَلِأَبَوَيْهِ لِكُلِّ وَاحِدٍ مِّنْهُمَا السُّدُسُ مِمَّا تَرَكَ إِن كَانَ لَهُ وَلَدٌ ۚ فَإِن لَّمْ يَكُن لَّهُ وَلَدٌ وَوَرِثَهُ أَبَوَاهُ فَلِأُمِّهِ الثُّلُثُ ۚ فَإِن كَانَ لَهُ إِخْوَةٌ فَلِأُمِّهِ السُّدُسُ ۚ مِن بَعْدِ وَصِيَّةٍ يُوصِي بِهَا أَوْ دَيْنٍ ۗ آبَاؤُكُمْ وَأَبْنَاؤُكُمْ لَا تَدْرُونَ أَيُّهُمْ أَقْرَبُ لَكُمْ نَفْعًا ۚ فَرِيضَةً مِّنَ اللَّهِ ۗ إِنَّ اللَّهَ كَانَ عَلِيمًا حَكِيمًا",
+            translation = "Allah mensyariatkan (mewajibkan) kepadamu tentang (pembagian warisan untuk) anak-anakmu, yaitu bagian seorang anak laki-laki sama dengan bagian dua orang anak perempuan; dan jika anak itu semuanya perempuan yang lebih dari dua, maka bagi mereka dua pertiga dari harta yang ditinggalkan; jika dia (anak perempuan) itu seorang saja, maka dia memperoleh setengah (harta). Dan untuk kedua ibu-bapak, bagian masing-masing seperenam dari harta yang ditinggalkan, jika dia (yang meninggal) mempunyai anak; jika dia (yang meninggal) tidak mempunyai anak dan dia diwarisi oleh kedua ibu-bapaknya (saja), maka ibunya mendapat sepertiga; jika dia (yang meninggal) mempunyai beberapa saudara, maka ibunya mendapat seperenam. (Pembagian-pembagian tersebut di atas) setelah dipenuhi wasiat yang dibuatnya atau (dan setelah dibayar) utangnya. (Tentang) orang tuamu dan anak-anakmu, kamu tidak mengetahui siapa di antara mereka yang lebih dekat (banyak) manfaatnya bagimu. Ini adalah ketetapan Allah. Sungguh, Allah Maha Mengetahui, Maha Bijaksana.",
+            fiqhNote = "Rasulullah SAW bersabda: 'تَعَلَّمُوا الْفَرَائِضَ وَعَلِّمُوهَا فَإِنَّهُ نِصْفُ الْعِلْمِ وَهُوَ يُنْسَى وَهُوَ أَوَّلُ شَيْءٍ يُنْزَعُ مِنْ أُمَّتِي' (Pelajarilah faraidh dan ajarkanlah, karena sesungguhnya ia adalah setengah dari ilmu dan ia mudah dilupakan serta merupakan perkara pertama yang akan dicabut dari umatku) — HR. Ibnu Majah (No. 2719), Al-Hakim, dan Ad-Daraquthni."
         )
 
         Card(
@@ -416,9 +416,9 @@ fun TopicQardhContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
             source = "QS. Al-Baqarah: 282 (Ayat Mudayanah)",
-            arabicText = "يَا أَيُّهَا الَّذِينَ آمَنُوا إِذَا تَدَايَنتُم بِدَيْنٍ إِلَىٰ أَجَلٍ مُّسَمًّى فَاكْتُبُوهُ",
-            translation = "Wahai orang-orang yang beriman! Apabila kamu bermuamalah tidak secara tunai untuk waktu yang ditentukan, hendaklah kamu menuliskannya...",
-            fiqhNote = "Ayat terpanjang dalam Al-Qur'an ini secara tegas mewajibkan dokumentasi pencatatan hutang piutang beserta saksi agar terhindar dari perselisihan dan riba."
+            arabicText = "يَا أَيُّهَا الَّذِينَ آمَنُوا إِذَا تَدَايَنتُم بِدَيْنٍ إِلَىٰ أَجَلٍ مُّسَمًّى فَاكْتُبُوهُ ۚ وَلْيَكْتُب بَّيْنَكُمْ كَاتِبٌ بِالْعَدْلِ ۚ وَلَا يَأْبَ كَاتِبٌ أَن يَكْتُبَ كَمَا عَلَّمَهُ اللَّهُ ۚ فَلْيَكْتُبْ وَلْيُمْلِلِ الَّذِي عَلَيْهِ الْحَقُّ وَلْيَتَّقِ اللَّهَ رَبَّهُ وَلَا يَبْخَسْ مِنْهُ شَيْئًا ۚ فَإِن كَانَ الَّذِي عَلَيْهِ الْحَقُّ سَفِيهًا أَوْ ضَعِيفًا أَوْ لَا يَسْتَطِيعُ أَن يُمِلَّ هُوَ فَلْيُمْلِلْ وَلِيُّهُ بِالْعَدْلِ ۚ وَاسْتَشْهِدُوا شَهِيدَيْنِ مِن رِّجَالِكُمْ ۖ فَإِن لَّمْ يَكُونَا رَجُلَيْنِ فَرَجُلٌ وَامْرَأَتَانِ مِمَّن تَرْضَوْنَ مِنَ الشُّهَدَاءِ أَن تَضِلَّ إِحْدَاهُمَا فَتُذَكِّرَ إِحْدَاهُمَا الْأُخْرَىٰ ۚ وَلَا يَأْبَ الشُّهَدَاءُ إِذَا مَا دُعُوا ۚ وَلَا تَسْأَمُوا أَن تَكْتُبُوهُ صَغِيرًا أَوْ كَبِيرًا إِلَىٰ أَجَلِهِ ۚ ذَٰلِكُمْ أَقْسَطُ عِندَ اللَّهِ وَأَقْوَمُ لِلشَّهَادَةِ وَأَدْنَىٰ أَلَّا تَرْتَابُوا ۖ إِلَّا أَن تَكُونَ تِجَارَةً حَاضِرَةً تُدِيرُونَهَا بَيْنَكُمْ فَلَيْسَ عَلَيْكُمْ جُنَاحٌ أَلَّا تَكْتُبُوهَا ۗ وَأَشْهِدُوا إِذَا تَبَايَعْتُمْ ۚ وَلَا يُضَارَّ كَاتِبٌ وَلَا شَهِيدٌ ۚ وَإِن تَفْعَلُوا فَإِنَّهُ فُسُوقٌ بِكُمْ ۗ وَاتَّقُوا اللَّهَ ۖ وَيُعَلِّمُكُمُ اللَّهُ ۗ وَاللَّهُ بِكُلِّ شَيْءٍ عَلِيمٌ",
+            translation = "Wahai orang-orang yang beriman! Apabila kamu melakukan utang piutang untuk waktu yang ditentukan, hendaklah kamu menuliskannya. Dan hendaklah seorang penulis di antara kamu menuliskannya dengan benar. Janganlah penulis menolak untuk menuliskannya sebagaimana Allah telah mengajarkan kepadanya, maka hendaklah dia menuliskan. Dan hendaklah orang yang berutang itu mendiktekan, dan hendaklah dia bertakwa kepada Allah Tuhannya, dan janganlah dia mengurangi sedikit pun daripadanya. Jika yang berutang itu orang yang kurang akalnya atau lemah (keadaannya), atau tidak mampu mendiktekan sendiri, maka hendaklah walinya mendiktekan dengan benar. Dan persaksikanlah dengan dua orang saksi laki-laki di antara kamu. Jika tidak ada (dua orang laki-laki), maka (boleh) seorang laki-laki dan dua orang perempuan di antara orang-orang yang kamu sukai dari para saksi (yang ada), agar jika yang seorang lupa maka yang seorang lagi mengingatkannya. Dan janganlah saksi-saksi itu menolak apabila dipanggil. Dan janganlah kamu jemu menuliskannya, baik kecil maupun besar sampai batas waktu pembayarannya. Yang demikian itu lebih adil di sisi Allah, lebih dapat menguatkan kesaksian, dan lebih mendekatkan kamu kepada ketidakraguan, kecuali jika hal itu merupakan perdagangan tunai yang kamu jalankan di antara kamu, maka tidak ada dosa bagi kamu jika kamu tidak menuliskannya. Dan ambillah saksi apabila kamu berjual beli, dan janganlah penulis dipersulit dan jangan pula saksi. Jika kamu lakukan (yang demikian), maka sungguh, hal itu suatu kefasikan pada kamu. Dan bertakwalah kepada Allah, Allah memberikan pengajaran kepadamu, dan Allah Maha Mengetahui segala sesuatu.",
+            fiqhNote = "Ayat terpanjang dalam Al-Qur'an ini secara tegas mewajibkan dokumentasi pencatatan hutang piutang beserta saksi agar terhindar dari perselisihan dan riba. Rasulullah SAW bersabda: 'مَنْ أَنْظَرَ مُعْسِرًا أَوْ وَضَعَ عَنْهُ أَظَلَّهُ اللَّهُ فِي ظِلِّهِ يَوْمَ لَا ظِلَّ إِلَّا ظِلُّهُ' (Barangsiapa memberi tenggang waktu kepada orang yang kesulitan membayar utang atau membebaskannya, Allah akan menaunginya di bawah naungan-Nya pada hari yang tidak ada naungan selain naungan-Nya) — HR. Muslim (No. 3014)."
         )
 
         Card(
@@ -505,8 +505,8 @@ fun TopicZakatHubContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
             source = "QS. At-Taubah: 60 (Mustahiq 8 Asnaf)",
-            arabicText = "إِنَّمَا الصَّدَقَاتُ لِلْفُقَرَاءِ وَالْمَسَاكِينِ وَالْعَامِلِينَ عَلَيْهَا وَالْمُؤَلَّفَةِ قُلُوبُهُمْ وَفِي الرِّقَابِ وَالْغَارِمِينَ وَفِي سَبِيلِ اللَّهِ وَابْنِ السَّبِيلِ ۖ فَرِيضَةً مِّنَ اللَّهِ",
-            translation = "Sesungguhnya zakat itu hanyalah untuk orang-orang fakir, orang miskin, amil zakat, mualaf yang dilunakkan hatinya, untuk memerdekakan hamba sahaya, orang yang berutang, untuk jalan Allah, dan untuk orang yang sedang dalam perjalanan, sebagai kewajiban dari Allah...",
+            arabicText = "إِنَّمَا الصَّدَقَاتُ لِلْفُقَرَاءِ وَالْمَسَاكِينِ وَالْعَامِلِينَ عَلَيْهَا وَالْمُؤَلَّفَةِ قُلُوبُهُمْ وَفِي الرِّقَابِ وَالْغَارِمِينَ وَفِي سَبِيلِ اللَّهِ وَابْنِ السَّبِيلِ ۖ فَرِيضَةً مِّنَ اللَّهِ ۗ وَاللَّهُ عَلِيمٌ حَكِيمٌ",
+            translation = "Sesungguhnya zakat itu hanyalah untuk orang-orang fakir, orang miskin, amil zakat, orang yang dilunakkan hatinya (mualaf), untuk (memerdekakan) hamba sahaya, untuk (membebaskan) orang yang berutang, untuk jalan Allah dan untuk orang yang sedang dalam perjalanan, sebagai kewajiban dari Allah. Dan Allah Maha Mengetahui, Maha Bijaksana.",
             fiqhNote = "Zakat wajib disalurkan secara spesifik kepada 8 asnaf ini, berbeda dengan infaq/sedekah umum yang cakupannya lebih luas."
         )
 
@@ -609,9 +609,9 @@ fun TopicZakatHubContent(onTryAction: () -> Unit) {
 fun TopicMultiWalletContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "Prinsip Amanah & Ketertiban Pengelolaan Kas",
-            arabicText = "إِنَّ اللَّهَ يَأْمُرُكُمْ أَن تُؤَدُّوا الْأَمَانَاتِ إِلَىٰ أَهْلِهَا",
-            translation = "Sesungguhnya Allah menyuruh kamu menyampaikan amanat kepada yang berhak menerimanya... (QS. An-Nisa: 58)",
+            source = "QS. An-Nisa: 58",
+            arabicText = "إِنَّ اللَّهَ يَأْمُرُكُمْ أَن تُؤَدُّوا الْأَمَانَاتِ إِلَىٰ أَهْلِهَا وَإِذَا حَكَمْتُم بَيْنَ النَّاسِ أَن تَحْكُمُوا بِالْعَدْلِ ۚ إِنَّ اللَّهَ نِعِمَّا يَعِظُكُم بِهِ ۗ إِنَّ اللَّهَ كَانَ سَمِيعًا بَصِيرًا",
+            translation = "Sungguh, Allah menyuruhmu menyampaikan amanat kepada orang yang berhak menerimanya, dan apabila kamu menetapkan hukum di antara manusia hendaknya kamu menetapkannya dengan adil. Sungguh, Allah sebaik-baik yang memberi pengajaran kepadamu. Sungguh, Allah Maha Mendengar, Maha Melihat.",
             fiqhNote = "Memisahkan rekening pribadi, rekening tabungan ibadah, kas operasional, dan dana titipan infaq adalah wujud ihsan agar tidak terjadi syubhat percampuran dana."
         )
 
@@ -709,9 +709,9 @@ fun TopicMultiWalletContent(onTryAction: () -> Unit) {
 fun TopicRecurringContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "HR. Bukhari & Muslim (Keutamaan Istiqamah)",
-            arabicText = "أَحَبُّ الأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ",
-            translation = "Amalan yang paling dicintai oleh Allah adalah amalan yang berkelanjutan (terus menerus/istiqamah) walaupun sedikit.",
+            source = "HR. Bukhari (No. 6464) & Muslim (No. 783)",
+            arabicText = "سَدِّدُوا وَقَارِبُوا، وَاعْلَمُوا أَنْ لَنْ يُدْخِلَ أَحَدَكُمْ عَمَلُهُ الْجَنَّةَ، وَأَنَّ أَحَبَّ الْأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ",
+            translation = "Berbuat luruslah dan mendekatlah (kepada kebenaran), dan ketahuilah bahwa amalan seseorang tidak akan pernah memasukkannya ke dalam surga (kecuali dengan rahmat Allah), dan amalan yang paling dicintai oleh Allah adalah amalan yang paling konsisten (berkelanjutan) dilakukan meskipun sedikit.",
             fiqhNote = "Mengatur pengeluaran infaq, sedekah bulanan, dan pemenuhan nafkah secara terencana dan konsisten mencerminkan keistiqamahan dalam bermuamalah."
         )
 
@@ -798,9 +798,9 @@ fun TopicRecurringContent(onTryAction: () -> Unit) {
 fun TopicIbadahGoalsContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "QS. Al-Baqarah: 197 & Fiqih Istitha'ah",
-            arabicText = "وَتَزَوَّدُوا فَإِنَّ خَيْرَ الزَّادِ التَّقْوَىٰ ۚ وَاتَّقُونِ يَا أُولِي الْأَلْبَابِ",
-            translation = "Dan berbekallah kamu, sesungguhnya sebaik-baik bekal adalah takwa, dan bertakwalah kepada-Ku wahai orang-orang yang mempunyai akal sehat...",
+            source = "QS. Al-Baqarah: 197",
+            arabicText = "الْحَجُّ أَشْهُرٌ مَّعْلُومَاتٌ ۚ فَمَن فَرَضَ فِيهِنَّ الْحَجَّ فَلَا رَفَثَ وَلَا فُسُوقَ وَلَا جِدَالَ فِي الْحَجِّ ۗ وَمَا تَفْعَلُوا مِنْ خَيْرٍ يَعْلَمْهُ اللَّهُ ۗ وَتَزَوَّدُوا فَإِنَّ خَيْرَ الزَّادِ التَّقْوَىٰ ۚ وَاتَّقُونِ يَا أُولِي الْأَلْبَابِ",
+            translation = "(Musim) haji itu (pada) bulan-bulan yang telah dimaklumi. Barangsiapa mengerjakan (ibadah) haji dalam (bulan-bulan) itu, maka janganlah dia berkata jorok (rafats), berbuat maksiat dan bertengkar dalam (melakukan ibadah) haji. Segala yang baik yang kamu kerjakan, Allah mengetahuinya. Dan bawalah bekal, karena sesungguhnya sebaik-baik bekal adalah takwa. Dan bertakwalah kepada-Ku wahai orang-orang yang mempunyai akal sehat.",
             fiqhNote = "Ibadah besar seperti Haji, Umroh, dan Qurban membutuhkan persiapan bekal finansial yang matang (istitha'ah). Merencanakannya sejak dini adalah wujud ikhtiar takwa."
         )
 
@@ -898,9 +898,9 @@ fun TopicIbadahGoalsContent(onTryAction: () -> Unit) {
 fun TopicIslamicGroundingContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "QS. An-Nahl: 43 & Otoritas Fatwa DSN-MUI",
-            arabicText = "فَاسْأَلُوا أَهْلَ الذِّكْرِ إِن كُنتُمْ لَا تَعْلَمُونَ",
-            translation = "Maka bertanyalah kepada orang-orang yang mempunyai pengetahuan jika kamu tidak mengetahui...",
+            source = "QS. An-Nahl: 43",
+            arabicText = "وَمَا أَرْسَلْنَا مِن قَبْلِكَ إِلَّا رِجَالًا نُّوحِي إِلَيْهِمْ ۚ فَاسْأَلُوا أَهْلَ الذِّكْرِ إِن كُنتُمْ لَا تَعْلَمُونَ",
+            translation = "Dan Kami tidak mengutus sebelum engkau (Muhammad), melainkan orang-orang laki-laki yang Kami beri wahyu kepada mereka; maka bertanyalah kepada orang yang mempunyai pengetahuan jika kamu tidak mengetahui.",
             fiqhNote = "Dewan Syariah Nasional Majelis Ulama Indonesia (DSN-MUI) adalah otoritas rujukan hukum Islam resmi dalam bidang muamalah maliyyah di Indonesia."
         )
 
@@ -986,9 +986,9 @@ fun TopicIslamicGroundingContent(onTryAction: () -> Unit) {
 fun TopicExportReportContent(onTryAction: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IslamicDalilCard(
-            source = "Atsar Umar bin Khattab RA (Muhasabah & Hisab)",
-            arabicText = "حَاسِبُوا أَنْفُسَكُمْ قَبْلَ أَنْ تُحَاسَبُوا ، وَزِنُوا أَنْفُسَكُمْ قَبْلَ أَنْ تُوزَنُوا",
-            translation = "Hisablah (introspeksi/evaluasilah) diri kalian sebelum kalian dihisab di hari kiamat, dan timbanglah amal kalian sebelum amal kalian ditimbang...",
+            source = "Atsar Umar bin Khattab RA & HR. Ahmad (Zuhd)",
+            arabicText = "حَاسِبُوا أَنْفُسَكُمْ قَبْلَ أَنْ تُحَاسَبُوا، وَزِنُوا أَنْفُسَكُمْ قَبْلَ أَنْ تُوزَنُوا، فَإِنَّهُ أَهْوَنُ عَلَيْكُمْ فِي الْحِسَابِ غَدًا أَنْ تُحَاسِبُوا أَنْفُسَكُمُ الْيَوْمَ، وَتَزَيَّنُوا لِلْعَرْضِ الْأَكْبَرِ: ﴿يَوْمَئِذٍ تُعْرَضُونَ لَا تَخْفَى مِنْكُمْ خَافِيَةٌ﴾",
+            translation = "Hisablah (evaluasilah) diri kalian sebelum kalian dihisab (di akhirat), dan timbanglah amal kalian sebelum amal kalian ditimbang, karena sesungguhnya lebih ringan hisab kalian kelak pada hari esok jika kalian telah menghisab diri kalian pada hari ini. Dan bersiaplah kalian untuk menghadapi pertunjukan amal yang besar: 'Pada hari itu kamu dihadapkan (kepada Tuhanmu), tiada sesuatupun dari keadaanmu yang tersembunyi (bagi Allah).' (QS. Al-Haqqah: 18).",
             fiqhNote = "Membuat laporan keuangan yang transparan dan rapi adalah bentuk hisab maliyyah (audit harta) agar kita siap mempertanggungjawabkan setiap rezeki dari mana diperoleh dan ke mana dibelanjakan."
         )
 

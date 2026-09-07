@@ -18,6 +18,7 @@ import com.example.core.budget.BudgetOptimizerEngine
 import com.example.core.budget.FinancialGoalMode
 import com.example.core.budget.SpendingPatternAnalysis
 import com.example.core.calendar.HijriCalendarEngine
+import com.example.core.debug.AppDebugLogger
 import com.example.core.ibadah.IbadahDepositRecord
 import com.example.core.ibadah.IbadahGoal
 import com.example.core.ibadah.IbadahGoalType
@@ -51,6 +52,9 @@ import com.example.core.directory.AmilInstitution
 import com.example.core.directory.AmilBankAccount
 import com.example.core.directory.AmilCategory
 import com.example.core.directory.AmilDirectoryRepository
+import com.example.core.shariah.ShariahRulesConfig
+import com.example.core.shariah.ShariahRuling
+import com.example.core.shariah.ShariahDefaultRulings
 import com.example.core.auth.AmanahAuthManager
 import com.example.core.auth.AmanahAuthState
 import com.example.core.auth.AmanahUserProfile
@@ -415,6 +419,7 @@ class AmanahLedgerViewModel : ViewModel() {
         date: Date,
         receiptAttachment: ReceiptAttachment? = null
     ) {
+        AppDebugLogger.i("AmanahVM", "Mencatat Pemasukan: Rp ${grossAmount.toLong()} ke akun $depositAccountId ($description)")
         val hijri = HijriCalendarEngine.fromGregorian(date)
         val infaqAmount = grossAmount * customInfaqRate
         val journalId = UUID.randomUUID().toString()
@@ -522,6 +527,7 @@ class AmanahLedgerViewModel : ViewModel() {
         date: Date,
         receiptAttachment: ReceiptAttachment? = null
     ) {
+        AppDebugLogger.i("AmanahVM", "Mencatat Pengeluaran: Rp ${amount.toLong()} dari akun $fromAccountId ($description)")
         val hijri = HijriCalendarEngine.fromGregorian(date)
         val journalId = UUID.randomUUID().toString()
 
@@ -650,6 +656,7 @@ class AmanahLedgerViewModel : ViewModel() {
      */
     fun deleteJournalEntry(entryId: String) {
         val target = _uiState.value.journalEntries.firstOrNull { it.id == entryId } ?: return
+        AppDebugLogger.w("AmanahVM", "Menghapus Transaksi Jurnal ID: $entryId (${target.description})")
 
         _uiState.update { state ->
             // If it was an infaq distribution, also remove from infaqDistributions list
@@ -1331,94 +1338,146 @@ class AmanahLedgerViewModel : ViewModel() {
         if (newPin.length < 4) return false
 
         val hashedNewPin = SecurityConfig.hashString(newPin)
+        val newCfg = current.copy(
+            pinHash = hashedNewPin,
+            failedAttempts = 0,
+            lockoutUntilTimestamp = 0L,
+            isAppLocked = false
+        )
+        isSessionAuthenticated = true
         _uiState.update { state ->
             val newLog = SecurityLogEntry(
                 eventType = SecurityEventType.SECURITY_QUESTION_RESET,
                 description = "PIN diatur ulang menggunakan Verifikasi Pertanyaan Pemulihan"
             )
             state.copy(
-                securityConfig = state.securityConfig.copy(
-                    pinHash = hashedNewPin,
-                    failedAttempts = 0,
-                    lockoutUntilTimestamp = 0L,
-                    isAppLocked = false,
+                securityConfig = newCfg.copy(
                     logs = listOf(newLog) + state.securityConfig.logs
                 )
             )
         }
+        viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
+        return true
+    }
+
+    fun updateSecurityRecovery(currentPin: String, newQuestion: String, newAnswer: String): Boolean {
+        val current = _uiState.value.securityConfig
+        if (current.isPinEnabled && !current.verifyPin(currentPin)) {
+            recordSecurityEvent(
+                SecurityEventType.PIN_FAILED,
+                "Gagal mengubah pertanyaan pemulihan: PIN salah",
+                isWarning = true
+            )
+            return false
+        }
+        if (newQuestion.isBlank() || newAnswer.isBlank()) return false
+
+        val hashedAnswer = SecurityConfig.hashString(newAnswer.trim().lowercase(Locale.ROOT))
+        val newCfg = current.copy(
+            securityQuestion = newQuestion.trim(),
+            securityAnswerHash = hashedAnswer
+        )
+        _uiState.update { state ->
+            val newLog = SecurityLogEntry(
+                eventType = SecurityEventType.SECURITY_QUESTION_RESET,
+                description = "Pertanyaan dan jawaban pemulihan PIN berhasil diperbarui"
+            )
+            state.copy(
+                securityConfig = newCfg.copy(
+                    logs = listOf(newLog) + state.securityConfig.logs
+                )
+            )
+        }
+        viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
+        appStateNotifier.notify(
+            title = "Pemulihan PIN Diperbarui",
+            message = "Pertanyaan dan kunci jawaban pemulihan darurat berhasil disimpan.",
+            severity = NotificationSeverity.SUCCESS
+        )
         return true
     }
 
     fun setAutoLockInterval(interval: AutoLockInterval) {
+        val newCfg = _uiState.value.securityConfig.copy(autoLockInterval = interval)
         _uiState.update { state ->
             val newLog = SecurityLogEntry(
                 eventType = SecurityEventType.SECURITY_ALERT,
                 description = "Interval kunci otomatis diubah ke: ${interval.label}"
             )
             state.copy(
-                securityConfig = state.securityConfig.copy(
-                    autoLockInterval = interval,
+                securityConfig = newCfg.copy(
                     logs = listOf(newLog) + state.securityConfig.logs
                 )
             )
         }
+        viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
     }
 
     fun setBiometricEnabled(enabled: Boolean) {
+        val newCfg = _uiState.value.securityConfig.copy(isBiometricEnabled = enabled)
         _uiState.update { state ->
             val newLog = SecurityLogEntry(
                 eventType = SecurityEventType.SECURITY_ALERT,
                 description = if (enabled) "Otentikasi Biometrik diaktifkan" else "Otentikasi Biometrik dinonaktifkan"
             )
             state.copy(
-                securityConfig = state.securityConfig.copy(
-                    isBiometricEnabled = enabled,
+                securityConfig = newCfg.copy(
                     logs = listOf(newLog) + state.securityConfig.logs
                 )
             )
         }
+        viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
     }
 
     fun toggleBalancePrivacy() {
+        val newMaskState = !_uiState.value.securityConfig.isMaskBalance
+        val newCfg = _uiState.value.securityConfig.copy(isMaskBalance = newMaskState)
         _uiState.update { state ->
-            val newMaskState = !state.securityConfig.isMaskBalance
             val newLog = SecurityLogEntry(
                 eventType = SecurityEventType.BALANCE_PRIVACY_TOGGLED,
                 description = if (newMaskState) "Mode Privasi Saldo diaktifkan (Disamarkan)" else "Mode Privasi Saldo dinonaktifkan"
             )
             state.copy(
-                securityConfig = state.securityConfig.copy(
-                    isMaskBalance = newMaskState,
+                securityConfig = newCfg.copy(
                     logs = listOf(newLog) + state.securityConfig.logs
                 )
             )
         }
-    }
-
-    fun setMaskBalanceByDefault(enabled: Boolean) {
-        _uiState.update { state ->
-            state.copy(
-                securityConfig = state.securityConfig.copy(
-                    maskBalanceByDefault = enabled,
-                    isMaskBalance = if (enabled) true else state.securityConfig.isMaskBalance
-                )
-            )
+        viewModelScope.launch {
+            repository?.saveSecurityConfig(newCfg)
+            repository?.saveMaskBalance(newMaskState)
         }
     }
 
+    fun setMaskBalanceByDefault(enabled: Boolean) {
+        val newCfg = _uiState.value.securityConfig.copy(
+            maskBalanceByDefault = enabled,
+            isMaskBalance = if (enabled) true else _uiState.value.securityConfig.isMaskBalance
+        )
+        _uiState.update { state ->
+            state.copy(
+                securityConfig = newCfg.copy(
+                    logs = state.securityConfig.logs
+                )
+            )
+        }
+        viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
+    }
+
     fun setScreenshotProtection(enabled: Boolean) {
+        val newCfg = _uiState.value.securityConfig.copy(isScreenshotProtected = enabled)
         _uiState.update { state ->
             val newLog = SecurityLogEntry(
                 eventType = SecurityEventType.SECURITY_ALERT,
                 description = if (enabled) "Perlindungan Layar & Anti-Screenshot diaktifkan" else "Perlindungan Layar dinonaktifkan"
             )
             state.copy(
-                securityConfig = state.securityConfig.copy(
-                    isScreenshotProtected = enabled,
+                securityConfig = newCfg.copy(
                     logs = listOf(newLog) + state.securityConfig.logs
                 )
             )
         }
+        viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
     }
 
     fun clearSecurityLogs() {
@@ -2231,7 +2290,18 @@ class AmanahLedgerViewModel : ViewModel() {
                             selectedGoalMode = prefs.selectedGoalMode,
                             uiScaleMode = prefs.uiScaleMode,
                             uiScaleFactor = prefs.uiScaleFactor,
-                            securityConfig = if (shouldLock) prefs.securityConfig.copy(isAppLocked = true) else prefs.securityConfig
+                            securityConfig = current.securityConfig.copy(
+                                isPinEnabled = prefs.securityConfig.isPinEnabled,
+                                pinHash = prefs.securityConfig.pinHash,
+                                isBiometricEnabled = prefs.securityConfig.isBiometricEnabled,
+                                isMaskBalance = prefs.securityConfig.isMaskBalance,
+                                maskBalanceByDefault = prefs.securityConfig.maskBalanceByDefault,
+                                isScreenshotProtected = prefs.securityConfig.isScreenshotProtected,
+                                securityQuestion = prefs.securityConfig.securityQuestion,
+                                securityAnswerHash = prefs.securityConfig.securityAnswerHash,
+                                autoLockInterval = prefs.securityConfig.autoLockInterval,
+                                isAppLocked = shouldLock
+                            )
                         )
                     }
                 }
@@ -2453,21 +2523,61 @@ class AmanahLedgerViewModel : ViewModel() {
 
     fun setupPinLock(pin: String) {
         val hashed = SecurityConfig.hashString(pin)
-        val newCfg = _uiState.value.securityConfig.copy(isPinEnabled = true, pinHash = hashed)
-        _uiState.update { it.copy(securityConfig = newCfg) }
+        val defaultQuestion = _uiState.value.securityConfig.securityQuestion.ifBlank { "Nama kota kelahiran Anda?" }
+        val defaultAnswerHash = if (_uiState.value.securityConfig.securityAnswerHash.isNotBlank()) {
+            _uiState.value.securityConfig.securityAnswerHash
+        } else {
+            SecurityConfig.hashString("indonesia")
+        }
+        val newCfg = _uiState.value.securityConfig.copy(
+            isPinEnabled = true,
+            pinHash = hashed,
+            securityQuestion = defaultQuestion,
+            securityAnswerHash = defaultAnswerHash,
+            failedAttempts = 0,
+            lockoutUntilTimestamp = 0L,
+            isAppLocked = false
+        )
+        isSessionAuthenticated = true
+        _uiState.update { state ->
+            val newLog = SecurityLogEntry(
+                eventType = SecurityEventType.PIN_ENABLED,
+                description = "Kunci PIN 6-digit berhasil diaktifkan"
+            )
+            state.copy(
+                securityConfig = newCfg.copy(
+                    logs = listOf(newLog) + state.securityConfig.logs
+                )
+            )
+        }
         viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
     }
 
     fun disablePinLock() {
-        val newCfg = _uiState.value.securityConfig.copy(isPinEnabled = false, pinHash = "")
-        _uiState.update { it.copy(securityConfig = newCfg) }
+        val newCfg = _uiState.value.securityConfig.copy(
+            isPinEnabled = false,
+            pinHash = "",
+            failedAttempts = 0,
+            lockoutUntilTimestamp = 0L,
+            isAppLocked = false
+        )
+        isSessionAuthenticated = true
+        _uiState.update { state ->
+            val newLog = SecurityLogEntry(
+                eventType = SecurityEventType.PIN_DISABLED,
+                description = "Kunci PIN aplikasi dinonaktifkan"
+            )
+            state.copy(
+                securityConfig = newCfg.copy(
+                    logs = listOf(newLog) + state.securityConfig.logs
+                )
+            )
+        }
         viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
     }
 
     fun toggleBiometric(enabled: Boolean) {
-        val newCfg = _uiState.value.securityConfig.copy(isBiometricEnabled = enabled)
-        _uiState.update { it.copy(securityConfig = newCfg) }
-        viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
+        setBiometricEnabled(enabled)
     }
 
     fun resetAllSettingsToDefault() {

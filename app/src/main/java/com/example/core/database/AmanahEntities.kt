@@ -111,6 +111,24 @@ data class SettingsEntity(
     val updatedAtMillis: Long = System.currentTimeMillis()
 )
 
+@Entity(tableName = "custom_rulings")
+data class CustomRulingEntity(
+    @PrimaryKey val id: String,
+    val title: String,
+    val category: String,
+    val authority: String,
+    val referenceNumber: String,
+    val summary: String,
+    val detailedRuling: String,
+    val calculationFormula: String = "",
+    val dalilSource: String = "",
+    val dalilArabic: String = "",
+    val dalilTranslation: String = "",
+    val isCustom: Boolean = true,
+    val isEnabled: Boolean = true,
+    val updatedAtMillis: Long = System.currentTimeMillis()
+)
+
 typealias TransactionEntity = JournalEntryEntity
 typealias BudgetEntity = BudgetAllocationEntity
 

@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -522,6 +523,16 @@ fun AppNavigationDrawerContent(
                 selected = currentScreen == Screen.INTERACTIVE_GUIDE,
                 testTag = "sidebar_nav_guide",
                 onClick = { onSelectScreen(Screen.INTERACTIVE_GUIDE) }
+            )
+
+            SidebarNavigationItem(
+                label = "Terminal Log & Diagnostik",
+                icon = Icons.Default.Terminal,
+                selected = currentScreen == Screen.DEBUG_TERMINAL,
+                badgeText = "LIVE",
+                badgeColor = Color(0xFF38BDF8),
+                testTag = "sidebar_nav_debug_terminal",
+                onClick = { onSelectScreen(Screen.DEBUG_TERMINAL) }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
