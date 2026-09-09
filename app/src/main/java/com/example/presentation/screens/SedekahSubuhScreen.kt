@@ -484,7 +484,7 @@ fun SubuhStreakHeroCard(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Total Sedekah", fontSize = 10.sp, color = White60)
-                    Text("Rp ${formatRupiah(subuhState.totalContributions)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GoldLight)
+                    Text("Rp ${formatRupiah(subuhState.totalContributions)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
                 }
                 Box(modifier = Modifier.width(1.dp).height(24.dp).background(DarkBorder))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

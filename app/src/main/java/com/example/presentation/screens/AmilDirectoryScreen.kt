@@ -532,7 +532,7 @@ fun AmilInstitutionCard(
                     text = institution.skLegalNumber,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = GoldLight
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
             if (institution.description.isNotBlank()) {
@@ -597,7 +597,7 @@ fun AmilInstitutionCard(
                                         text = acc.category,
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = GoldLight,
+                                        color = MaterialTheme.colorScheme.secondary,
                                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                     )
                                 }
@@ -607,7 +607,7 @@ fun AmilInstitutionCard(
                                 text = acc.accountNumber,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = EmeraldLight
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 text = "a.n ${acc.accountHolder}",
@@ -625,11 +625,11 @@ fun AmilInstitutionCard(
                             Icon(
                                 Icons.Default.ContentCopy,
                                 contentDescription = "Salin",
-                                tint = EmeraldLight,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Salin", fontSize = 11.sp, color = EmeraldLight, fontWeight = FontWeight.Bold)
+                            Text("Salin", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -653,7 +653,7 @@ fun AmilInstitutionCard(
                                 text = "Panduan Konfirmasi Donasi:",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldLight
+                                color = MaterialTheme.colorScheme.secondary
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
@@ -697,7 +697,7 @@ fun AmilInstitutionCard(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Icon(Icons.Default.Language, contentDescription = null, tint = GoldLight, modifier = Modifier.size(14.dp))
+                                        Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(14.dp))
                                         Text(institution.websiteUrl.removePrefix("https://"), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                                     }
                                 }
@@ -821,7 +821,7 @@ fun AmilInstitutionFormDialog(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Category Selection
-                    Text("Kategori Lembaga:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GoldLight)
+                    Text("Kategori Lembaga:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -986,7 +986,7 @@ fun AmilInstitutionFormDialog(
                                 modifier = Modifier.padding(12.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text("Entri Rekening Bank Baru:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GoldLight)
+                                Text("Entri Rekening Bank Baru:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
 
                                 OutlinedTextField(
                                     value = newBankName,

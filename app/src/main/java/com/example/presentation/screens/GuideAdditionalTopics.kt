@@ -63,14 +63,14 @@ fun IslamicDalilCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.6f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f))
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.Verified,
                     contentDescription = null,
-                    tint = GoldAccent,
+                    tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -78,7 +78,7 @@ fun IslamicDalilCard(
                     text = "Rujukan Dalil Syariah: $source",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = GoldAccent
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
 
@@ -107,7 +107,7 @@ fun IslamicDalilCard(
                     Text(
                         text = fiqhNote,
                         fontSize = 11.sp,
-                        color = EmeraldLight,
+                        color = MaterialTheme.colorScheme.primary,
                         lineHeight = 16.sp
                     )
                 }
@@ -135,7 +135,7 @@ fun IslamicHikmahBox(
                 Icon(
                     imageVector = Icons.Default.Lightbulb,
                     contentDescription = null,
-                    tint = EmeraldLight,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -143,7 +143,7 @@ fun IslamicHikmahBox(
                     text = title,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = EmeraldLight
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -152,7 +152,7 @@ fun IslamicHikmahBox(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text("•", color = GoldAccent, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("•", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     Text(
                         text = point,
                         fontSize = 11.sp,
@@ -177,14 +177,14 @@ fun IslamicStepByStepCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = EmeraldLight,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -192,7 +192,7 @@ fun IslamicStepByStepCard(
                     text = title,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = EmeraldLight
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             steps.forEachIndexed { index, step ->
@@ -203,7 +203,7 @@ fun IslamicStepByStepCard(
                 ) {
                     Surface(
                         shape = CircleShape,
-                        color = EmeraldPrimary.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                         modifier = Modifier.size(20.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -211,7 +211,7 @@ fun IslamicStepByStepCard(
                                 text = "${index + 1}",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                     }
@@ -334,35 +334,35 @@ fun TopicFaraidhContent(onTryAction: () -> Unit) {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Calculate, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Calculate, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Urutan Wajib Sebelum Waris Dibagikan (Tirkah)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Urutan Wajib Sebelum Waris Dibagikan (Tirkah)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 Text(
                     text = "Dalam fiqih mawarith, harta peninggalan jenazah (Tirkah) tidak boleh langsung dibagi ke ahli waris sebelum 3 hak terdahulu dituntaskan:",
                     fontSize = 12.sp,
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 17.sp
                 )
 
                 Surface(
-                    color = Color(0xFF0B1718),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, DarkBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("1️⃣ Biaya Pengurusan Jenazah (Tajhiz al-Jana'iz): Kafan, makam, dan pemakaman secara wajar tanpa berlebihan.", fontSize = 11.sp, color = Color.White)
-                        Text("2️⃣ Pelunasan Hutang Jenazah (Qardh/Dayn): Wajib dilunasi dari harta almarhum sebelum wasiat dan warisan!", fontSize = 11.sp, color = GoldAccent, fontWeight = FontWeight.SemiBold)
-                        Text("3️⃣ Penunaian Wasiat: Maksimal 1/3 dari sisa harta bersih, dan tidak boleh ditujukan kepada penerima ahli waris.", fontSize = 11.sp, color = Color.White)
-                        Text("4️⃣ Pembagian Ahli Waris: Sisa bersih dibagikan secara adil berdasarkan Ashabul Furudh dan Ashabah.", fontSize = 11.sp, color = EmeraldLight, fontWeight = FontWeight.Bold)
+                        Text("1️⃣ Biaya Pengurusan Jenazah (Tajhiz al-Jana'iz): Kafan, makam, dan pemakaman secara wajar tanpa berlebihan.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("2️⃣ Pelunasan Hutang Jenazah (Qardh/Dayn): Wajib dilunasi dari harta almarhum sebelum wasiat dan warisan!", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                        Text("3️⃣ Penunaian Wasiat: Maksimal 1/3 dari sisa harta bersih, dan tidak boleh ditujukan kepada penerima ahli waris.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("4️⃣ Pembagian Ahli Waris: Sisa bersih dibagikan secara adil berdasarkan Ashabul Furudh dan Ashabah.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -423,35 +423,35 @@ fun TopicQardhContent(onTryAction: () -> Unit) {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Description, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Kaidah Utama: Qardh Hasan Bebas Riba", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Kaidah Utama: Qardh Hasan Bebas Riba", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 Text(
                     text = "Qardh Hasan adalah pinjaman kebajikan tanpa meminta kelebihan sedikitpun:",
                     fontSize = 12.sp,
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 17.sp
                 )
 
                 Surface(
-                    color = Color(0xFF081415),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
                     border = BorderStroke(1.dp, ExpenseCoral.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text("⚠️ Kaidah Fiqih Pengharam Bunga Pinjaman:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
-                        Text("« كُلُّ قَرْضٍ جَرَّ مَنْفَعَةً فَهُوَ رِبًا »", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Text("'Setiap pinjaman yang menarik manfaat/keuntungan tambahan (bagi pemberi pinjaman) adalah riba.'", fontSize = 11.sp, fontStyle = FontStyle.Italic, color = Color.White80)
-                        Text("Pinjam Rp 1.000.000 wajib kembali persis Rp 1.000.000 tanpa bunga, tanpa potongan biaya terselubung, dan tanpa denda keterlambatan berbunga.", fontSize = 10.sp, color = Color.White70)
+                        Text("« كُلُّ قَرْضٍ جَرَّ مَنْفَعَةً فَهُوَ رِبًا »", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("'Setiap pinjaman yang menarik manfaat/keuntungan tambahan (bagi pemberi pinjaman) adalah riba.'", fontSize = 11.sp, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Pinjam Rp 1.000.000 wajib kembali persis Rp 1.000.000 tanpa bunga, tanpa potongan biaya terselubung, dan tanpa denda keterlambatan berbunga.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -512,51 +512,51 @@ fun TopicZakatHubContent(onTryAction: () -> Unit) {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.VolunteerActivism, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.VolunteerActivism, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Pusat Penyaluran Zakat & Infaq Amanah", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Pusat Penyaluran Zakat & Infaq Amanah", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 Text(
                     text = "Zakat Hub mengintegrasikan perhitungan hisab zakat dengan eksekusi penyaluran langsung dari Virtual Infaq Vault:",
                     fontSize = 12.sp,
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 17.sp
                 )
 
                 Surface(
-                    color = Color(0xFF0B1718),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, DarkBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(EmeraldPrimary), contentAlignment = Alignment.Center) {
+                            Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
                                 Text("1", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Kalkulator Zakat Profesi: Dihitung 2.5% dari rezeki kasab bersih.", fontSize = 11.sp, color = Color.White)
+                            Text("Kalkulator Zakat Profesi: Dihitung 2.5% dari rezeki kasab bersih.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(EmeraldPrimary), contentAlignment = Alignment.Center) {
+                            Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
                                 Text("2", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Kalkulator Zakat Maal: Berdasarkan aset haul & nisab 85g emas.", fontSize = 11.sp, color = Color.White)
+                            Text("Kalkulator Zakat Maal: Berdasarkan aset haul & nisab 85g emas.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(EmeraldPrimary), contentAlignment = Alignment.Center) {
+                            Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
                                 Text("3", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Disburse Dana Infaq Vault: Penyaluran langsung ke amil dengan kwitansi syariah.", fontSize = 11.sp, color = Color.White)
+                            Text("Disburse Dana Infaq Vault: Penyaluran langsung ke amil dengan kwitansi syariah.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -617,46 +617,46 @@ fun TopicMultiWalletContent(onTryAction: () -> Unit) {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Kelola Berbagai Rekening & Kantong Kas", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Kelola Berbagai Rekening & Kantong Kas", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 Text(
                     text = "Amanah Ledger memungkinkan Anda mengelola seluruh rekening keuangan dalam satu tempat:",
                     fontSize = 12.sp,
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 17.sp
                 )
 
                 Surface(
-                    color = Color(0xFF0B1718),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, DarkBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🏦 ", fontSize = 14.sp)
-                            Text("Rekening Bank Syariah: Tabungan Wadiah/Mudharabah BSI, Muamalat, BCA Syariah.", fontSize = 11.sp, color = Color.White)
+                            Text("Rekening Bank Syariah: Tabungan Wadiah/Mudharabah BSI, Muamalat, BCA Syariah.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("📱 ", fontSize = 14.sp)
-                            Text("Dompet Digital / E-Wallet: Saldo transaksi harian bebas bunga.", fontSize = 11.sp, color = Color.White)
+                            Text("Dompet Digital / E-Wallet: Saldo transaksi harian bebas bunga.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("💵 ", fontSize = 14.sp)
-                            Text("Kas Tunai (Dompet Fisik): Pengeluaran uang kertas sehari-hari.", fontSize = 11.sp, color = Color.White)
+                            Text("Kas Tunai (Dompet Fisik): Pengeluaran uang kertas sehari-hari.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🔄 ", fontSize = 14.sp)
-                            Text("Transfer Antar Kantong: Pindah dana antar akun kas tanpa memengaruhi laba rugi.", fontSize = 11.sp, color = EmeraldLight, fontWeight = FontWeight.SemiBold)
+                            Text("Transfer Antar Kantong: Pindah dana antar akun kas tanpa memengaruhi laba rugi.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -717,35 +717,35 @@ fun TopicRecurringContent(onTryAction: () -> Unit) {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.AutoMode, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.AutoMode, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Otomasi Transaksi Berulang yang Cerdas", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Otomasi Transaksi Berulang yang Cerdas", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 Text(
                     text = "Amanah Ledger menjamin Anda tidak pernah melewatkan kewajiban berkala:",
                     fontSize = 12.sp,
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 17.sp
                 )
 
                 Surface(
-                    color = Color(0xFF0B1718),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, DarkBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("📅 Frekuensi Fleksibel: Atur jadwal harian, mingguan, atau bulanan.", fontSize = 11.sp, color = Color.White)
-                        Text("🔔 Deteksi Jatuh Tempo Otomatis: Muncul di beranda saat tanggal pembayaran tiba.", fontSize = 11.sp, color = GoldAccent, fontWeight = FontWeight.SemiBold)
-                        Text("⚡ Eksekusi 1-Klik: Klik 'Jalankan Transaksi' untuk langsung mencatat jurnal ganda tanpa ketik ulang.", fontSize = 11.sp, color = EmeraldLight, fontWeight = FontWeight.Bold)
-                        Text("🛡️ Pemenuhan Hak Nafkah: Memastikan nafkah wajib keluarga (QS. Al-Baqarah: 233) tertunaikan tepat waktu.", fontSize = 11.sp, color = Color.White70)
+                        Text("📅 Frekuensi Fleksibel: Atur jadwal harian, mingguan, atau bulanan.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("🔔 Deteksi Jatuh Tempo Otomatis: Muncul di beranda saat tanggal pembayaran tiba.", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                        Text("⚡ Eksekusi 1-Klik: Klik 'Jalankan Transaksi' untuk langsung mencatat jurnal ganda tanpa ketik ulang.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Text("🛡️ Pemenuhan Hak Nafkah: Memastikan nafkah wajib keluarga (QS. Al-Baqarah: 233) tertunaikan tepat waktu.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -806,46 +806,46 @@ fun TopicIbadahGoalsContent(onTryAction: () -> Unit) {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Rencanakan Target Ibadah Finansial", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Rencanakan Target Ibadah Finansial", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 Text(
                     text = "Fitur Ibadah Goals membantu Anda mengumpulkan dana untuk target ibadah mulia:",
                     fontSize = 12.sp,
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 17.sp
                 )
 
                 Surface(
-                    color = Color(0xFF0B1718),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, DarkBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🐑 ", fontSize = 14.sp)
-                            Text("Qurban Idul Adha: Menabung rutin bulanan untuk pengadaan kambing/sapi qurban.", fontSize = 11.sp, color = Color.White)
+                            Text("Qurban Idul Adha: Menabung rutin bulanan untuk pengadaan kambing/sapi qurban.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🕋 ", fontSize = 14.sp)
-                            Text("Umroh & Haji: Menghimpun dana porsi haji atau paket perjalanan umroh keluarga.", fontSize = 11.sp, color = Color.White)
+                            Text("Umroh & Haji: Menghimpun dana porsi haji atau paket perjalanan umroh keluarga.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("👶 ", fontSize = 14.sp)
-                            Text("Aqiqah Anak: Mempersiapkan dana syukuran aqiqah kelahiran putra/putri tercinta.", fontSize = 11.sp, color = Color.White)
+                            Text("Aqiqah Anak: Mempersiapkan dana syukuran aqiqah kelahiran putra/putri tercinta.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🕌 ", fontSize = 14.sp)
-                            Text("Wakaf Produktif / Masjid: Berpartisipasi dalam wakaf pembangunan tempat ibadah.", fontSize = 11.sp, color = EmeraldLight, fontWeight = FontWeight.SemiBold)
+                            Text("Wakaf Produktif / Masjid: Berpartisipasi dalam wakaf pembangunan tempat ibadah.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -906,35 +906,35 @@ fun TopicIslamicGroundingContent(onTryAction: () -> Unit) {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Verified, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Verified, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Ensiklopedia Fatwa & Solusi Fiqih Muamalah", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Ensiklopedia Fatwa & Solusi Fiqih Muamalah", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 Text(
                     text = "Amanah Ledger menyediakan basis pengetahuan interaktif untuk menjawab keraguan muamalah kontemporer:",
                     fontSize = 12.sp,
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 17.sp
                 )
 
                 Surface(
-                    color = Color(0xFF0B1718),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, DarkBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("📜 Fatwa Paylater & Denda Keterlambatan: Penjelasan status riba denda vs ta'zir/gharamat sosial.", fontSize = 11.sp, color = Color.White)
-                        Text("💳 Fatwa Uang Elektronik & Cashback: Fatwa DSN No. 116 mengenai batas kehalalan diskon e-wallet.", fontSize = 11.sp, color = Color.White)
-                        Text("⚖️ Screening Bebas Riba, Gharar, Maysir: Kriteria transaksi halal yang wajib dipenuhi dalam setiap akad.", fontSize = 11.sp, color = EmeraldLight, fontWeight = FontWeight.SemiBold)
-                        Text("🔍 Pencarian Cerdas: Temukan dalil dan jawaban hukum syariah dengan cepat.", fontSize = 11.sp, color = GoldAccent)
+                        Text("📜 Fatwa Paylater & Denda Keterlambatan: Penjelasan status riba denda vs ta'zir/gharamat sosial.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("💳 Fatwa Uang Elektronik & Cashback: Fatwa DSN No. 116 mengenai batas kehalalan diskon e-wallet.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("⚖️ Screening Bebas Riba, Gharar, Maysir: Kriteria transaksi halal yang wajib dipenuhi dalam setiap akad.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        Text("🔍 Pencarian Cerdas: Temukan dalil dan jawaban hukum syariah dengan cepat.", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                     }
                 }
             }
@@ -994,46 +994,46 @@ fun TopicExportReportContent(onTryAction: () -> Unit) {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Laporan Keuangan & Audit Syariah Resmi", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Laporan Keuangan & Audit Syariah Resmi", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
 
                 Text(
                     text = "Amanah Ledger menyediakan fitur ekspor dokumen yang rapi, profesional, dan siap dibagikan:",
                     fontSize = 12.sp,
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 17.sp
                 )
 
                 Surface(
-                    color = Color(0xFF0B1718),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, DarkBorder),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("📄 ", fontSize = 14.sp)
-                            Text("Format PDF Resmi: Laporan arus kas, laba rugi, dan rasio kedermawanan lengkap dengan kop syariah.", fontSize = 11.sp, color = Color.White)
+                            Text("Format PDF Resmi: Laporan arus kas, laba rugi, dan rasio kedermawanan lengkap dengan kop syariah.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("📊 ", fontSize = 14.sp)
-                            Text("Format CSV / Excel: Data mutasi mentah yang kompatibel untuk analisis lebih lanjut di komputer.", fontSize = 11.sp, color = Color.White)
+                            Text("Format CSV / Excel: Data mutasi mentah yang kompatibel untuk analisis lebih lanjut di komputer.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("📈 ", fontSize = 14.sp)
-                            Text("Spiritual Liquidity Index (SLI): Statistik persentase infaq terhadap pemasukan kasab.", fontSize = 11.sp, color = EmeraldLight, fontWeight = FontWeight.SemiBold)
+                            Text("Spiritual Liquidity Index (SLI): Statistik persentase infaq terhadap pemasukan kasab.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🔒 ", fontSize = 14.sp)
-                            Text("Privasi 100% Offline: Dokumen dibuat langsung di perangkat tanpa diunggah ke server pihak ketiga.", fontSize = 11.sp, color = GoldAccent)
+                            Text("Privasi 100% Offline: Dokumen dibuat langsung di perangkat tanpa diunggah ke server pihak ketiga.", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                         }
                     }
                 }

@@ -23,6 +23,7 @@ enum class Screen(val title: String) {
     FARAIDH_CALCULATOR("Kalkulator Waris Faraidh"),
     EXPORT_REPORT("Ekspor Laporan Resmi"),
     ISLAMIC_GROUNDING("Fatwa & Fiqih Muamalah"),
+    SHARIAH_RULES_CUSTOMIZATION("Kustomisasi Logika Syariah"),
     DEBUG_TERMINAL("Terminal Log & Diagnostik");
 
     fun toRoute(): String = when (this) {
@@ -48,6 +49,7 @@ enum class Screen(val title: String) {
         FARAIDH_CALCULATOR -> com.example.navigation.AmanahRoutes.FARAIDH
         EXPORT_REPORT -> com.example.navigation.AmanahRoutes.EXPORT_REPORT
         ISLAMIC_GROUNDING -> com.example.navigation.AmanahRoutes.ISLAMIC_GROUNDING
+        SHARIAH_RULES_CUSTOMIZATION -> com.example.navigation.AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION
         DEBUG_TERMINAL -> com.example.navigation.AmanahRoutes.DEBUG_TERMINAL
     }
 
@@ -75,6 +77,7 @@ enum class Screen(val title: String) {
             com.example.navigation.AmanahRoutes.FARAIDH -> FARAIDH_CALCULATOR
             com.example.navigation.AmanahRoutes.EXPORT_REPORT -> EXPORT_REPORT
             com.example.navigation.AmanahRoutes.ISLAMIC_GROUNDING -> ISLAMIC_GROUNDING
+            com.example.navigation.AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION -> SHARIAH_RULES_CUSTOMIZATION
             com.example.navigation.AmanahRoutes.DEBUG_TERMINAL -> DEBUG_TERMINAL
             else -> DASHBOARD
         }

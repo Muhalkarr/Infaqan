@@ -83,10 +83,8 @@ import com.example.core.receipt.ReceiptAttachment
 import com.example.core.receipt.ReceiptType
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.GoldAccent
-import com.example.ui.theme.GoldLight
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -242,7 +240,7 @@ fun IbadahGoalsScreen(
                             text = "${state.ibadahGoals.count { it.isCompleted }} dari ${state.ibadahGoals.size} Tercapai",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -388,7 +386,7 @@ fun IbadahGoalsScreen(
                                         text = "+ Rp ${nf.format(deposit.amount)}",
                                         fontWeight = FontWeight.Black,
                                         fontSize = 14.sp,
-                                        color = EmeraldLight
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
@@ -531,7 +529,7 @@ private fun IbadahGoalCard(
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
-                color = if (goal.isCompleted) EmeraldLight else GoldAccent,
+                color = if (goal.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
 
@@ -547,7 +545,7 @@ private fun IbadahGoalCard(
                         text = "Terkumpul $percent%",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (goal.isCompleted) EmeraldLight else GoldAccent
+                        color = if (goal.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                     )
                     Text(
                         text = if (isMasked) "Rp •••••••• / Rp ••••••••" else "Rp ${nf.format(goal.currentAccumulated)} / Rp ${nf.format(goal.targetAmount)}",
@@ -560,8 +558,8 @@ private fun IbadahGoalCard(
                 Button(
                     onClick = onDeposit,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (goal.isCompleted) EmeraldPrimary else GoldAccent,
-                        contentColor = if (goal.isCompleted) Color.White else Color.Black
+                        containerColor = if (goal.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                        contentColor = if (goal.isCompleted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.testTag("goal_deposit_btn_${goal.id}")

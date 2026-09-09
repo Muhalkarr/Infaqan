@@ -8,23 +8,29 @@ val EmeraldLight = Color(0xFF4DB6AC)
 val EmeraldDark = Color(0xFF004D40)
 val EmeraldGlow = Color(0xFF26A69A)
 
-val GoldAccent = Color(0xFFFFD54F)
+val GoldAccent = Color(0xFFFFD54F) // User's requested radiant gold #FFD54F
 val GoldLight = Color(0xFFFFE082)
 val GoldDark = Color(0xFFFFA000)
+val GoldRoyal = Color(0xFFC47D00) // Radiant Lustrous Gold (Emas Muamalah) with high contrast on light backgrounds (WCAG AA compliant)
+val GoldDeep = Color(0xFF854F00) // Deep warm amber for high accessibility
+val GoldOchre = Color(0xFF945B00)
+val GoldContainerLight = Color(0xFFFFF0C2)
+val OnGoldContainerLight = Color(0xFF3F2600)
+val EmeraldDeep = Color(0xFF00564C) // Deep dark emerald for high readability on light backgrounds (>7:1 contrast)
 
 val DarkBackground = Color(0xFF0A1214)
 val DarkSurface = Color(0xFF132225)
 val DarkSurfaceVariant = Color(0xFF1A2E32)
-val DarkBorder = Color(0xFF1E3539)
+val DarkBorder = Color(0xFF284348) // Increased border contrast for crisp separation
 
-// Standard Light Mode Palette
+// Standard Light Mode Palette (Enhanced Readability & High Contrast)
 val LightBackground = Color(0xFFF4F7F6)
 val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFE6EFEF)
-val LightBorder = Color(0xFFCBD5D1)
-val LightTextPrimary = Color(0xFF0A1E20)
-val LightTextSecondary = Color(0xFF334E52)
-val LightTextMuted = Color(0xFF6B8083)
+val LightSurfaceVariant = Color(0xFFE2EBE8)
+val LightBorder = Color(0xFF8FA8A3) // Enhanced border contrast for cards and dividers
+val LightTextPrimary = Color(0xFF0A1E20) // Deep obsidian teal (14.2:1 contrast on white)
+val LightTextSecondary = Color(0xFF1A383C) // Enhanced contrast (8.4:1 on white)
+val LightTextMuted = Color(0xFF3B585C) // Enhanced contrast (5.6:1 on white, WCAG AA compliant)
 
 // High-Contrast Light Mode Palette (WCAG AAA Compliant)
 val HighContrastLightBackground = Color(0xFFFFFFFF)

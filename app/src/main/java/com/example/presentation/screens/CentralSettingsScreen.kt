@@ -145,6 +145,7 @@ fun CentralSettingsScreen(
     onNavigateToFaraidh: () -> Unit = {},
     onNavigateToExportReport: () -> Unit = {},
     onNavigateToDebugTerminal: () -> Unit = {},
+    onNavigateToShariahRules: () -> Unit = {},
     onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -966,7 +967,7 @@ fun CentralSettingsScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = "Nisab Zakat Mal Acuan (85 Gram Emas):",
+                                        text = "Nisab Zakat Mal Acuan (${state.shariahConfig.goldNisabGram}g Emas • ${state.shariahConfig.selectedMazhab.displayName}):",
                                         fontSize = 11.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -977,6 +978,58 @@ fun CentralSettingsScreen(
                                         color = EmeraldLight
                                     )
                                 }
+                            }
+                        }
+
+                        // Tombol Akses Pusat Kustomisasi Logika & Parameter Syariah
+                        Surface(
+                            onClick = onNavigateToShariahRules,
+                            color = EmeraldPrimary.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(10.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.4f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .testTag("btn_open_shariah_rules_engine")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(EmeraldPrimary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Tune,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Pusat Kustomisasi Logika Syariah",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = EmeraldLight
+                                    )
+                                    Text(
+                                        text = "Sesuaikan bobot nisab, tarif zakat, mazhab fikih & nomor SK fatwa",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = EmeraldLight,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
                         }
 

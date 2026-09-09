@@ -39,6 +39,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.Screen
+import com.example.core.debug.AppDebugLogger
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.navigation.AmanahNavHost
 import com.example.navigation.AmanahRoutes
@@ -78,11 +79,13 @@ class MainActivity : FragmentActivity() {
 
     override fun onStop() {
         super.onStop()
+        AppDebugLogger.i("MainActivity", "Aplikasi beralih ke latar belakang (onStop/Background).")
         viewModel.onAppBackgrounded()
     }
 
     override fun onStart() {
         super.onStart()
+        AppDebugLogger.i("MainActivity", "Aplikasi aktif di latar depan (onStart/Foreground).")
         viewModel.onAppForegrounded()
     }
 }
@@ -101,6 +104,13 @@ fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
     val currentRoute = navBackStackEntry?.destination?.route
     val currentScreen = remember(currentRoute) { Screen.fromRoute(currentRoute) }
     val state by viewModel.uiState.collectAsState()
+
+    // Otomatis catat pergantian layar ke log diagnostik
+    LaunchedEffect(currentRoute) {
+        currentRoute?.let { route ->
+            AppDebugLogger.logNavigation(route)
+        }
+    }
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -148,6 +158,7 @@ fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
                 uiState = state,
                 onSelectScreen = { screen ->
                     val targetRoute = screen.toRoute()
+                    AppDebugLogger.logUserAction("Navigasi Sidebar", "Membuka ${screen.name} ($targetRoute)")
                     if (currentRoute != targetRoute) {
                         navController.navigate(targetRoute) {
                             popUpTo(navController.graph.findStartDestination().id) {
@@ -162,9 +173,16 @@ fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
                 onCloseDrawer = {
                     coroutineScope.launch { drawerState.close() }
                 },
-                onToggleTheme = { viewModel.toggleDarkMode() },
-                onTogglePrivacy = { viewModel.toggleBalancePrivacy() },
+                onToggleTheme = {
+                    AppDebugLogger.logUserAction("Pengaturan Tema", "Pengguna beralih tema gelap/terang")
+                    viewModel.toggleDarkMode()
+                },
+                onTogglePrivacy = {
+                    AppDebugLogger.logUserAction("Privasi Saldo", "Pengguna beralih sensor privasi saldo")
+                    viewModel.toggleBalancePrivacy()
+                },
                 onLockAppNow = {
+                    AppDebugLogger.logUserAction("Keamanan", "Pengguna mengunci aplikasi secara instan")
                     coroutineScope.launch { drawerState.close() }
                     viewModel.lockAppNow()
                 }
@@ -183,6 +201,7 @@ fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
                             NavigationBarItem(
                                 selected = isSelected,
                                 onClick = {
+                                    AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tab '${item.title}' (${item.route})")
                                     if (currentRoute != item.route) {
                                         navController.navigate(item.route) {
                                             popUpTo(navController.graph.findStartDestination().id) {
@@ -223,7 +242,10 @@ fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
             AmanahNavHost(
                 navController = navController,
                 viewModel = viewModel,
-                onOpenDrawer = { coroutineScope.launch { drawerState.open() } },
+                onOpenDrawer = {
+                    AppDebugLogger.logUserAction("Navigasi", "Membuka drawer navigasi samping")
+                    coroutineScope.launch { drawerState.open() }
+                },
                 modifier = Modifier.padding(paddingValues)
             )
         }

@@ -156,6 +156,9 @@ interface RulingDao {
     @Query("SELECT * FROM custom_rulings ORDER BY updatedAtMillis DESC")
     fun getAllRulingsFlow(): Flow<List<CustomRulingEntity>>
 
+    @Query("SELECT * FROM custom_rulings ORDER BY updatedAtMillis DESC")
+    suspend fun getAllRulings(): List<CustomRulingEntity>
+
     @Query("SELECT * FROM custom_rulings WHERE isEnabled = 1 ORDER BY updatedAtMillis DESC")
     fun getActiveRulingsFlow(): Flow<List<CustomRulingEntity>>
 

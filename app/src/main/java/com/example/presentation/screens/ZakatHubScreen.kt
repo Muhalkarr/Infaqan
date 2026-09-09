@@ -73,10 +73,8 @@ import com.example.core.state.AmanahLedgerViewModel
 import com.example.core.zakat.ZakatFitrahFamilyCalculation
 import com.example.core.zakat.ZakatPerniagaanCalculation
 import com.example.core.zakat.ZakatProfesiCalculation
-import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.GoldAccent
-import com.example.ui.theme.GoldLight
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -259,13 +257,13 @@ private fun ZakatProfesiTab(
                             text = if (calc.isObligated) "WAJIB ZAKAT PROFESI (2.5%)" else "BELUM MENCAPAI NISAB",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (calc.isObligated) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (calc.isObligated) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "Rp ${nf.format(calc.zakatPayableAmount)}",
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Black,
-                            color = if (calc.isObligated) EmeraldLight else MaterialTheme.colorScheme.onSurface
+                            color = if (calc.isObligated) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
 
@@ -390,7 +388,7 @@ private fun ZakatPerniagaanTab(
         // Result Banner
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = if (calc.isObligated) GoldAccent.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
+                containerColor = if (calc.isObligated) MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
             ),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
@@ -406,20 +404,20 @@ private fun ZakatPerniagaanTab(
                             text = if (calc.isObligated) "WAJIB ZAKAT TIJARAH (2.5%)" else "BELUM MENCAPAI NISAB 85g EMAS",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (calc.isObligated) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (calc.isObligated) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "Rp ${nf.format(calc.zakatPayableAmount)}",
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Black,
-                            color = if (calc.isObligated) GoldAccent else MaterialTheme.colorScheme.onSurface
+                            color = if (calc.isObligated) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface
                         )
                     }
 
                     if (calc.isObligated) {
                         Button(
                             onClick = { onTunaikan(calc.zakatPayableAmount) },
-                            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent, contentColor = Color.Black),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary),
                             modifier = Modifier.testTag("tunaikan_zakat_tijarah_btn")
                         ) {
                             Text("Tunaikan", fontWeight = FontWeight.Bold)
@@ -539,13 +537,13 @@ private fun ZakatFitrahTab(
                             text = "TOTAL ZAKAT FITRAH KELUARGA",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                         Text(
                             text = "Rp ${nf.format(calc.totalFitrahRupiah)}",
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Black,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
 
@@ -655,7 +653,7 @@ private fun DisburseZakatDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.VolunteerActivism, contentDescription = null, tint = EmeraldLight)
+                Icon(Icons.Default.VolunteerActivism, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Tunaikan & Salurkan Zakat", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }

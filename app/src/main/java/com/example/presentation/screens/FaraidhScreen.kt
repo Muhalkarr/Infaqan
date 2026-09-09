@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.core.faraidh.DeceasedGender
 import com.example.core.faraidh.FaraidhEngine
 import com.example.core.faraidh.FaraidhShare

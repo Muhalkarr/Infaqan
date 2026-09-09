@@ -122,6 +122,8 @@ data class AmanahLedgerUiState(
     val showDailyHadith: Boolean = true,
     val showQuickTutorial: Boolean = true,
     val amilInstitutions: List<AmilInstitution> = emptyList(),
+    val shariahConfig: ShariahRulesConfig = ShariahRulesConfig(),
+    val shariahRulings: List<ShariahRuling> = emptyList(),
     val uiScaleMode: com.example.ui.theme.UiScaleMode = com.example.ui.theme.UiScaleMode.DEFAULT,
     val uiScaleFactor: Float = 1.0f,
     val isLoading: Boolean = false,
@@ -130,7 +132,7 @@ data class AmanahLedgerUiState(
     val dueRecurringCount: Int
         get() = recurringTransactions.count { it.isDue() }
     val nisabThreshold: Double
-        get() = 85.0 * goldPricePerGram // 85 gram emas (~Rp 114.750.000)
+        get() = shariahConfig.goldNisabGram * goldPricePerGram // Variabel bobot hisab dinamis dari Rules Engine (default 85g emas)
 
     val spendingPatternAnalysis: SpendingPatternAnalysis by lazy {
         BudgetOptimizerEngine.analyzeAndOptimize(accounts, budgets, journalEntries, selectedGoalMode)
@@ -506,6 +508,7 @@ class AmanahLedgerViewModel : ViewModel() {
             state.copy(journalEntries = updatedList)
         }
         persistEntryAsync(updatedEntry)
+        AppDebugLogger.i("AmanahVM", "Memperbarui Pemasukan: Rp ${grossAmount.toLong()} (ID: $entryId, '$description')")
 
         appStateNotifier.notify(
             title = "Pemasukan Diperbarui",
@@ -643,6 +646,7 @@ class AmanahLedgerViewModel : ViewModel() {
             state.copy(journalEntries = updatedList)
         }
         persistEntryAsync(updatedEntry)
+        AppDebugLogger.i("AmanahVM", "Memperbarui Pengeluaran: Rp ${amount.toLong()} (ID: $entryId, '$cleanDesc')")
 
         appStateNotifier.notify(
             title = "Pengeluaran Diperbarui",
@@ -761,6 +765,7 @@ class AmanahLedgerViewModel : ViewModel() {
             )
         }
         persistEntryAsync(entry)
+        AppDebugLogger.i("AmanahInfaq", "Penyaluran Infaq: Rp ${amount.toLong()} ke $recipientName (${asnafCategory.displayName})")
 
         appStateNotifier.notify(
             title = "Penyaluran Infaq Berhasil",
@@ -815,6 +820,7 @@ class AmanahLedgerViewModel : ViewModel() {
             )
         }
         persistEntryAsync(entry)
+        AppDebugLogger.i("AmanahSedekah", "Sedekah Subuh tercatat: Rp ${amount.toLong()} via $fromAccountId (Streak: hari ke-${updatedStreakState.currentStreak})")
 
         appStateNotifier.notify(
             title = "Sedekah Subuh Tercatat",
@@ -895,13 +901,16 @@ class AmanahLedgerViewModel : ViewModel() {
         }
         val budgetToPersist = _uiState.value.budgets.firstOrNull { it.accountId == accountId }
         if (budgetToPersist != null) persistBudgetAsync(budgetToPersist)
+        AppDebugLogger.i("AmanahBudget", "Pagu Anggaran '$categoryName' disetel: Rp ${monthlyLimit.toLong()} (Ambang: ${(alertThresholdPercent * 100).toInt()}%)")
     }
 
     fun deleteBudget(budgetId: String) {
+        val target = _uiState.value.budgets.firstOrNull { it.id == budgetId }
         _uiState.update { state ->
             state.copy(budgets = state.budgets.filterNot { it.id == budgetId })
         }
         deleteBudgetAsync(budgetId)
+        AppDebugLogger.w("AmanahBudget", "Menghapus alokasi anggaran: ${target?.categoryName ?: budgetId}")
     }
 
     fun addRule(rule: InfaqRule) {
@@ -1577,6 +1586,7 @@ class AmanahLedgerViewModel : ViewModel() {
     fun addWallet(wallet: WalletAccount) {
         _uiState.update { it.copy(wallets = it.wallets + wallet) }
         persistWalletAsync(wallet)
+        AppDebugLogger.i("AmanahWallet", "Menambahkan kantong rekening baru: '${wallet.name}' (${wallet.type})")
         appStateNotifier.notify(
             title = "Kantong Rekening Dibuat",
             message = "Kantong '${wallet.name}' berhasil ditambahkan ke daftar rekening.",
@@ -1589,6 +1599,7 @@ class AmanahLedgerViewModel : ViewModel() {
             state.copy(wallets = state.wallets.map { if (it.id == wallet.id) wallet else it })
         }
         persistWalletAsync(wallet)
+        AppDebugLogger.i("AmanahWallet", "Memperbarui info kantong: '${wallet.name}' (${wallet.type})")
         appStateNotifier.notify(
             title = "Kantong Rekening Diperbarui",
             message = "Data rekening '${wallet.name}' telah disesuaikan.",
@@ -1602,6 +1613,7 @@ class AmanahLedgerViewModel : ViewModel() {
             state.copy(wallets = state.wallets.filterNot { it.id == walletId })
         }
         deleteWalletAsync(walletId)
+        AppDebugLogger.w("AmanahWallet", "Menghapus kantong rekening: '${target?.name ?: walletId}'")
         appStateNotifier.notify(
             title = "Kantong Rekening Dihapus",
             message = "Kantong '${target?.name ?: walletId}' telah dihapus.",
@@ -1669,6 +1681,7 @@ class AmanahLedgerViewModel : ViewModel() {
             )
         }
         persistEntryAsync(entry)
+        AppDebugLogger.i("AmanahWallet", "Mutasi Antar-Kantong: Rp ${amount.toLong()} dari ${fromWallet.name} ke ${toWallet.name} (Admin: Rp ${adminFee.toLong()})")
 
         val nf = java.text.NumberFormat.getNumberInstance(Locale("id", "ID"))
         appStateNotifier.notify(
@@ -1840,6 +1853,7 @@ class AmanahLedgerViewModel : ViewModel() {
 
     fun generateBackupPackage(password: String = ""): String {
         val state = _uiState.value
+        AppDebugLogger.i("AmanahBackup", "Membuat paket pencadangan terenkripsi (${state.journalEntries.size} transaksi jurnal, ${state.wallets.size} kantong)")
         return BackupEngine.createBackupPackage(
             journalEntries = state.journalEntries,
             wallets = state.wallets,
@@ -1864,12 +1878,14 @@ class AmanahLedgerViewModel : ViewModel() {
                     sedekahSubuhState = result.restoredSedekahState
                 )
             }
+            AppDebugLogger.i("AmanahBackup", "Pemulihan data sukses: ${result.restoredEntries.size} jurnal, ${result.restoredWallets.size} kantong")
             appStateNotifier.notify(
                 title = "Pemulihan Data Sukses",
                 message = "Berhasil memulihkan ${result.restoredEntries.size} transaksi buku kas & ${result.restoredWallets.size} kantong rekening.",
                 severity = NotificationSeverity.SUCCESS
             )
         } else if (result is RestoreResult.Failure) {
+            AppDebugLogger.logHandledError("AmanahBackup", "Gagal memulihkan cadangan: ${result.errorMessage}")
             appStateNotifier.notify(
                 title = "Gagal Memulihkan Data",
                 message = result.errorMessage,
@@ -1903,8 +1919,10 @@ class AmanahLedgerViewModel : ViewModel() {
                 repository?.clearAllQardh()
                 repository?.clearSedekahSubuh()
                 repository?.saveCustomSetting("user_has_cleared_dummy_data", "true")
+                AppDebugLogger.w("AmanahDatabase", "Pengguna mengosongkan seluruh data dummy dari Room DB & memori.")
             } catch (e: Exception) {
                 android.util.Log.e("AmanahVM", "Error clearing dummy data: ${e.message}")
+                AppDebugLogger.logHandledError("AmanahDatabase", "Gagal menghapus data dummy dari Room DB: ${e.message}", e)
             }
 
             _uiState.update { current ->
@@ -1969,8 +1987,10 @@ class AmanahLedgerViewModel : ViewModel() {
                     seedDummyDataToRoom(db)
                 }
                 repository?.saveCustomSetting("user_has_cleared_dummy_data", "false")
+                AppDebugLogger.i("AmanahDatabase", "Pengguna memuat ulang dataset simulasi / contoh ke Room DB.")
             } catch (e: Exception) {
                 android.util.Log.e("AmanahVM", "Error saving dummy data to Room: ${e.message}")
+                AppDebugLogger.logHandledError("AmanahDatabase", "Gagal memuat dataset simulasi ke Room DB: ${e.message}", e)
             }
 
             appStateNotifier.notify(
@@ -2141,6 +2161,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.journalDao().insertOrUpdate(EntityMappers.toEntity(entry))
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error persisting journal entry", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menyimpan transaksi jurnal ID: ${entry.id}", e)
             }
         }
     }
@@ -2152,6 +2173,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.journalDao().deleteById(entryId)
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error deleting journal entry", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menghapus transaksi jurnal ID: $entryId", e)
             }
         }
     }
@@ -2163,6 +2185,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.walletDao().insertOrUpdate(EntityMappers.toEntity(wallet))
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error persisting wallet", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menyimpan kantong: ${wallet.name}", e)
             }
         }
     }
@@ -2174,6 +2197,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.walletDao().deleteById(walletId)
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error deleting wallet", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menghapus kantong ID: $walletId", e)
             }
         }
     }
@@ -2185,6 +2209,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.budgetDao().insertOrUpdate(EntityMappers.toEntity(budget))
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error persisting budget", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menyimpan anggaran pos: ${budget.categoryName}", e)
             }
         }
     }
@@ -2196,6 +2221,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.budgetDao().deleteById(budgetId)
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error deleting budget", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menghapus anggaran ID: $budgetId", e)
             }
         }
     }
@@ -2207,6 +2233,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.ibadahGoalDao().insertOrUpdate(EntityMappers.toEntity(goal))
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error persisting ibadah goal", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menyimpan target ibadah: ${goal.title}", e)
             }
         }
     }
@@ -2218,6 +2245,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.ibadahGoalDao().deleteById(goalId)
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error deleting goal", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menghapus target ibadah ID: $goalId", e)
             }
         }
     }
@@ -2229,6 +2257,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.qardhDao().insertOrUpdate(EntityMappers.toEntity(qardh))
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error persisting qardh", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menyimpan qardh: ${qardh.counterpartyName}", e)
             }
         }
     }
@@ -2240,6 +2269,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 db.qardhDao().deleteById(qardhId)
             } catch (e: Exception) {
                 android.util.Log.e("AmanahLedgerVM", "Error deleting qardh", e)
+                AppDebugLogger.logHandledError("RoomDatabase", "Gagal menghapus qardh ID: $qardhId", e)
             }
         }
     }
@@ -2378,8 +2408,27 @@ class AmanahLedgerViewModel : ViewModel() {
                             db.settingsDao().insertOrUpdate(SettingsEntity("dummy_data_version", "v2_proportional"))
                         }
                     }
+
+                    // Muat Shariah Rules & Rulings dari Repository / Room
+                    val loadedShariahConfig = repository?.getShariahConfig() ?: ShariahRulesConfig()
+                    var loadedRulings = repository?.getAllShariahRulings() ?: emptyList()
+                    if (loadedRulings.isEmpty()) {
+                        val defaults = ShariahDefaultRulings.defaults
+                        for (r in defaults) {
+                            repository?.saveShariahRuling(r)
+                        }
+                        loadedRulings = defaults
+                    }
+                    _uiState.update { current ->
+                        current.copy(
+                            shariahConfig = loadedShariahConfig,
+                            shariahRulings = loadedRulings
+                        )
+                    }
+                    AppDebugLogger.i("RoomDatabase", "Inisialisasi data Room selesai. Mode audit syariah siap.")
                 } catch (e: Exception) {
                     android.util.Log.e("AmanahVM", "Room init load: ${e.message}")
+                    AppDebugLogger.logHandledError("RoomDatabase", "Gagal memuat data awal Room DB: ${e.message}", e)
                 }
             }
         }
@@ -2551,6 +2600,7 @@ class AmanahLedgerViewModel : ViewModel() {
             )
         }
         viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
+        AppDebugLogger.i("AmanahSecurity", "Kunci PIN 6-digit berhasil diaktifkan.")
     }
 
     fun disablePinLock() {
@@ -2574,15 +2624,18 @@ class AmanahLedgerViewModel : ViewModel() {
             )
         }
         viewModelScope.launch { repository?.saveSecurityConfig(newCfg) }
+        AppDebugLogger.w("AmanahSecurity", "Kunci PIN aplikasi dinonaktifkan oleh pengguna.")
     }
 
     fun toggleBiometric(enabled: Boolean) {
         setBiometricEnabled(enabled)
+        AppDebugLogger.i("AmanahSecurity", "Biometrik otentikasi disetel: $enabled")
     }
 
     fun resetAllSettingsToDefault() {
         viewModelScope.launch {
             repository?.clearAllPreferences()
+            AppDebugLogger.w("AmanahSettings", "Mereset semua pengaturan aplikasi ke konfigurasi bawaan.")
             _uiState.update {
                 it.copy(
                     isDarkMode = true,
@@ -2617,6 +2670,7 @@ class AmanahLedgerViewModel : ViewModel() {
         } else {
             "guest_local_user"
         }
+        AppDebugLogger.i("AmanahSync", "Memulai sinkronisasi Cloud Firestore (Pengguna: $userId)...")
 
         viewModelScope.launch {
             val state = _uiState.value
@@ -2641,12 +2695,15 @@ class AmanahLedgerViewModel : ViewModel() {
                 }
             )
             if (res.isSuccess) {
+                AppDebugLogger.i("AmanahSync", "Sinkronisasi Cloud sukses. Data tersinkronkan ke Firestore & Room DB.")
                 appStateNotifier.notify(
                     title = "Sinkronisasi Cloud Berhasil",
                     message = "Data keuangan telah dicadangkan secara aman ke Cloud Firestore & Room Database.",
                     severity = NotificationSeverity.SUCCESS
                 )
             } else {
+                val errorMsg = res.exceptionOrNull()?.message ?: "Koneksi offline atau konfigurasi Firestore lokal"
+                AppDebugLogger.w("AmanahSync", "Sinkronisasi Cloud dialihkan ke mode lokal offline: $errorMsg")
                 appStateNotifier.notify(
                     title = "Sinkronisasi Offline",
                     message = "Data tersimpan aman di Database Room lokal (mode offline).",
@@ -2664,6 +2721,7 @@ class AmanahLedgerViewModel : ViewModel() {
         } else {
             "guest_local_user"
         }
+        AppDebugLogger.i("AmanahSync", "Meminta pemulihan data cadangan dari Firestore untuk ID: $userId")
 
         viewModelScope.launch {
             val res = se.restoreFromCloud(
@@ -2678,6 +2736,7 @@ class AmanahLedgerViewModel : ViewModel() {
                             sedekahSubuhState = sedekah
                         )
                     }
+                    AppDebugLogger.i("AmanahSync", "Pemulihan Cloud sukses: ${entries.size} jurnal, ${wallets.size} kantong.")
                     appStateNotifier.notify(
                         title = "Pemulihan Cloud Berhasil",
                         message = "Seluruh catatan keuangan, kantong, dan target ibadah berhasil dipulihkan dari Firestore.",
@@ -2686,9 +2745,11 @@ class AmanahLedgerViewModel : ViewModel() {
                 }
             )
             if (res.isFailure) {
+                val err = res.exceptionOrNull()?.localizedMessage ?: "Belum ada data cadangan di akun ini."
+                AppDebugLogger.logHandledError("AmanahSync", "Gagal memulihkan data dari Cloud: $err", res.exceptionOrNull())
                 appStateNotifier.notify(
                     title = "Gagal Memulihkan",
-                    message = res.exceptionOrNull()?.localizedMessage ?: "Belum ada data cadangan di akun ini.",
+                    message = err,
                     severity = NotificationSeverity.WARNING
                 )
             }
@@ -2816,5 +2877,82 @@ class AmanahLedgerViewModel : ViewModel() {
             message = "Daftar lembaga amil dikembalikan ke data resmi terverifikasi standar.",
             severity = NotificationSeverity.INFO
         )
+    }
+
+    // ==============================================================
+    // PUSAT KUSTOMISASI LOGIKA & PARAMETER SYARIAH (RULES ENGINE)
+    // ==============================================================
+
+    fun updateShariahConfig(config: ShariahRulesConfig) {
+        _uiState.update { it.copy(shariahConfig = config) }
+        viewModelScope.launch {
+            repository?.saveShariahConfig(config)
+        }
+        AppDebugLogger.i("AmanahShariah", "Parameter syariah diperbarui: Nisab ${config.goldNisabGram}g emas (${config.selectedMazhab.displayName})")
+        appStateNotifier.notify(
+            title = "Parameter Syariah Diperbarui",
+            message = "Kaidah hisab nisab ${config.goldNisabGram}g emas (${config.selectedMazhab.displayName}) aktif.",
+            severity = NotificationSeverity.SUCCESS
+        )
+    }
+
+    fun saveShariahRuling(ruling: ShariahRuling) {
+        _uiState.update { st ->
+            val exists = st.shariahRulings.any { it.id == ruling.id }
+            val updatedList = if (exists) {
+                st.shariahRulings.map { if (it.id == ruling.id) ruling else it }
+            } else {
+                listOf(ruling) + st.shariahRulings
+            }
+            st.copy(shariahRulings = updatedList)
+        }
+        viewModelScope.launch {
+            repository?.saveShariahRuling(ruling)
+        }
+        AppDebugLogger.i("AmanahShariah", "Menyimpan Kaidah/Fatwa: '${ruling.title}' (${ruling.authority})")
+        appStateNotifier.notify(
+            title = "Rujukan Hukum / Fatwa Disimpan",
+            message = "${ruling.authority}: '${ruling.title}' berhasil disimpan.",
+            severity = NotificationSeverity.SUCCESS
+        )
+    }
+
+    fun deleteShariahRuling(rulingId: String) {
+        val target = _uiState.value.shariahRulings.firstOrNull { it.id == rulingId }
+        _uiState.update { st ->
+            st.copy(shariahRulings = st.shariahRulings.filterNot { it.id == rulingId })
+        }
+        viewModelScope.launch {
+            repository?.deleteShariahRuling(rulingId)
+        }
+        AppDebugLogger.w("AmanahShariah", "Menghapus rujukan hukum/fatwa: '${target?.title ?: rulingId}'")
+        appStateNotifier.notify(
+            title = "Rujukan Dihapus",
+            message = "Entri rujukan hukum '${target?.title ?: rulingId}' telah dihapus.",
+            severity = NotificationSeverity.INFO
+        )
+    }
+
+    fun toggleRulingEnabled(rulingId: String) {
+        val target = _uiState.value.shariahRulings.firstOrNull { it.id == rulingId } ?: return
+        val updated = target.copy(isEnabled = !target.isEnabled)
+        AppDebugLogger.i("AmanahShariah", "Mengubah status fatwa '${target.title}' menjadi: ${updated.isEnabled}")
+        saveShariahRuling(updated)
+    }
+
+    fun resetShariahRulingsToDefault() {
+        viewModelScope.launch {
+            val defaults = ShariahDefaultRulings.defaults
+            for (r in defaults) {
+                repository?.saveShariahRuling(r)
+            }
+            _uiState.update { it.copy(shariahRulings = defaults) }
+            AppDebugLogger.w("AmanahShariah", "Mereset daftar rujukan fatwa dan dalil ke konfigurasi standar DSN-MUI.")
+            appStateNotifier.notify(
+                title = "Kaidah & Fatwa Direset",
+                message = "Rujukan hukum dan fatwa DSN-MUI dikembalikan ke standar acuan resmi.",
+                severity = NotificationSeverity.INFO
+            )
+        }
     }
 }

@@ -5,23 +5,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.example.core.accounting.JournalEntry
 import com.example.core.calendar.HijriDate
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -32,6 +29,18 @@ fun HijriRadialHeatmap(
     entries: List<JournalEntry>,
     modifier: Modifier = Modifier
 ) {
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val outlineColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+
+    val textColorArgb = onSurfaceColor.toArgb()
+    val ramadanColorArgb = secondaryColor.toArgb()
+    val centerSubColorArgb = primaryColor.toArgb()
+
     Box(modifier = modifier.fillMaxWidth().height(280.dp)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val center = Offset(size.width / 2f, size.height / 2f)
@@ -53,7 +62,7 @@ fun HijriRadialHeatmap(
             val textPaint = android.graphics.Paint().apply {
                 isAntiAlias = true
                 textSize = 24f
-                color = android.graphics.Color.WHITE
+                color = textColorArgb
                 textAlign = android.graphics.Paint.Align.CENTER
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
             }
@@ -61,7 +70,7 @@ fun HijriRadialHeatmap(
             val ramadanPaint = android.graphics.Paint().apply {
                 isAntiAlias = true
                 textSize = 26f
-                color = android.graphics.Color.rgb(255, 213, 79)
+                color = ramadanColorArgb
                 textAlign = android.graphics.Paint.Align.CENTER
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
             }
@@ -72,10 +81,10 @@ fun HijriRadialHeatmap(
                 val valInfaq = monthlyInfaq[m] ?: 0.0
                 val intensity = (valInfaq / maxVal).toFloat().coerceIn(0.12f, 1.0f)
 
-                val color = if (valInfaq <= 0.0) {
-                    Color(0xFF132225)
+                val sectorColor = if (valInfaq <= 0.0) {
+                    surfaceVariantColor
                 } else {
-                    lerp(EmeraldPrimary, GoldAccent, intensity)
+                    lerp(primaryColor, secondaryColor, intensity)
                 }
 
                 val path = Path().apply {
@@ -87,8 +96,8 @@ fun HijriRadialHeatmap(
                     close()
                 }
 
-                drawPath(path = path, color = color)
-                drawPath(path = path, color = DarkBorder, style = Stroke(width = 1.5f))
+                drawPath(path = path, color = sectorColor)
+                drawPath(path = path, color = outlineColor, style = Stroke(width = 1.5f))
 
                 // Label month code
                 val labelAngle = startAngle + (sweepAngle / 2.0)
@@ -109,13 +118,13 @@ fun HijriRadialHeatmap(
 
             // Center Ring Circle
             drawCircle(
-                color = DarkBorder,
+                color = outlineColor,
                 radius = innerRadius - 2.dp.toPx(),
                 center = center,
                 style = Stroke(width = 2f)
             )
             drawCircle(
-                color = Color(0xFF0E1A1C),
+                color = surfaceColor,
                 radius = innerRadius - 4.dp.toPx(),
                 center = center
             )
@@ -124,15 +133,16 @@ fun HijriRadialHeatmap(
             val centerTitlePaint = android.graphics.Paint().apply {
                 isAntiAlias = true
                 textSize = 22f
-                color = android.graphics.Color.WHITE
+                color = textColorArgb
                 textAlign = android.graphics.Paint.Align.CENTER
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
             }
             val centerSubPaint = android.graphics.Paint().apply {
                 isAntiAlias = true
                 textSize = 18f
-                color = android.graphics.Color.rgb(77, 182, 172)
+                color = centerSubColorArgb
                 textAlign = android.graphics.Paint.Align.CENTER
+                typeface = android.graphics.Typeface.DEFAULT_BOLD
             }
 
             drawContext.canvas.nativeCanvas.drawText("12 Bulan", center.x, center.y - 8f, centerTitlePaint)

@@ -113,6 +113,11 @@ interface AmanahRepository {
     suspend fun clearCustomRulings()
     suspend fun saveShariahRulesConfig(config: com.example.core.shariah.ShariahRulesConfig)
     suspend fun getShariahRulesConfig(): com.example.core.shariah.ShariahRulesConfig?
+    suspend fun getAllShariahRulings(): List<com.example.core.shariah.ShariahRuling>
+    suspend fun saveShariahRuling(ruling: com.example.core.shariah.ShariahRuling)
+    suspend fun deleteShariahRuling(id: String)
+    suspend fun getShariahConfig(): com.example.core.shariah.ShariahRulesConfig?
+    suspend fun saveShariahConfig(config: com.example.core.shariah.ShariahRulesConfig)
 }
 
 class AmanahRepositoryImpl(
@@ -524,5 +529,25 @@ class AmanahRepositoryImpl(
             isCustomFormulaActive = isCustomActiveStr?.toBooleanStrictOrNull() ?: false,
             customFormulaName = formulaNameStr ?: "Formula Pribadi"
         )
+    }
+
+    override suspend fun getAllShariahRulings(): List<com.example.core.shariah.ShariahRuling> = withContext(ioDispatcher) {
+        database.rulingDao().getAllRulings().map { EntityMappers.toDomain(it) }
+    }
+
+    override suspend fun saveShariahRuling(ruling: com.example.core.shariah.ShariahRuling) = withContext(ioDispatcher) {
+        saveRuling(ruling)
+    }
+
+    override suspend fun deleteShariahRuling(id: String) = withContext(ioDispatcher) {
+        deleteRuling(id)
+    }
+
+    override suspend fun getShariahConfig(): com.example.core.shariah.ShariahRulesConfig? = withContext(ioDispatcher) {
+        getShariahRulesConfig()
+    }
+
+    override suspend fun saveShariahConfig(config: com.example.core.shariah.ShariahRulesConfig) = withContext(ioDispatcher) {
+        saveShariahRulesConfig(config)
     }
 }

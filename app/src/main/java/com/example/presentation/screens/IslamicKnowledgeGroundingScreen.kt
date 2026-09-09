@@ -62,6 +62,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -69,6 +70,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.core.debug.AppDebugLogger
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -283,6 +285,37 @@ fun IslamicKnowledgeGroundingScreen(
         if (isWajibZakat) netAssetCalculated * 0.025 else 0.0
     }
 
+    LaunchedEffect(selectedTab) {
+        AppDebugLogger.logUserAction(
+            "Fatwa & Zakat Grounding",
+            "Membuka tab: ${if (selectedTab == 0) "Ensiklopedia Fatwa & Dalil" else "Verifikator Hisab Zakat"}"
+        )
+    }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery.trim().length >= 2) {
+            AppDebugLogger.logUserAction(
+                "Pencarian Fatwa",
+                "Kueri: '$searchQuery' (Ditemukan ${filteredRulings.size} rujukan relevan)"
+            )
+        }
+    }
+
+    LaunchedEffect(isWajibZakat, netAssetCalculated, zakatTypeIndex) {
+        if (netAssetCalculated > 0.0) {
+            val typeName = when (zakatTypeIndex) {
+                0 -> "Zakat Maal / Simpanan"
+                1 -> "Zakat Profesi"
+                2 -> "Zakat Perniagaan"
+                else -> "Zakat"
+            }
+            AppDebugLogger.logUserAction(
+                "Verifikator Zakat",
+                "Simulasi $typeName: Bersih Rp ${nf.format(netAssetCalculated.toLong())} -> ${if (isWajibZakat) "WAJIB ZAKAT (Kewajiban: Rp ${nf.format(calculatedZakatObligation.toLong())})" else "Belum Capai Nisab"}"
+            )
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -317,14 +350,14 @@ fun IslamicKnowledgeGroundingScreen(
                             Icon(
                                 imageVector = Icons.Default.Verified,
                                 contentDescription = "Terverifikasi Syariah",
-                                tint = EmeraldLight,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
                         Text(
                             text = "Rujukan Resmi Fatwa DSN-MUI & Standar BAZNAS",
                             fontSize = 11.sp,
-                            color = GoldAccent
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 },
@@ -352,11 +385,11 @@ fun IslamicKnowledgeGroundingScreen(
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = EmeraldLight,
+                contentColor = MaterialTheme.colorScheme.primary,
                 indicator = { tabPositions ->
                     TabRowDefaults.SecondaryIndicator(
                         modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                        color = EmeraldPrimary,
+                        color = MaterialTheme.colorScheme.primary,
                         height = 3.dp
                     )
                 }
@@ -367,6 +400,8 @@ fun IslamicKnowledgeGroundingScreen(
                         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                         selectedTab = 0
                     },
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     text = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -383,6 +418,8 @@ fun IslamicKnowledgeGroundingScreen(
                         haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                         selectedTab = 1
                     },
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     text = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -410,25 +447,25 @@ fun IslamicKnowledgeGroundingScreen(
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("Cari hukum (contoh: zakat emas, bunga bank, israf)...", fontSize = 13.sp) },
+                            placeholder = { Text("Cari hukum (contoh: zakat emas, bunga bank, israf)...", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                             leadingIcon = {
-                                Icon(Icons.Default.Search, contentDescription = "Cari", tint = EmeraldLight)
+                                Icon(Icons.Default.Search, contentDescription = "Cari", tint = MaterialTheme.colorScheme.primary)
                             },
                             trailingIcon = {
                                 if (searchQuery.isNotEmpty()) {
                                     IconButton(onClick = { searchQuery = "" }) {
-                                        Icon(Icons.Default.Clear, contentDescription = "Hapus", tint = Color.White.copy(alpha = 0.6f))
+                                        Icon(Icons.Default.Clear, contentDescription = "Hapus", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             },
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = EmeraldPrimary,
-                                unfocusedBorderColor = DarkBorder,
-                                focusedContainerColor = DarkSurface,
-                                unfocusedContainerColor = DarkSurface,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             ),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
@@ -460,9 +497,10 @@ fun IslamicKnowledgeGroundingScreen(
                                     },
                                     label = { Text(label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = EmeraldPrimary.copy(alpha = 0.25f),
-                                        selectedLabelColor = EmeraldLight,
-                                        containerColor = DarkSurfaceVariant
+                                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                        selectedLabelColor = MaterialTheme.colorScheme.primary,
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                     ),
                                     shape = RoundedCornerShape(8.dp)
                                 )
@@ -490,9 +528,9 @@ fun IslamicKnowledgeGroundingScreen(
                     // Header Info Card
                     item {
                         Card(
-                            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             shape = RoundedCornerShape(14.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.4f))
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(14.dp),
@@ -503,22 +541,22 @@ fun IslamicKnowledgeGroundingScreen(
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(CircleShape)
-                                        .background(EmeraldPrimary.copy(alpha = 0.2f)),
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Icon(Icons.Default.FactCheck, contentDescription = null, tint = EmeraldLight)
+                                    Icon(Icons.Default.FactCheck, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                 }
                                 Column {
                                     Text(
                                         text = "Mesin Verifikasi Zakat Terstandar",
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "Dihitung berdasarkan parameter resmi SK BAZNAS & Fatwa MUI.",
                                         fontSize = 11.sp,
-                                        color = GoldLight
+                                        color = MaterialTheme.colorScheme.secondary
                                     )
                                 }
                             }
@@ -531,8 +569,8 @@ fun IslamicKnowledgeGroundingScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(DarkSurface)
-                                .border(1.dp, DarkBorder, RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                                 .padding(4.dp)
                         ) {
                             listOf("Zakat Maal", "Zakat Profesi", "Perniagaan").forEachIndexed { index, label ->
@@ -541,7 +579,7 @@ fun IslamicKnowledgeGroundingScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(if (isSelected) EmeraldPrimary else Color.Transparent)
+                                        .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                                         .clickable {
                                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                                             zakatTypeIndex = index
@@ -553,7 +591,7 @@ fun IslamicKnowledgeGroundingScreen(
                                         text = label,
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.7f)
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -563,9 +601,9 @@ fun IslamicKnowledgeGroundingScreen(
                     // Form Inputs
                     item {
                         Card(
-                            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             shape = RoundedCornerShape(14.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
                         ) {
                             Column(
                                 modifier = Modifier.padding(16.dp),
@@ -581,15 +619,17 @@ fun IslamicKnowledgeGroundingScreen(
                                 OutlinedTextField(
                                     value = inputAmountText,
                                     onValueChange = { inputAmountText = it },
-                                    label = { Text(amountLabel, fontSize = 12.sp) },
-                                    placeholder = { Text("Contoh: 120000000", fontSize = 12.sp) },
-                                    prefix = { Text("${state.primaryCurrencySymbol} ", fontWeight = FontWeight.Bold, color = EmeraldLight) },
+                                    label = { Text(amountLabel, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                    placeholder = { Text("Contoh: 120000000", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) },
+                                    prefix = { Text("${state.primaryCurrencySymbol} ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = EmeraldPrimary,
-                                        unfocusedBorderColor = DarkBorder,
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                                     ),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier
@@ -601,15 +641,17 @@ fun IslamicKnowledgeGroundingScreen(
                                     OutlinedTextField(
                                         value = inputDebtText,
                                         onValueChange = { inputDebtText = it },
-                                        label = { Text(if (zakatTypeIndex == 2) "Hutang Jatuh Tempo Usaha" else "Kebutuhan Pokok / Hutang Bulanan", fontSize = 12.sp) },
-                                        placeholder = { Text("0", fontSize = 12.sp) },
+                                        label = { Text(if (zakatTypeIndex == 2) "Hutang Jatuh Tempo Usaha" else "Kebutuhan Pokok / Hutang Bulanan", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                        placeholder = { Text("0", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) },
                                         prefix = { Text("${state.primaryCurrencySymbol} ", fontWeight = FontWeight.Bold, color = ExpenseCoral) },
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = EmeraldPrimary,
-                                            unfocusedBorderColor = DarkBorder,
-                                            focusedTextColor = Color.White,
-                                            unfocusedTextColor = Color.White
+                                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                                         ),
                                         shape = RoundedCornerShape(10.dp),
                                         modifier = Modifier.fillMaxWidth()
@@ -619,14 +661,16 @@ fun IslamicKnowledgeGroundingScreen(
                                 OutlinedTextField(
                                     value = inputGoldPriceText,
                                     onValueChange = { inputGoldPriceText = it },
-                                    label = { Text("Acuan Harga Emas Per Gram", fontSize = 12.sp) },
-                                    prefix = { Text("${state.primaryCurrencySymbol} ", fontWeight = FontWeight.Bold, color = GoldAccent) },
+                                    label = { Text("Acuan Harga Emas Per Gram", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                    prefix = { Text("${state.primaryCurrencySymbol} ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = EmeraldPrimary,
-                                        unfocusedBorderColor = DarkBorder,
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                                     ),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.fillMaxWidth()
@@ -639,12 +683,12 @@ fun IslamicKnowledgeGroundingScreen(
                     item {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = if (isWajibZakat) EmeraldDark.copy(alpha = 0.35f) else DarkSurfaceVariant
+                                containerColor = if (isWajibZakat) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceVariant
                             ),
                             shape = RoundedCornerShape(14.dp),
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                if (isWajibZakat) EmeraldPrimary else DarkBorder
+                                if (isWajibZakat) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                             ),
                             modifier = Modifier.testTag("zakat_verification_result_card")
                         ) {
@@ -664,26 +708,26 @@ fun IslamicKnowledgeGroundingScreen(
                                         Icon(
                                             imageVector = if (isWajibZakat) Icons.Default.CheckCircle else Icons.Default.Warning,
                                             contentDescription = null,
-                                            tint = if (isWajibZakat) EmeraldLight else GoldAccent,
+                                            tint = if (isWajibZakat) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                                             modifier = Modifier.size(20.dp)
                                         )
                                         Text(
                                             text = if (isWajibZakat) "WAJIB KELUARKAN ZAKAT" else "BELUM MENCAPAI NISAB",
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isWajibZakat) EmeraldLight else GoldAccent
+                                            color = if (isWajibZakat) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                                         )
                                     }
 
                                     Surface(
-                                        color = if (isWajibZakat) EmeraldPrimary.copy(alpha = 0.3f) else GoldAccent.copy(alpha = 0.2f),
+                                        color = if (isWajibZakat) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f),
                                         shape = RoundedCornerShape(6.dp)
                                     ) {
                                         Text(
                                             text = if (isWajibZakat) "Tarif 2.5%" else "Bebas Zakat",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isWajibZakat) EmeraldLight else GoldAccent,
+                                            color = if (isWajibZakat) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                         )
                                     }
@@ -693,31 +737,31 @@ fun IslamicKnowledgeGroundingScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Batas Nisab Standar:", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
-                                    Text("${state.primaryCurrencySymbol} ${nf.format(nisabThreshold.toLong())}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                                    Text("Batas Nisab Standar:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${state.primaryCurrencySymbol} ${nf.format(nisabThreshold.toLong())}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                                 }
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Aset Bersih Dihitung:", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
-                                    Text("${state.primaryCurrencySymbol} ${nf.format(netAssetCalculated.toLong())}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                                    Text("Aset Bersih Dihitung:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${state.primaryCurrencySymbol} ${nf.format(netAssetCalculated.toLong())}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                                 }
 
-                                androidx.compose.material3.HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+                                androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("Kewajiban Zakat Bersih:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text("Kewajiban Zakat Bersih:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                     Text(
                                         text = "${state.primaryCurrencySymbol} ${nf.format(calculatedZakatObligation.toLong())}",
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        color = if (isWajibZakat) EmeraldLight else Color.White.copy(alpha = 0.5f)
+                                        color = if (isWajibZakat) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -740,9 +784,9 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
             .fillMaxWidth()
             .clickable { isExpanded = !isExpanded }
             .testTag("grounded_ruling_${ruling.id}"),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -758,23 +802,23 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        color = EmeraldPrimary.copy(alpha = 0.18f),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
                             text = ruling.authority,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = EmeraldLight,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
                 }
 
                 Surface(
-                    color = GoldAccent.copy(alpha = 0.12f),
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
                     shape = RoundedCornerShape(6.dp),
-                    border = androidx.compose.foundation.BorderStroke(0.5.dp, GoldAccent.copy(alpha = 0.35f))
+                    border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -784,14 +828,14 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                         Icon(
                             imageVector = Icons.Default.Bookmark,
                             contentDescription = null,
-                            tint = GoldAccent,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(11.dp)
                         )
                         Text(
                             text = ruling.referenceNumber,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = GoldLight
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -801,13 +845,13 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                 text = ruling.title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
                 text = ruling.summary,
                 fontSize = 12.sp,
-                color = Color.White.copy(alpha = 0.8f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 17.sp
             )
 
@@ -822,7 +866,7 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(DarkSurfaceVariant)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
                             .padding(10.dp)
                     ) {
                         Column {
@@ -830,13 +874,13 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                                 text = "Kaidah Fiqih Terperinci:",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldLight
+                                color = MaterialTheme.colorScheme.secondary
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = ruling.detailedRuling,
                                 fontSize = 11.sp,
-                                color = Color.White.copy(alpha = 0.85f),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 lineHeight = 16.sp
                             )
                         }
@@ -847,8 +891,8 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF0F241A))
-                                .border(1.dp, EmeraldPrimary.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f))
+                                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
                                 .padding(10.dp)
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -859,21 +903,21 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.MenuBook,
                                         contentDescription = null,
-                                        tint = EmeraldLight,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Text(
                                         text = "Nash Dalil Lengkap: ${ruling.dalilSource}",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = EmeraldLight
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                                 Text(
                                     text = ruling.dalilArabic,
                                     fontSize = 13.sp,
                                     lineHeight = 22.sp,
-                                    color = GoldLight,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                                 if (ruling.dalilTranslation != null) {
@@ -881,7 +925,7 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                                         text = "\"${ruling.dalilTranslation}\"",
                                         fontSize = 10.sp,
                                         lineHeight = 15.sp,
-                                        color = Color.White.copy(alpha = 0.85f)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -893,8 +937,8 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(EmeraldDark.copy(alpha = 0.3f))
-                                .border(1.dp, EmeraldPrimary.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f))
+                                .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
                             .padding(10.dp)
                         ) {
                             Column {
@@ -902,14 +946,14 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                                     text = "Rumus Hisab Syariah:",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = EmeraldLight
+                                    color = MaterialTheme.colorScheme.secondary
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = ruling.calculationFormula,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color.White
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
@@ -925,7 +969,7 @@ fun GroundedRulingCard(ruling: GroundedRuling) {
                     text = if (isExpanded) "Tutup Rujukan ▲" else "Baca Ketentuan Lengkap ▼",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = EmeraldLight
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }

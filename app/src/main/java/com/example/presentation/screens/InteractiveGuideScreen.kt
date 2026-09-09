@@ -1328,7 +1328,7 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Batas Nisab 85g Emas:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatNumber(nisab85g)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GoldLight)
+                            Text("Rp ${formatNumber(nisab85g)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Status Harta:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1336,7 +1336,7 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
                                 text = if (isNisabReached) "✅ WAJIB ZAKAT MAL" else "❌ BELUM MENCAPAI NISAB",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isNisabReached) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                color = if (isNisabReached) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                         }
                         if (isNisabReached) {

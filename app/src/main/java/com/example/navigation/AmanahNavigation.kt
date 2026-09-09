@@ -33,6 +33,7 @@ import com.example.presentation.screens.RecurringTransactionsScreen
 import com.example.presentation.screens.SecuritySettingsScreen
 import com.example.presentation.screens.SedekahSubuhScreen
 import com.example.presentation.screens.SettingsScreen
+import com.example.presentation.screens.ShariahRulesCustomizationScreen
 import com.example.presentation.screens.VaultDistributionHistoryScreen
 import com.example.presentation.screens.ZakatHubScreen
 
@@ -62,6 +63,7 @@ object AmanahRoutes {
     const val APP_LOCK = "app_lock"
     const val INTERACTIVE_GUIDE = "interactive_guide"
     const val ISLAMIC_GROUNDING = "islamic_grounding"
+    const val SHARIAH_RULES_CUSTOMIZATION = "shariah_rules_customization"
     const val DEBUG_TERMINAL = "debug_terminal"
 }
 
@@ -423,6 +425,7 @@ fun AmanahNavHost(
                 onNavigateToFaraidh = { navController.navigate(AmanahRoutes.FARAIDH) },
                 onNavigateToExportReport = { navController.navigate(AmanahRoutes.EXPORT_REPORT) },
                 onNavigateToDebugTerminal = { navController.navigate(AmanahRoutes.DEBUG_TERMINAL) },
+                onNavigateToShariahRules = { navController.navigate(AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION) },
                 onOpenDrawer = onOpenDrawer
             )
         }
@@ -448,6 +451,14 @@ fun AmanahNavHost(
             DebugTerminalScreen(
                 onNavigateBack = handleSmartBack,
                 onOpenDrawer = onOpenDrawer
+            )
+        }
+
+        // 25. Pusat Kustomisasi Logika & Parameter Syariah (Rules Engine Studio)
+        composable(AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION) {
+            ShariahRulesCustomizationScreen(
+                viewModel = viewModel,
+                onNavigateBack = handleSmartBack
             )
         }
     }

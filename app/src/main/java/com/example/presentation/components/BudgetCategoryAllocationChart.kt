@@ -317,7 +317,7 @@ fun BudgetCategoryAllocationChart(
                         Text(
                             text = "Kaidah Maqashid Syariah 50 / 30 / 10 / 10",
                             fontSize = 11.sp,
-                            color = GoldLight
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -333,7 +333,7 @@ fun BudgetCategoryAllocationChart(
                         text = "Kelola",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = EmeraldLight,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     )
                 }
@@ -475,7 +475,7 @@ fun BudgetCategoryAllocationChart(
                             },
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Medium,
-                            color = GoldLight,
+                            color = MaterialTheme.colorScheme.secondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )

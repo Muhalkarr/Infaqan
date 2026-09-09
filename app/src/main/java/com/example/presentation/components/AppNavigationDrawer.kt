@@ -202,7 +202,7 @@ fun AppNavigationDrawerContent(
                                 Text(
                                     text = hijriDate.toString(),
                                     fontSize = 10.sp,
-                                    color = GoldLight
+                                    color = GoldAccent
                                 )
                             }
 
@@ -366,6 +366,16 @@ fun AppNavigationDrawerContent(
                 badgeColor = EmeraldLight,
                 testTag = "sidebar_nav_islamic_grounding",
                 onClick = { onSelectScreen(Screen.ISLAMIC_GROUNDING) }
+            )
+
+            SidebarNavigationItem(
+                label = "Pusat Kustomisasi Logika Syariah",
+                icon = Icons.Default.Tune,
+                selected = currentScreen == Screen.SHARIAH_RULES_CUSTOMIZATION,
+                badgeText = "Rules Studio",
+                badgeColor = GoldAccent,
+                testTag = "sidebar_nav_shariah_rules_customization",
+                onClick = { onSelectScreen(Screen.SHARIAH_RULES_CUSTOMIZATION) }
             )
 
             HorizontalDivider(

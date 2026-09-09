@@ -2,6 +2,7 @@ package com.example.presentation.screens
 
 import android.app.DatePickerDialog
 import android.net.Uri
+import com.example.core.debug.AppDebugLogger
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -320,6 +321,10 @@ fun AddTransactionScreen(
                 )
             }
         }
+        AppDebugLogger.logUserAction(
+            "Pencatatan Transaksi",
+            "Menyimpan ${if (isIncome) "Pemasukan" else "Pengeluaran"}: Rp ${amountValue.toLong()} ('$desc')"
+        )
         onNavigateBack()
     }
 
@@ -1392,12 +1397,15 @@ fun OcrReceiptScannerDialog(
                         isOcrProcessing = false
                         rawText = visionText.text
                         parsedPreview = SmartReceiptParser.parseReceiptText(visionText.text)
+                        AppDebugLogger.i("ReceiptOCR", "OCR berhasil memproses teks struk (${visionText.text.length} karakter).")
                     }
-                    .addOnFailureListener {
+                    .addOnFailureListener { exc ->
                         isOcrProcessing = false
+                        AppDebugLogger.logHandledError("ReceiptOCR", "Gagal memindai teks struk: ${exc.message}", exc)
                     }
             } catch (e: Exception) {
                 isOcrProcessing = false
+                AppDebugLogger.logHandledError("ReceiptOCR", "Gagal membaca berkas gambar struk: ${e.message}", e)
             }
         }
     }

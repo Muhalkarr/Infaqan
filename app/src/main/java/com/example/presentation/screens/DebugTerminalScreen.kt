@@ -92,12 +92,8 @@ import com.example.core.debug.AppDebugLogger
 import com.example.core.debug.DebugLogEntry
 import com.example.core.debug.DebugLogLevel
 import com.example.core.debug.GlobalCrashHandler
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.EmeraldPrimary
 import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,12 +136,14 @@ fun DebugTerminalScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFF0B0F19), // Dark console background
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF111827),
-                    titleContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 navigationIcon = {
                     IconButton(
@@ -155,7 +153,7 @@ fun DebugTerminalScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -167,7 +165,7 @@ fun DebugTerminalScreen(
                         Icon(
                             imageVector = Icons.Default.Terminal,
                             contentDescription = null,
-                            tint = EmeraldLight,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp)
                         )
                         Column {
@@ -175,12 +173,12 @@ fun DebugTerminalScreen(
                                 text = "Terminal Log & Diagnostik",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Live Debug Console (${filteredLogs.size} logs)",
                                 fontSize = 11.sp,
-                                color = Color(0xFF9CA3AF)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -199,7 +197,7 @@ fun DebugTerminalScreen(
                         Icon(
                             imageVector = Icons.Default.ContentCopy,
                             contentDescription = "Salin Semua Log",
-                            tint = EmeraldLight
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
 
@@ -219,7 +217,7 @@ fun DebugTerminalScreen(
                         Icon(
                             imageVector = Icons.Default.Share,
                             contentDescription = "Bagikan Log",
-                            tint = Color(0xFF60A5FA)
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
 
@@ -254,11 +252,11 @@ fun DebugTerminalScreen(
                         .padding(12.dp)
                         .testTag("crash_detected_banner"),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF450A0A)
+                        containerColor = MaterialTheme.colorScheme.errorContainer
                     ),
                     shape = RoundedCornerShape(12.dp),
                     border = CardDefaults.outlinedCardBorder().copy(
-                        brush = androidx.compose.ui.graphics.SolidColor(Color(0xFFDC2626))
+                        brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.error)
                     )
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -269,21 +267,21 @@ fun DebugTerminalScreen(
                             Icon(
                                 imageVector = Icons.Default.ErrorOutline,
                                 contentDescription = "Crash Alert",
-                                tint = Color(0xFFFCA5A5),
+                                tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(22.dp)
                             )
                             Text(
                                 text = "Laporan Crash Terakhir Ditemukan",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
-                                color = Color.White
+                                color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Aplikasi mendeteksi bahwa sesi sebelumnya mengalami crash (galat fatal). Anda dapat membaca berkas laporan kerusakan untuk mengetahui lokasi persis penyebab error.",
                             fontSize = 11.sp,
-                            color = Color(0xFFFECACA),
+                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f),
                             lineHeight = 15.sp
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -293,7 +291,7 @@ fun DebugTerminalScreen(
                             Button(
                                 onClick = { showCrashDialog = true },
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFFDC2626)
+                                    containerColor = MaterialTheme.colorScheme.error
                                 ),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                 modifier = Modifier.testTag("view_crash_report_button")
@@ -308,7 +306,7 @@ fun DebugTerminalScreen(
                                 },
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                             ) {
-                                Text("Salin Laporan", fontSize = 11.sp, color = Color.White)
+                                Text("Salin Laporan", fontSize = 11.sp, color = MaterialTheme.colorScheme.onErrorContainer)
                             }
                             TextButton(
                                 onClick = {
@@ -317,7 +315,7 @@ fun DebugTerminalScreen(
                                     Toast.makeText(context, "Laporan crash dibersihkan.", Toast.LENGTH_SHORT).show()
                                 }
                             ) {
-                                Text("Hapus", fontSize = 11.sp, color = Color(0xFFFCA5A5))
+                                Text("Hapus", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
@@ -326,7 +324,7 @@ fun DebugTerminalScreen(
 
             // 2. Search & Controls Bar
             Surface(
-                color = Color(0xFF111827),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
@@ -342,14 +340,14 @@ fun DebugTerminalScreen(
                             Text(
                                 "Cari teks log, tag, atau error...",
                                 fontSize = 12.sp,
-                                color = Color(0xFF6B7280)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = null,
-                                tint = Color(0xFF9CA3AF),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
                         },
@@ -359,19 +357,19 @@ fun DebugTerminalScreen(
                                     Icon(
                                         imageVector = Icons.Default.Clear,
                                         contentDescription = "Hapus Pencarian",
-                                        tint = Color(0xFF9CA3AF),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = EmeraldPrimary,
-                            unfocusedBorderColor = Color(0xFF374151),
-                            focusedContainerColor = Color(0xFF1F2937),
-                            unfocusedContainerColor = Color(0xFF1F2937),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         singleLine = true,
                         shape = RoundedCornerShape(8.dp)
@@ -393,20 +391,20 @@ fun DebugTerminalScreen(
                             onClick = { selectedLevelFilter = null },
                             label = { Text("SEMUA (${allLogs.size})", fontSize = 11.sp, fontFamily = FontFamily.Monospace) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = EmeraldPrimary,
-                                selectedLabelColor = Color.White,
-                                containerColor = Color(0xFF1F2937),
-                                labelColor = Color(0xFFD1D5DB)
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
 
                         DebugLogLevel.values().forEach { level ->
                             val count = allLogs.count { it.level == level }
                             val chipColor = when (level) {
-                                DebugLogLevel.VERBOSE -> Color(0xFF6B7280)
-                                DebugLogLevel.DEBUG -> Color(0xFF38BDF8)
-                                DebugLogLevel.INFO -> EmeraldLight
-                                DebugLogLevel.WARN -> GoldAccent
+                                DebugLogLevel.VERBOSE -> MaterialTheme.colorScheme.onSurfaceVariant
+                                DebugLogLevel.DEBUG -> Color(0xFF0284C7)
+                                DebugLogLevel.INFO -> MaterialTheme.colorScheme.primary
+                                DebugLogLevel.WARN -> MaterialTheme.colorScheme.secondary
                                 DebugLogLevel.ERROR -> ExpenseCoral
                                 DebugLogLevel.CRASH -> Color(0xFFEF4444)
                             }
@@ -424,9 +422,9 @@ fun DebugTerminalScreen(
                                     )
                                 },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = chipColor.copy(alpha = 0.85f),
+                                    selectedContainerColor = chipColor,
                                     selectedLabelColor = Color.White,
-                                    containerColor = Color(0xFF1F2937),
+                                    containerColor = MaterialTheme.colorScheme.surface,
                                     labelColor = chipColor
                                 )
                             )
@@ -437,13 +435,14 @@ fun DebugTerminalScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFF1F2937))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = "Auto-Scroll",
                                 fontSize = 10.sp,
-                                color = Color(0xFFD1D5DB),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontFamily = FontFamily.Monospace
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -452,10 +451,10 @@ fun DebugTerminalScreen(
                                 onCheckedChange = { autoScrollEnabled = it },
                                 modifier = Modifier.size(width = 36.dp, height = 24.dp),
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = EmeraldLight,
-                                    checkedTrackColor = EmeraldDark,
-                                    uncheckedThumbColor = Color(0xFF9CA3AF),
-                                    uncheckedTrackColor = Color(0xFF374151)
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
                             )
                         }
@@ -467,7 +466,7 @@ fun DebugTerminalScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF0F172A))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
                     .padding(horizontal = 12.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -477,7 +476,7 @@ fun DebugTerminalScreen(
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold,
-                    color = if (filteredLogs.isEmpty()) Color(0xFF6B7280) else EmeraldLight
+                    color = if (filteredLogs.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -492,7 +491,7 @@ fun DebugTerminalScreen(
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                         modifier = Modifier.height(28.dp)
                     ) {
-                        Text("Tes Catat Log", fontSize = 10.sp, color = EmeraldLight)
+                        Text("Tes Catat Log", fontSize = 10.sp, color = MaterialTheme.colorScheme.primary)
                     }
 
                     // Test crash simulation button
@@ -509,13 +508,13 @@ fun DebugTerminalScreen(
                 }
             }
 
-            HorizontalDivider(color = Color(0xFF1E293B), thickness = 1.dp)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
 
             // 3. Main Terminal Log Output
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF030712)) // Pure terminal dark
+                    .background(MaterialTheme.colorScheme.background)
             ) {
                 if (filteredLogs.isEmpty()) {
                     Column(
@@ -528,21 +527,21 @@ fun DebugTerminalScreen(
                         Icon(
                             imageVector = Icons.Default.Terminal,
                             contentDescription = null,
-                            tint = Color(0xFF374151),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                             modifier = Modifier.size(48.dp)
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = if (searchQuery.isNotEmpty()) "Tidak ada log yang cocok dengan kata kunci '$searchQuery'" else "Belum ada rekaman log terminal",
                             fontSize = 13.sp,
-                            color = Color(0xFF9CA3AF),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontFamily = FontFamily.Monospace
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "Aktivitas transaksi, database, dan galat sistem akan otomatis ditampilkan di sini.",
                             fontSize = 11.sp,
-                            color = Color(0xFF6B7280),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                             fontFamily = FontFamily.Monospace
                         )
                     }
@@ -567,7 +566,7 @@ fun DebugTerminalScreen(
     if (showCrashDialog && !latestCrashReport.isNullOrBlank()) {
         AlertDialog(
             onDismissRequest = { showCrashDialog = false },
-            containerColor = Color(0xFF1E293B),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -576,11 +575,11 @@ fun DebugTerminalScreen(
                     Icon(
                         imageVector = Icons.Default.BugReport,
                         contentDescription = null,
-                        tint = Color(0xFFEF4444)
+                        tint = MaterialTheme.colorScheme.error
                     )
                     Text(
                         text = "Detail Laporan Crash",
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -591,7 +590,7 @@ fun DebugTerminalScreen(
                     Text(
                         text = "Stack trace & aktivitas sistem sebelum terjadi crash:",
                         fontSize = 12.sp,
-                        color = Color(0xFFD1D5DB)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Box(
@@ -599,8 +598,8 @@ fun DebugTerminalScreen(
                             .fillMaxWidth()
                             .height(300.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFF0F172A))
-                            .border(1.dp, Color(0xFF334155), RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                             .padding(8.dp)
                     ) {
                         LazyColumn {
@@ -609,7 +608,7 @@ fun DebugTerminalScreen(
                                     text = latestCrashReport ?: "",
                                     fontSize = 10.sp,
                                     fontFamily = FontFamily.Monospace,
-                                    color = Color(0xFFFCA5A5),
+                                    color = MaterialTheme.colorScheme.error,
                                     lineHeight = 14.sp
                                 )
                             }
@@ -624,14 +623,14 @@ fun DebugTerminalScreen(
                         clipboard.setPrimaryClip(ClipData.newPlainText("Crash Report", latestCrashReport))
                         Toast.makeText(context, "Laporan crash disalin ke clipboard!", Toast.LENGTH_SHORT).show()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Salin Laporan")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCrashDialog = false }) {
-                    Text("Tutup", color = Color(0xFF9CA3AF))
+                    Text("Tutup", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -641,14 +640,14 @@ fun DebugTerminalScreen(
     if (showSimulateCrashConfirm) {
         AlertDialog(
             onDismissRequest = { showSimulateCrashConfirm = false },
-            containerColor = Color(0xFF1E293B),
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
-                Text("Simulasi Crash Pengujian", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Simulasi Crash Pengujian", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
             },
             text = {
                 Text(
                     text = "Tindakan ini akan sengaja memicu Unhandled Exception fatal untuk memverifikasi bahwa GlobalCrashHandler berhasil menangkap stack trace, mencatat ke memori internal ponsel, dan dapat dibaca kembali saat aplikasi dibuka lagi.\n\nAplikasi akan menutup dan saat dibuka kembali banner crash report akan muncul.",
-                    color = Color(0xFFE2E8F0),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
             },
@@ -658,14 +657,14 @@ fun DebugTerminalScreen(
                         showSimulateCrashConfirm = false
                         GlobalCrashHandler.simulateTestCrash()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Picu Crash Sekarang")
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showSimulateCrashConfirm = false }) {
-                    Text("Batal", color = Color(0xFF9CA3AF))
+                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -677,21 +676,23 @@ fun TerminalLogRow(log: DebugLogEntry) {
     var isExpanded by remember { mutableStateOf(false) }
 
     val levelColor = when (log.level) {
-        DebugLogLevel.VERBOSE -> Color(0xFF6B7280)
-        DebugLogLevel.DEBUG -> Color(0xFF38BDF8)
-        DebugLogLevel.INFO -> EmeraldLight
-        DebugLogLevel.WARN -> GoldAccent
+        DebugLogLevel.VERBOSE -> MaterialTheme.colorScheme.onSurfaceVariant
+        DebugLogLevel.DEBUG -> Color(0xFF0284C7)
+        DebugLogLevel.INFO -> MaterialTheme.colorScheme.primary
+        DebugLogLevel.WARN -> MaterialTheme.colorScheme.secondary
         DebugLogLevel.ERROR -> ExpenseCoral
         DebugLogLevel.CRASH -> Color(0xFFEF4444)
     }
+
+    val errorRowBg = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.35f)
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(4.dp))
-            .background(if (log.level == DebugLogLevel.ERROR || log.level == DebugLogLevel.CRASH) Color(0xFF1A0A0A) else Color.Transparent)
+            .background(if (log.level == DebugLogLevel.ERROR || log.level == DebugLogLevel.CRASH) errorRowBg else Color.Transparent)
             .clickable(enabled = log.stackTrace != null) { isExpanded = !isExpanded }
-            .padding(vertical = 2.dp, horizontal = 4.dp)
+            .padding(vertical = 3.dp, horizontal = 6.dp)
     ) {
         Row(
             verticalAlignment = Alignment.Top,
@@ -702,7 +703,7 @@ fun TerminalLogRow(log: DebugLogEntry) {
                 text = log.timeFormatted,
                 fontSize = 10.sp,
                 fontFamily = FontFamily.Monospace,
-                color = Color(0xFF64748B),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 modifier = Modifier.width(76.dp)
             )
 
@@ -722,7 +723,7 @@ fun TerminalLogRow(log: DebugLogEntry) {
                 fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace,
-                color = Color(0xFFA78BFA),
+                color = Color(0xFF7C3AED),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.width(90.dp)
@@ -733,7 +734,7 @@ fun TerminalLogRow(log: DebugLogEntry) {
                 text = log.message,
                 fontSize = 10.sp,
                 fontFamily = FontFamily.Monospace,
-                color = if (log.level == DebugLogLevel.ERROR || log.level == DebugLogLevel.CRASH) Color(0xFFFCA5A5) else Color(0xFFE2E8F0),
+                color = if (log.level == DebugLogLevel.ERROR || log.level == DebugLogLevel.CRASH) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 lineHeight = 13.sp,
                 modifier = Modifier.weight(1f)
             )
@@ -751,14 +752,14 @@ fun TerminalLogRow(log: DebugLogEntry) {
                         .fillMaxWidth()
                         .padding(start = 76.dp, top = 4.dp, bottom = 4.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFF2D1215))
+                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f))
                         .padding(6.dp)
                 ) {
                     Text(
                         text = log.stackTrace,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace,
-                        color = Color(0xFFFCA5A5),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
                         lineHeight = 12.sp
                     )
                 }
@@ -769,7 +770,7 @@ fun TerminalLogRow(log: DebugLogEntry) {
                     text = "▶ Ketuk untuk melihat stack trace galat",
                     fontSize = 9.sp,
                     fontFamily = FontFamily.Monospace,
-                    color = Color(0xFFF87171),
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(start = 76.dp, top = 2.dp)
                 )
             }

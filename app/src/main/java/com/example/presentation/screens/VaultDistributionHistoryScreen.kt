@@ -490,7 +490,7 @@ fun VaultDistributionSummaryCard(
                         text = "Rp ${formatRupiah(totalDisbursed)}",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = GoldLight
+                        color = GoldAccent
                     )
                 }
             }

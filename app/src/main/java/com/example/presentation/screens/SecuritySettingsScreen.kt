@@ -171,12 +171,12 @@ fun SecuritySettingsScreen(
                         .fillMaxWidth()
                         .testTag("security_status_card"),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (securityConfig.isPinEnabled) DarkSurface else Color(0xFF231818)
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(
                         1.dp,
-                        if (securityConfig.isPinEnabled) EmeraldPrimary.copy(alpha = 0.6f) else ExpenseCoral.copy(alpha = 0.5f)
+                        if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else ExpenseCoral.copy(alpha = 0.5f)
                     )
                 ) {
                     Row(
@@ -190,14 +190,14 @@ fun SecuritySettingsScreen(
                                 .size(50.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (securityConfig.isPinEnabled) EmeraldPrimary.copy(alpha = 0.2f) else ExpenseCoral.copy(alpha = 0.2f)
+                                    if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else ExpenseCoral.copy(alpha = 0.15f)
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = if (securityConfig.isPinEnabled) Icons.Default.Lock else Icons.Default.LockOpen,
                                 contentDescription = null,
-                                tint = if (securityConfig.isPinEnabled) EmeraldLight else ExpenseCoral,
+                                tint = if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary else ExpenseCoral,
                                 modifier = Modifier.size(28.dp)
                             )
                         }
@@ -209,7 +209,7 @@ fun SecuritySettingsScreen(
                                 text = if (securityConfig.isPinEnabled) "Proteksi Aktif (PIN Terpasang)" else "Proteksi Belum Diaktifkan",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (securityConfig.isPinEnabled) EmeraldLight else ExpenseCoral
+                                color = if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary else ExpenseCoral
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
@@ -609,10 +609,10 @@ fun SecuritySettingsScreen(
     if (showClearLogsDialog) {
         AlertDialog(
             onDismissRequest = { showClearLogsDialog = false },
-            containerColor = DarkSurface,
+            containerColor = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
-            title = { Text("Bersihkan Log Keamanan?", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) },
-            text = { Text("Riwayat aktivitas audit keamanan akan dihapus dari memori.", color = White70, fontSize = 13.sp) },
+            title = { Text("Bersihkan Log Keamanan?", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+            text = { Text("Riwayat aktivitas audit keamanan akan dihapus dari memori.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -627,7 +627,7 @@ fun SecuritySettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showClearLogsDialog = false }) {
-                    Text("Batal", color = White70)
+                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -638,9 +638,9 @@ fun SecuritySettingsScreen(
 fun SecurityLogCard(log: SecurityLogEntry) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, if (log.isWarning) ExpenseCoral.copy(alpha = 0.4f) else DarkBorder)
+        border = BorderStroke(1.dp, if (log.isWarning) ExpenseCoral.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
     ) {
         Row(
             modifier = Modifier
@@ -668,7 +668,7 @@ fun SecurityLogCard(log: SecurityLogEntry) {
                         else -> Icons.Default.Shield
                     },
                     contentDescription = null,
-                    tint = if (log.isWarning) ExpenseCoral else EmeraldLight,
+                    tint = if (log.isWarning) ExpenseCoral else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -680,12 +680,12 @@ fun SecurityLogCard(log: SecurityLogEntry) {
                     text = log.description,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (log.isWarning) ExpenseCoral else Color.White
+                    color = if (log.isWarning) ExpenseCoral else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = log.formattedTime,
                     fontSize = 10.sp,
-                    color = White60
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -705,18 +705,18 @@ fun EnablePinDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = DarkSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(18.dp),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Lock, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Atur Kunci PIN 6-Digit", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Atur Kunci PIN 6-Digit", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Masukkan 6-digit angka untuk mengamankan akses ke buku besar keuangan.", fontSize = 12.sp, color = White70)
+                Text("Masukkan 6-digit angka untuk mengamankan akses ke buku besar keuangan.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                 OutlinedTextField(
                     value = pin,
@@ -804,7 +804,7 @@ fun EnablePinDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Batal", color = White70) }
+            TextButton(onClick = onDismiss) { Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     )
 }
@@ -819,28 +819,22 @@ fun DisablePinDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = DarkSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(18.dp),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.LockOpen, contentDescription = null, tint = ExpenseCoral, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Nonaktifkan Kunci PIN?", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Nonaktifkan Kunci PIN?", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Masukkan PIN saat ini untuk menonaktifkan proteksi kunci aplikasi.", fontSize = 12.sp, color = White70)
+                Text("Masukkan PIN saat ini untuk menonaktifkan proteksi kunci aplikasi.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) pin = it },
                     label = { Text("PIN Saat Ini") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
-                    ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("disable_pin_field")
                 )
@@ -862,7 +856,7 @@ fun DisablePinDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Batal", color = White70) }
+            TextButton(onClick = onDismiss) { Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     )
 }
@@ -879,13 +873,13 @@ fun ChangePinDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = DarkSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(18.dp),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.VpnKey, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.VpnKey, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Ganti PIN Keamanan", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("Ganti PIN Keamanan", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
         },
         text = {
@@ -894,12 +888,6 @@ fun ChangePinDialog(
                     value = oldPin,
                     onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) oldPin = it },
                     label = { Text("PIN Lama") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
-                    ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("change_old_pin_field")
                 )
@@ -908,12 +896,6 @@ fun ChangePinDialog(
                     value = newPin,
                     onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) newPin = it },
                     label = { Text("PIN Baru (6 Digit)") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
-                    ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("change_new_pin_field")
                 )
@@ -922,12 +904,6 @@ fun ChangePinDialog(
                     value = confirmNewPin,
                     onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) confirmNewPin = it },
                     label = { Text("Konfirmasi PIN Baru") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
-                    ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("change_confirm_new_pin_field")
                 )
@@ -958,7 +934,7 @@ fun ChangePinDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Batal", color = White70) }
+            TextButton(onClick = onDismiss) { Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     )
 }
@@ -1109,9 +1085,9 @@ fun AutoLockIntervalDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = DarkSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(18.dp),
-        title = { Text("Waktu Kunci Otomatis", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+        title = { Text("Waktu Kunci Otomatis", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 16.sp) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 AutoLockInterval.entries.forEach { interval ->
@@ -1125,16 +1101,16 @@ fun AutoLockIntervalDialog(
                         RadioButton(
                             selected = (interval == currentInterval),
                             onClick = { onSelect(interval) },
-                            colors = RadioButtonDefaults.colors(selectedColor = EmeraldLight)
+                            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(interval.label, color = Color.White, fontSize = 13.sp)
+                        Text(interval.label, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Tutup", color = White70) }
+            TextButton(onClick = onDismiss) { Text("Tutup", color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     )
 }

@@ -832,7 +832,7 @@ fun DashboardScreen(
                                         text = "DSN-MUI",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = EmeraldLight,
+                                        color = MaterialTheme.colorScheme.primary,
                                         maxLines = 1,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
@@ -840,7 +840,7 @@ fun DashboardScreen(
                                 Text(
                                     text = "Rujukan Fiqih & Bebas Riba",
                                     fontSize = 10.sp,
-                                    color = GoldLight,
+                                    color = MaterialTheme.colorScheme.secondary,
                                     maxLines = 1
                                 )
                             }
@@ -855,7 +855,7 @@ fun DashboardScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowForwardIos,
                             contentDescription = null,
-                            tint = EmeraldLight,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(14.dp)
                         )
                     }
@@ -1599,7 +1599,7 @@ fun JournalEntryItemCard(
                     text = "${if (isIncome) "+" else "-"}Rp ${formatRupiah(primaryAmount)}",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (isIncome) EmeraldLight else if (isPayout) GoldAccent else MaterialTheme.colorScheme.onSurface
+                    color = if (isIncome) MaterialTheme.colorScheme.primary else if (isPayout) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface
                 )
                 Row(
                     modifier = Modifier.padding(top = 2.dp),
@@ -1699,7 +1699,7 @@ fun TransactionDetailDialog(
                         Text(
                             text = typeLabel,
                             fontSize = 11.sp,
-                            color = if (isIncome) EmeraldLight else if (isPayout) GoldAccent else ExpenseCoral
+                            color = if (isIncome) MaterialTheme.colorScheme.primary else if (isPayout) MaterialTheme.colorScheme.secondary else ExpenseCoral
                         )
                         Text(
                             text = "Penanggalan: ${entry.hijriDay}/${entry.hijriMonth}/${entry.hijriYear} H (${entry.gregorianDate})",
@@ -1739,14 +1739,14 @@ fun TransactionDetailDialog(
                                         text = "Dr: Rp ${formatRupiah(line.debit)}",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = EmeraldLight
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 } else {
                                     Text(
                                         text = "Cr: Rp ${formatRupiah(line.credit)}",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = GoldAccent
+                                        color = MaterialTheme.colorScheme.secondary
                                     )
                                 }
                             }

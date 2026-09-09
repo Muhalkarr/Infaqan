@@ -139,13 +139,13 @@ fun DualCalendarCard(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(GoldAccent.copy(alpha = 0.15f)),
+                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
                             contentDescription = "Kalender Ganda",
-                            tint = GoldAccent,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -159,7 +159,7 @@ fun DualCalendarCard(
                         Text(
                             text = "Sinkronisasi Tarikh Ibadah & Muamalah",
                             fontSize = 11.sp,
-                            color = GoldLight
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -202,7 +202,7 @@ fun DualCalendarCard(
                                 },
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (currentDateOffsetDays != 0) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (currentDateOffsetDays != 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
                             )
                         }
@@ -256,14 +256,14 @@ fun DualCalendarCard(
                             Icon(
                                 imageVector = Icons.Default.WbSunny,
                                 contentDescription = "Kalender Masehi",
-                                tint = Color(0xFF00B4D8),
+                                tint = AssetBlue,
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
                                 text = "MASEHI",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF00B4D8),
+                                color = AssetBlue,
                                 letterSpacing = 1.sp
                             )
                         }
@@ -319,14 +319,14 @@ fun DualCalendarCard(
                             Icon(
                                 imageVector = Icons.Default.NightsStay,
                                 contentDescription = "Kalender Hijriah",
-                                tint = GoldAccent,
+                                tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(14.dp)
                             )
                             Text(
                                 text = "HIJRIAH",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent,
+                                color = MaterialTheme.colorScheme.secondary,
                                 letterSpacing = 1.sp
                             )
                         }
@@ -337,7 +337,7 @@ fun DualCalendarCard(
                             text = "${hijriDate.day}",
                             fontSize = 32.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = GoldAccent
+                            color = MaterialTheme.colorScheme.secondary
                         )
 
                         Text(
@@ -350,7 +350,7 @@ fun DualCalendarCard(
                         Text(
                             text = "${hijriDate.year} H",
                             fontSize = 11.sp,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -383,20 +383,20 @@ fun DualCalendarCard(
                             else -> "Ketetapan Haul & Zakat Maal mengikuti tarikh Hijriah"
                         },
                         fontSize = 10.sp,
-                        color = if (isFriday || isAyyamulBidh || isMondayOrThursday) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isFriday || isAyyamulBidh || isMondayOrThursday) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 if (isFriday || isAyyamulBidh || isMondayOrThursday) {
                     Surface(
-                        color = GoldAccent.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
                             text = if (isFriday) "Jumat Berkah" else "Sunnah",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldAccent,
+                            color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }

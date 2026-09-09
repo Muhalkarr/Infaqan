@@ -95,10 +95,6 @@ import com.example.core.budget.SpendingPatternAnalysis
 import com.example.core.budget.SuggestionStatus
 import com.example.core.state.AmanahLedgerUiState
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
-import com.example.ui.theme.DarkSurfaceVariant
 import com.example.ui.theme.EmeraldDark
 import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.EmeraldPrimary
@@ -122,11 +118,14 @@ fun BudgetAllocationScreen(
     var deletingBudget by remember { mutableStateOf<BudgetAllocation?>(null) }
 
     Scaffold(
-        containerColor = DarkBackground,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF0E1A1C)
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
                 ),
                 navigationIcon = {
                     IconButton(
@@ -136,7 +135,7 @@ fun BudgetAllocationScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
@@ -146,12 +145,12 @@ fun BudgetAllocationScreen(
                             text = "Pemisahan Anggaran Bulanan",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Batas Maksimal Pengeluaran & Anti-Israf",
                             fontSize = 11.sp,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -166,7 +165,7 @@ fun BudgetAllocationScreen(
                         Icon(
                             imageVector = Icons.Default.Add,
                             contentDescription = "Tambah Anggaran",
-                            tint = GoldAccent
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                     IconButton(
@@ -176,7 +175,7 @@ fun BudgetAllocationScreen(
                         Icon(
                             imageVector = Icons.Default.Menu,
                             contentDescription = "Buka Menu Sidebar",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -240,12 +239,12 @@ fun BudgetAllocationScreen(
                         text = "Alokasi per Kategori Akun (${state.budgets.size})",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White70
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Realisasi Bulan Ini",
                         fontSize = 11.sp,
-                        color = EmeraldLight
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -263,20 +262,20 @@ fun BudgetAllocationScreen(
                             Icon(
                                 imageVector = Icons.Default.PieChart,
                                 contentDescription = null,
-                                tint = Color.White38,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                 modifier = Modifier.size(48.dp)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = "Belum ada alokasi anggaran",
-                                color = Color.White70,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Tetapkan batas maksimal pengeluaran bulanan agar keuangan tetap berkah & terkendali.",
-                                color = Color.White38,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(horizontal = 24.dp)
                             )
@@ -337,11 +336,11 @@ fun BudgetAllocationScreen(
         val budgetToDelete = deletingBudget!!
         AlertDialog(
             onDismissRequest = { deletingBudget = null },
-            containerColor = DarkSurface,
+            containerColor = MaterialTheme.colorScheme.surface,
             title = {
                 Text(
                     text = "Hapus Alokasi Anggaran?",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -349,7 +348,7 @@ fun BudgetAllocationScreen(
             text = {
                 Text(
                     text = "Apakah Anda yakin ingin menghapus anggaran untuk \"${budgetToDelete.categoryName}\"? Riwayat transaksi akun tidak akan terhapus.",
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
             },
@@ -366,7 +365,7 @@ fun BudgetAllocationScreen(
             },
             dismissButton = {
                 TextButton(onClick = { deletingBudget = null }) {
-                    Text("Batal", color = Color.White70)
+                    Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )
@@ -383,23 +382,17 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
 
     val progressColor = when {
         usagePercentage >= 100.0 -> ExpenseCoral
-        usagePercentage >= 80.0 -> GoldAccent
-        else -> EmeraldLight
+        usagePercentage >= 80.0 -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.primary
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(Color(0xFF0E332E), Color(0xFF071E1C))
-                )
-            )
-            .border(1.dp, EmeraldPrimary.copy(alpha = 0.5f), RoundedCornerShape(18.dp))
-            .padding(18.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
     ) {
-        Column {
+        Column(modifier = Modifier.padding(18.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -409,7 +402,7 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
                     Icon(
                         imageVector = Icons.Default.PieChart,
                         contentDescription = null,
-                        tint = GoldAccent,
+                        tint = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -417,13 +410,13 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
                         text = "TOTAL ANGGARAN BULAN INI",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GoldAccent,
+                        color = MaterialTheme.colorScheme.secondary,
                         letterSpacing = 0.8.sp
                     )
                 }
 
                 Surface(
-                    color = progressColor.copy(alpha = 0.2f),
+                    color = progressColor.copy(alpha = 0.15f),
                     shape = RoundedCornerShape(6.dp),
                     border = BorderStroke(1.dp, progressColor.copy(alpha = 0.5f))
                 ) {
@@ -448,13 +441,13 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
                     Text(
                         text = "Realisasi Pengeluaran",
                         fontSize = 11.sp,
-                        color = Color.White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "Rp ${formatRupiah(totalSpent)}",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -462,13 +455,13 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
                     Text(
                         text = "Plafon Anggaran",
                         fontSize = 11.sp,
-                        color = Color.White60
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "Rp ${formatRupiah(totalLimit)}",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = GoldLight
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
@@ -483,7 +476,7 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
                 color = progressColor,
-                trackColor = Color.Black.copy(alpha = 0.4f),
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 strokeCap = StrokeCap.Round
             )
 
@@ -497,12 +490,12 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
                     text = "Sisa Kuota Belanja: Rp ${formatRupiah(remainingBudget)}",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (remainingBudget > 0) EmeraldLight else ExpenseCoral
+                    color = if (remainingBudget > 0) MaterialTheme.colorScheme.primary else ExpenseCoral
                 )
                 Text(
                     text = "${state.budgets.size} Kategori",
                     fontSize = 11.sp,
-                    color = Color.White38
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -513,9 +506,9 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
 fun OverBudgetAlertBanner(overBudgetCount: Int) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF3B1515)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f)),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, ExpenseCoral.copy(alpha = 0.6f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
     ) {
         Row(
             modifier = Modifier
@@ -526,20 +519,20 @@ fun OverBudgetAlertBanner(overBudgetCount: Int) {
             Icon(
                 imageVector = Icons.Default.Warning,
                 contentDescription = null,
-                tint = ExpenseCoral,
+                tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(
                     text = "Peringatan Pemborosan (Over-Budget)",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
                 )
                 Text(
                     text = "$overBudgetCount kategori akun telah melampaui batas maksimal pengeluaran bulan ini. Evaluasi pos belanja untuk menjaga amanah.",
-                    color = Color.White70,
+                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f),
                     fontSize = 11.sp
                 )
             }
@@ -562,8 +555,8 @@ fun BudgetItemCard(
 
     val itemColor = when {
         isOver -> ExpenseCoral
-        isNear -> GoldAccent
-        else -> EmeraldLight
+        isNear -> MaterialTheme.colorScheme.secondary
+        else -> MaterialTheme.colorScheme.primary
     }
 
     val iconVector = getIconForBudget(budget.iconKey)
@@ -572,9 +565,9 @@ fun BudgetItemCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("budget_card_${budget.accountId}"),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, if (isOver) ExpenseCoral.copy(alpha = 0.5f) else DarkBorder)
+        border = BorderStroke(1.dp, if (isOver) ExpenseCoral.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -590,7 +583,7 @@ fun BudgetItemCard(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(itemColor.copy(alpha = 0.15f))
+                            .background(itemColor.copy(alpha = 0.12f))
                             .border(1.dp, itemColor.copy(alpha = 0.3f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
@@ -609,12 +602,12 @@ fun BudgetItemCard(
                             text = budget.categoryName,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Batas: Rp ${formatRupiah(budget.monthlyLimit)}",
                             fontSize = 11.sp,
-                            color = Color.White60
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -640,7 +633,7 @@ fun BudgetItemCard(
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit Anggaran",
-                            tint = Color.White60,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -669,7 +662,7 @@ fun BudgetItemCard(
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                 color = itemColor,
-                trackColor = DarkSurfaceVariant,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 strokeCap = StrokeCap.Round
             )
 
@@ -682,7 +675,7 @@ fun BudgetItemCard(
                 Text(
                     text = "Terpakai: Rp ${formatRupiah(spentAmount)}",
                     fontSize = 11.sp,
-                    color = Color.White70
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = if (isOver) {
@@ -692,7 +685,7 @@ fun BudgetItemCard(
                     },
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isOver) ExpenseCoral else EmeraldLight
+                    color = if (isOver) ExpenseCoral else MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -730,13 +723,13 @@ fun AddEditBudgetDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = DarkSurface,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Text(
                 text = if (isEdit) "Sesuaikan Anggaran" else "Tambah Alokasi Anggaran",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSurface
             )
         },
         text = {
@@ -754,15 +747,15 @@ fun AddEditBudgetDialog(
                         value = currentAccount?.name ?: "Pilih Akun Pengeluaran",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Pos Akun Pengeluaran", color = Color.White70) },
+                        label = { Text("Pos Akun Pengeluaran", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accountDropdownExpanded) },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = EmeraldPrimary,
-                            unfocusedBorderColor = DarkBorder,
-                            focusedContainerColor = Color(0xFF0E1A1C),
-                            unfocusedContainerColor = Color(0xFF0E1A1C)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
                         ),
                         modifier = Modifier
                             .menuAnchor()
@@ -772,14 +765,14 @@ fun AddEditBudgetDialog(
                     ExposedDropdownMenu(
                         expanded = accountDropdownExpanded,
                         onDismissRequest = { accountDropdownExpanded = false },
-                        modifier = Modifier.background(DarkSurface)
+                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                     ) {
                         expenseAccounts.forEach { acc ->
                             DropdownMenuItem(
                                 text = {
                                     Column {
-                                        Text(acc.name, color = Color.White, fontSize = 13.sp)
-                                        Text(acc.description, color = Color.White60, fontSize = 10.sp)
+                                        Text(acc.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+                                        Text(acc.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                     }
                                 },
                                 onClick = {
@@ -799,17 +792,17 @@ fun AddEditBudgetDialog(
                         limitText = it.filter { ch -> ch.isDigit() }
                         errorMessage = null
                     },
-                    label = { Text("Batas Maksimal Bulanan (Rp)", color = Color.White70) },
-                    prefix = { Text("Rp ", color = GoldAccent, fontWeight = FontWeight.Bold) },
+                    label = { Text("Batas Maksimal Bulanan (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    prefix = { Text("Rp ", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = DarkBorder,
-                        focusedContainerColor = Color(0xFF0E1A1C),
-                        unfocusedContainerColor = Color(0xFF0E1A1C)
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -818,7 +811,7 @@ fun AddEditBudgetDialog(
                 Text(
                     text = "Pilih Ikon Kategori",
                     fontSize = 12.sp,
-                    color = Color.White70
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -839,10 +832,10 @@ fun AddEditBudgetDialog(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) EmeraldPrimary else Color(0xFF0E1A1C))
+                                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
                                 .border(
                                     1.dp,
-                                    if (isSelected) GoldAccent else DarkBorder,
+                                    if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                                     RoundedCornerShape(8.dp)
                                 )
                                 .clickable { selectedIconKey = key },
@@ -851,7 +844,7 @@ fun AddEditBudgetDialog(
                             Icon(
                                 imageVector = icon,
                                 contentDescription = key,
-                                tint = if (isSelected) Color.White else Color.White60,
+                                tint = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -867,13 +860,13 @@ fun AddEditBudgetDialog(
                         Text(
                             text = "Batas Peringatan Awal",
                             fontSize = 12.sp,
-                            color = Color.White70
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "${(alertThreshold * 100).toInt()}%",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldAccent
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                     Slider(
@@ -903,7 +896,7 @@ fun AddEditBudgetDialog(
                     }
                     onSave(selectedAccountId, customCategoryName, limitVal, alertThreshold, selectedIconKey)
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(4.dp))
@@ -912,7 +905,7 @@ fun AddEditBudgetDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal", color = Color.White70)
+                Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )
@@ -922,16 +915,16 @@ fun AddEditBudgetDialog(
 fun IslamicBudgetWisdomCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0C2420)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, EmeraldDark)
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
                     contentDescription = null,
-                    tint = EmeraldLight,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -939,7 +932,7 @@ fun IslamicBudgetWisdomCard() {
                     text = "Prinsip Syariah: Anti-Israf & Keseimbangan",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = GoldAccent
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
 
@@ -948,7 +941,7 @@ fun IslamicBudgetWisdomCard() {
             Text(
                 text = "وَالَّذِينَ إِذَا أَنْفَقُوا لَمْ يُسْرِفُوا وَلَمْ يَقْتُرُوا وَكَانَ بَيْنَ ذَٰلِكَ قَوَامًا",
                 fontSize = 13.sp,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium,
                 lineHeight = 20.sp
             )
@@ -958,7 +951,7 @@ fun IslamicBudgetWisdomCard() {
             Text(
                 text = "\"Dan orang-orang yang apabila membelanjakan (harta), mereka tidak berlebihan, dan tidak (pula) kikir, dan adalah (pembelanjaan itu) di tengah-tengah antara yang demikian.\" (QS. Al-Furqan: 67)",
                 fontSize = 11.sp,
-                color = Color.White70,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 lineHeight = 16.sp
             )
         }
@@ -1090,7 +1083,7 @@ fun SpendingPatternOptimizerSection(
                                 Text(
                                     text = "${(mode.essentialWeight * 100).toInt()}/${(mode.discretionaryWeight * 100).toInt()}/${(mode.savingsInfaqWeight * 100).toInt()}",
                                     fontSize = 8.sp,
-                                    color = if (isSelected) GoldLight else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    color = if (isSelected) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                             }
                         }
@@ -1279,11 +1272,11 @@ fun SuggestionItemCard(
                 }
                 Column {
                     Text("Rata-rata Belanja", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Rp ${formatRupiah(suggestion.actualMonthlyAverage)}", fontSize = 11.sp, color = GoldLight)
+                    Text("Rp ${formatRupiah(suggestion.actualMonthlyAverage)}", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Saran Pagu Cerdas", fontSize = 9.sp, color = GoldAccent, fontWeight = FontWeight.Bold)
-                    Text("Rp ${formatRupiah(suggestion.suggestedCap)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                    Text("Saran Pagu Cerdas", fontSize = 9.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
+                    Text("Rp ${formatRupiah(suggestion.suggestedCap)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                 }
             }
 

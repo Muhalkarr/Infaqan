@@ -58,7 +58,80 @@ object AppDebugLogger {
 
     fun init(context: Context) {
         appContext = context.applicationContext
+        loadPersistedLogs(context)
         i("AppDebugLogger", "Amanah Ledger Debug Terminal diinisialisasi. Mode audit aktif.")
+    }
+
+    private fun loadPersistedLogs(context: Context) {
+        try {
+            val logsDir = File(context.filesDir, "logs")
+            val logFile = File(logsDir, LOG_FILE_NAME)
+            if (!logFile.exists() || logFile.length() == 0L) return
+
+            val lines = logFile.readLines()
+            val logRegex = Regex("""^\[(.*?)\] \[(.*?)\] \[(.*?)\] (.*)$""")
+            val loadedEntries = mutableListOf<DebugLogEntry>()
+
+            var currentEntry: DebugLogEntry? = null
+            val currentStackTrace = StringBuilder()
+
+            for (line in lines) {
+                val match = logRegex.matchEntire(line)
+                if (match != null) {
+                    currentEntry?.let { entry ->
+                        val trace = if (currentStackTrace.isNotEmpty()) currentStackTrace.toString().trim() else null
+                        loadedEntries.add(entry.copy(stackTrace = trace))
+                        currentStackTrace.clear()
+                    }
+
+                    val timeStr = match.groupValues[1]
+                    val levelStr = match.groupValues[2]
+                    val tagStr = match.groupValues[3]
+                    val msgStr = match.groupValues[4]
+
+                    val level = when (levelStr) {
+                        "VRB" -> DebugLogLevel.VERBOSE
+                        "DBG" -> DebugLogLevel.DEBUG
+                        "INF" -> DebugLogLevel.INFO
+                        "WRN" -> DebugLogLevel.WARN
+                        "ERR" -> DebugLogLevel.ERROR
+                        "FATAL" -> DebugLogLevel.CRASH
+                        else -> DebugLogLevel.INFO
+                    }
+
+                    currentEntry = DebugLogEntry(
+                        id = ++sequenceId,
+                        timestamp = System.currentTimeMillis(),
+                        timeFormatted = timeStr,
+                        level = level,
+                        tag = tagStr,
+                        message = msgStr
+                    )
+                } else {
+                    if (currentEntry != null) {
+                        if (currentStackTrace.isNotEmpty()) currentStackTrace.append("\n")
+                        currentStackTrace.append(line)
+                    }
+                }
+            }
+
+            currentEntry?.let { entry ->
+                val trace = if (currentStackTrace.isNotEmpty()) currentStackTrace.toString().trim() else null
+                loadedEntries.add(entry.copy(stackTrace = trace))
+            }
+
+            val truncated = if (loadedEntries.size > MAX_MEMORY_LOGS) {
+                loadedEntries.takeLast(MAX_MEMORY_LOGS)
+            } else {
+                loadedEntries
+            }
+
+            logQueue.clear()
+            logQueue.addAll(truncated)
+            _logsState.update { logQueue.toList() }
+        } catch (e: Exception) {
+            Log.e("AppDebugLogger", "Gagal memuat log persisten dari disk: ${e.message}")
+        }
     }
 
     fun v(tag: String, message: String) = log(DebugLogLevel.VERBOSE, tag, message)
@@ -67,6 +140,20 @@ object AppDebugLogger {
     fun w(tag: String, message: String, tr: Throwable? = null) = log(DebugLogLevel.WARN, tag, message, tr)
     fun e(tag: String, message: String, tr: Throwable? = null) = log(DebugLogLevel.ERROR, tag, message, tr)
     fun fatal(tag: String, message: String, tr: Throwable? = null) = log(DebugLogLevel.CRASH, tag, message, tr)
+
+    fun logNavigation(destination: String, source: String? = null) {
+        val msg = if (source != null) "Navigasi: dari '$source' menuju '$destination'" else "Membuka layar: '$destination'"
+        d("Navigation", msg)
+    }
+
+    fun logUserAction(action: String, details: String = "") {
+        val msg = if (details.isNotBlank()) "$action | $details" else action
+        i("UserAction", msg)
+    }
+
+    fun logHandledError(tag: String, message: String, throwable: Throwable? = null) {
+        e(tag, "GALAT TERTANGANI (Non-Fatal): $message", throwable)
+    }
 
     fun log(level: DebugLogLevel, tag: String, message: String, tr: Throwable? = null) {
         val now = System.currentTimeMillis()

@@ -48,15 +48,15 @@ private val IslamicDarkColorScheme = darkColorScheme(
 )
 
 private val IslamicLightColorScheme = lightColorScheme(
-    primary = EmeraldPrimary,
+    primary = EmeraldDeep,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFC8E6C9),
-    onPrimaryContainer = EmeraldDark,
-    secondary = GoldDark,
+    primaryContainer = Color(0xFFCCE8E2),
+    onPrimaryContainer = Color(0xFF002B24),
+    secondary = GoldRoyal, // Radiant Islamic Gold (Emas Muamalah berkilau dengan kontras tinggi)
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFF3CD),
-    onSecondaryContainer = Color(0xFF7A4F01),
-    tertiary = EmeraldPrimary,
+    secondaryContainer = GoldContainerLight,
+    onSecondaryContainer = OnGoldContainerLight,
+    tertiary = Color(0xFF004D40),
     onTertiary = Color.White,
     background = LightBackground,
     onBackground = LightTextPrimary,
@@ -65,6 +65,7 @@ private val IslamicLightColorScheme = lightColorScheme(
     surfaceVariant = LightSurfaceVariant,
     onSurfaceVariant = LightTextSecondary,
     outline = LightBorder,
+    outlineVariant = Color(0xFFB5C8C4),
     error = Color(0xFFD32F2F),
     onError = Color.White
 )

@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import com.example.core.debug.AppDebugLogger
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -238,7 +239,9 @@ fun ExportReportScreen(
                                     try {
                                         val file = FinancialPdfGenerator.generateComprehensiveLedgerPdf(context, uiState)
                                         FinancialPdfGenerator.viewPdfReport(context, file)
+                                        AppDebugLogger.logUserAction("Ekspor PDF", "Membuka pratinjau Buku Kas Lengkap")
                                     } catch (e: Exception) {
+                                        AppDebugLogger.logHandledError("Ekspor PDF", "Gagal membuka PDF Buku Kas: ${e.message}", e)
                                         Toast.makeText(context, "Gagal membuka PDF: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 },
@@ -256,7 +259,9 @@ fun ExportReportScreen(
                                     try {
                                         val file = FinancialPdfGenerator.generateComprehensiveLedgerPdf(context, uiState)
                                         FinancialPdfGenerator.sharePdfReport(context, file)
+                                        AppDebugLogger.logUserAction("Ekspor PDF", "Membagikan berkas PDF Buku Kas Lengkap")
                                     } catch (e: Exception) {
+                                        AppDebugLogger.logHandledError("Ekspor PDF", "Gagal mengekspor PDF Buku Kas: ${e.message}", e)
                                         Toast.makeText(context, "Gagal mengekspor PDF: ${e.message}", Toast.LENGTH_LONG).show()
                                     } finally {
                                         isGeneratingLedgerPdf = false
@@ -334,7 +339,9 @@ fun ExportReportScreen(
                                     try {
                                         val file = FinancialPdfGenerator.generateZakatAndInfaqReportPdf(context, uiState)
                                         FinancialPdfGenerator.viewPdfReport(context, file)
+                                        AppDebugLogger.logUserAction("Ekspor PDF", "Membuka pratinjau Laporan Zakat & Infaq")
                                     } catch (e: Exception) {
+                                        AppDebugLogger.logHandledError("Ekspor PDF", "Gagal membuka PDF Zakat & Infaq: ${e.message}", e)
                                         Toast.makeText(context, "Gagal membuka PDF: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 },
@@ -352,7 +359,9 @@ fun ExportReportScreen(
                                     try {
                                         val file = FinancialPdfGenerator.generateZakatAndInfaqReportPdf(context, uiState)
                                         FinancialPdfGenerator.sharePdfReport(context, file)
+                                        AppDebugLogger.logUserAction("Ekspor PDF", "Membagikan berkas PDF Laporan Zakat & Infaq")
                                     } catch (e: Exception) {
+                                        AppDebugLogger.logHandledError("Ekspor PDF", "Gagal mengekspor PDF Zakat & Infaq: ${e.message}", e)
                                         Toast.makeText(context, "Gagal mengekspor PDF: ${e.message}", Toast.LENGTH_LONG).show()
                                     } finally {
                                         isGeneratingZakatPdf = false
@@ -436,7 +445,9 @@ fun ExportReportScreen(
                                             cal.get(Calendar.YEAR)
                                         )
                                         FinancialPdfGenerator.viewPdfReport(context, file)
+                                        AppDebugLogger.logUserAction("Ekspor PDF", "Membuka pratinjau Laporan Bulanan")
                                     } catch (e: Exception) {
+                                        AppDebugLogger.logHandledError("Ekspor PDF", "Gagal membuka PDF Laporan Bulanan: ${e.message}", e)
                                         Toast.makeText(context, "Gagal membuka PDF: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 },
@@ -460,7 +471,9 @@ fun ExportReportScreen(
                                             cal.get(Calendar.YEAR)
                                         )
                                         FinancialPdfGenerator.sharePdfReport(context, file)
+                                        AppDebugLogger.logUserAction("Ekspor PDF", "Membagikan berkas PDF Laporan Bulanan")
                                     } catch (e: Exception) {
+                                        AppDebugLogger.logHandledError("Ekspor PDF", "Gagal mengekspor PDF Laporan Bulanan: ${e.message}", e)
                                         Toast.makeText(context, "Gagal mengekspor PDF: ${e.message}", Toast.LENGTH_LONG).show()
                                     } finally {
                                         isGeneratingMonthlyPdf = false

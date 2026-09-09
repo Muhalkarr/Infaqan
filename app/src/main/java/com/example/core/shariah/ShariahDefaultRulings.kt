@@ -2,6 +2,8 @@ package com.example.core.shariah
 
 object ShariahDefaultRulings {
 
+    val defaults: List<ShariahRuling> get() = getDefaultRulings()
+
     fun getDefaultRulings(): List<ShariahRuling> = listOf(
         ShariahRuling(
             id = "ruling_zakat_maal_emas",
