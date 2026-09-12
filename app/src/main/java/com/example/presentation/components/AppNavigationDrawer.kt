@@ -75,9 +75,6 @@ import com.example.Screen
 import com.example.core.calendar.HijriCalendarEngine
 import com.example.core.state.AmanahLedgerUiState
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.GoldLight
 import java.text.NumberFormat
 import java.util.Locale
@@ -118,7 +115,7 @@ fun AppNavigationDrawerContent(
                         brush = Brush.verticalGradient(
                             colors = listOf(
                                 EmeraldDark,
-                                EmeraldPrimary.copy(alpha = 0.95f)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.95f)
                             )
                         )
                     )
@@ -135,14 +132,14 @@ fun AppNavigationDrawerContent(
                                 modifier = Modifier
                                     .size(44.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(EmeraldPrimary)
-                                    .border(1.5.dp, GoldAccent, RoundedCornerShape(12.dp)),
+                                    .background(MaterialTheme.colorScheme.primary)
+                                    .border(1.5.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(12.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Nightlight,
                                     contentDescription = null,
-                                    tint = GoldAccent,
+                                    tint = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
@@ -158,7 +155,7 @@ fun AppNavigationDrawerContent(
                                 Text(
                                     text = "Sistem Akuntansi Syariah",
                                     fontSize = 11.sp,
-                                    color = EmeraldLight
+                                    color = Color.White.copy(alpha = 0.8f)
                                 )
                             }
                         }
@@ -172,7 +169,7 @@ fun AppNavigationDrawerContent(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Tutup Sidebar",
-                                tint = Color.White.copy(alpha = 0.8f)
+                                tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
                             )
                         }
                     }
@@ -181,7 +178,7 @@ fun AppNavigationDrawerContent(
 
                     // Profil Kas Mukmin & Hijri Card
                     Surface(
-                        color = Color.Black.copy(alpha = 0.25f),
+                        color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.25f),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -202,7 +199,7 @@ fun AppNavigationDrawerContent(
                                 Text(
                                     text = hijriDate.toString(),
                                     fontSize = 10.sp,
-                                    color = GoldAccent
+                                    color = Color.White.copy(alpha = 0.7f)
                                 )
                             }
 
@@ -216,7 +213,7 @@ fun AppNavigationDrawerContent(
                                 Icon(
                                     imageVector = if (uiState.securityConfig.isMaskBalance) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = "Privasi Saldo",
-                                    tint = if (uiState.securityConfig.isMaskBalance) GoldAccent else Color.White.copy(alpha = 0.7f),
+                                    tint = if (uiState.securityConfig.isMaskBalance) MaterialTheme.colorScheme.secondary else Color.White.copy(alpha = 0.7f),
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -245,7 +242,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.AddCircle,
                 selected = currentScreen == Screen.ADD_TRANSACTION,
                 badgeText = "+ Entri",
-                badgeColor = EmeraldLight,
+                badgeColor = MaterialTheme.colorScheme.primary,
                 testTag = "sidebar_nav_add_transaction",
                 onClick = { onSelectScreen(Screen.ADD_TRANSACTION) }
             )
@@ -255,7 +252,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.AccountBalance,
                 selected = currentScreen == Screen.MULTI_WALLET,
                 badgeText = "${uiState.wallets.size} Kantong",
-                badgeColor = EmeraldLight,
+                badgeColor = MaterialTheme.colorScheme.primary,
                 testTag = "sidebar_nav_multi_wallet",
                 onClick = { onSelectScreen(Screen.MULTI_WALLET) }
             )
@@ -285,7 +282,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.VolunteerActivism,
                 selected = currentScreen == Screen.ZAKAT_HUB,
                 badgeText = if (uiState.isNisabReached) "Wajib Zakat" else "Komprehensif",
-                badgeColor = GoldAccent,
+                badgeColor = MaterialTheme.colorScheme.secondary,
                 testTag = "sidebar_nav_zakat_hub",
                 onClick = { onSelectScreen(Screen.ZAKAT_HUB) }
             )
@@ -295,7 +292,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.WbSunny,
                 selected = currentScreen == Screen.SEDEKAH_SUBUH,
                 badgeText = if (uiState.sedekahSubuhState.currentStreak > 0) "🔥 ${uiState.sedekahSubuhState.currentStreak} Hari" else null,
-                badgeColor = GoldAccent,
+                badgeColor = MaterialTheme.colorScheme.secondary,
                 testTag = "sidebar_nav_sedekah_subuh",
                 onClick = { onSelectScreen(Screen.SEDEKAH_SUBUH) }
             )
@@ -305,7 +302,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.Savings,
                 selected = currentScreen == Screen.VAULT_HISTORY,
                 badgeText = if (uiState.securityConfig.isMaskBalance) "Rp •••" else "Rp ${nf.format(uiState.virtualInfaqVaultBalance)}",
-                badgeColor = EmeraldLight,
+                badgeColor = MaterialTheme.colorScheme.primary,
                 testTag = "sidebar_nav_vault_history",
                 onClick = { onSelectScreen(Screen.VAULT_HISTORY) }
             )
@@ -315,7 +312,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.MenuBook,
                 selected = currentScreen == Screen.HAUL_NISAB,
                 badgeText = if (uiState.isNisabReached) "Tercapai" else "Dipantau",
-                badgeColor = if (uiState.isNisabReached) GoldAccent else null,
+                badgeColor = if (uiState.isNisabReached) MaterialTheme.colorScheme.secondary else null,
                 testTag = "sidebar_nav_haul_nisab",
                 onClick = { onSelectScreen(Screen.HAUL_NISAB) }
             )
@@ -334,7 +331,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.Handshake,
                 selected = currentScreen == Screen.QARDH,
                 badgeText = if (uiState.qardhRecords.isNotEmpty()) "${uiState.qardhRecords.size} Akad" else null,
-                badgeColor = EmeraldLight,
+                badgeColor = MaterialTheme.colorScheme.primary,
                 testTag = "sidebar_nav_qardh",
                 onClick = { onSelectScreen(Screen.QARDH) }
             )
@@ -344,7 +341,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.LocationCity,
                 selected = currentScreen == Screen.AMIL_DIRECTORY,
                 badgeText = "BAZNAS & LAZ",
-                badgeColor = GoldAccent,
+                badgeColor = MaterialTheme.colorScheme.secondary,
                 testTag = "sidebar_nav_amil_directory",
                 onClick = { onSelectScreen(Screen.AMIL_DIRECTORY) }
             )
@@ -363,7 +360,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.MenuBook,
                 selected = currentScreen == Screen.ISLAMIC_GROUNDING,
                 badgeText = "Fatwa & Nisab",
-                badgeColor = EmeraldLight,
+                badgeColor = MaterialTheme.colorScheme.primary,
                 testTag = "sidebar_nav_islamic_grounding",
                 onClick = { onSelectScreen(Screen.ISLAMIC_GROUNDING) }
             )
@@ -373,7 +370,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.Tune,
                 selected = currentScreen == Screen.SHARIAH_RULES_CUSTOMIZATION,
                 badgeText = "Rules Studio",
-                badgeColor = GoldAccent,
+                badgeColor = MaterialTheme.colorScheme.secondary,
                 testTag = "sidebar_nav_shariah_rules_customization",
                 onClick = { onSelectScreen(Screen.SHARIAH_RULES_CUSTOMIZATION) }
             )
@@ -393,7 +390,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.Savings,
                 selected = currentScreen == Screen.IBADAH_GOALS,
                 badgeText = "${uiState.ibadahGoals.size} Program",
-                badgeColor = EmeraldLight,
+                badgeColor = MaterialTheme.colorScheme.primary,
                 testTag = "sidebar_nav_ibadah_goals",
                 onClick = { onSelectScreen(Screen.IBADAH_GOALS) }
             )
@@ -430,7 +427,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.FileDownload,
                 selected = currentScreen == Screen.EXPORT_REPORT,
                 badgeText = "PDF / CSV",
-                badgeColor = EmeraldLight,
+                badgeColor = MaterialTheme.colorScheme.primary,
                 testTag = "sidebar_nav_export_report",
                 onClick = { onSelectScreen(Screen.EXPORT_REPORT) }
             )
@@ -447,7 +444,7 @@ fun AppNavigationDrawerContent(
 
             // ITEM UTAMA: PENGATURAN TERPUSAT
             Surface(
-                color = if (currentScreen == Screen.CENTRAL_SETTINGS) EmeraldPrimary.copy(alpha = 0.15f) else Color.Transparent,
+                color = if (currentScreen == Screen.CENTRAL_SETTINGS) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .padding(horizontal = 12.dp, vertical = 2.dp)
@@ -465,13 +462,13 @@ fun AppNavigationDrawerContent(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (currentScreen == Screen.CENTRAL_SETTINGS) EmeraldPrimary else GoldAccent.copy(alpha = 0.15f)),
+                            .background(if (currentScreen == Screen.CENTRAL_SETTINGS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "Pengaturan Terpusat",
-                            tint = if (currentScreen == Screen.CENTRAL_SETTINGS) Color.White else GoldAccent,
+                            tint = if (currentScreen == Screen.CENTRAL_SETTINGS) Color.White else MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -483,7 +480,7 @@ fun AppNavigationDrawerContent(
                             text = "Pengaturan Terpusat",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (currentScreen == Screen.CENTRAL_SETTINGS) EmeraldLight else MaterialTheme.colorScheme.onSurface
+                            color = if (currentScreen == Screen.CENTRAL_SETTINGS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Konfigurasi seluruh modul & fitur",
@@ -493,14 +490,14 @@ fun AppNavigationDrawerContent(
                     }
 
                     Surface(
-                        color = GoldAccent.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
                             text = "HUB",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldAccent,
+                            color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
@@ -512,7 +509,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.Security,
                 selected = currentScreen == Screen.BACKUP_RESTORE,
                 badgeText = "Enkripsi",
-                badgeColor = EmeraldLight,
+                badgeColor = MaterialTheme.colorScheme.primary,
                 testTag = "sidebar_nav_backup_restore",
                 onClick = { onSelectScreen(Screen.BACKUP_RESTORE) }
             )
@@ -522,7 +519,7 @@ fun AppNavigationDrawerContent(
                 icon = Icons.Default.Shield,
                 selected = currentScreen == Screen.SECURITY_SETTINGS,
                 badgeText = if (uiState.securityConfig.isPinEnabled) "PIN Aktif" else "Nonaktif",
-                badgeColor = if (uiState.securityConfig.isPinEnabled) EmeraldLight else null,
+                badgeColor = if (uiState.securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary else null,
                 testTag = "sidebar_nav_security",
                 onClick = { onSelectScreen(Screen.SECURITY_SETTINGS) }
             )
@@ -574,7 +571,7 @@ fun AppNavigationDrawerContent(
                             Icon(
                                 imageVector = if (uiState.isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
                                 contentDescription = "Ganti Tema",
-                                tint = GoldAccent,
+                                tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -598,14 +595,14 @@ fun AppNavigationDrawerContent(
                                 Icon(
                                     imageVector = Icons.Default.Lock,
                                     contentDescription = "Kunci Sekarang",
-                                    tint = EmeraldLight,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "Kunci",
                                     fontSize = 12.sp,
-                                    color = EmeraldLight,
+                                    color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -615,7 +612,7 @@ fun AppNavigationDrawerContent(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Amanah Ledger v2.4 • 100% Syariah-Compliant",
+                        text = "Amanah Ledger v2.4\n© 2026 Muhammad Abdul Kholik Arrasyid\n100% Syariah-Compliant", textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         fontSize = 10.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -632,7 +629,7 @@ private fun SidebarCategoryHeader(title: String) {
         text = title,
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
-        color = EmeraldLight,
+        color = MaterialTheme.colorScheme.primary,
         letterSpacing = 0.8.sp,
         modifier = Modifier.padding(start = 20.dp, end = 16.dp, top = 12.dp, bottom = 4.dp)
     )
@@ -684,16 +681,16 @@ private fun SidebarNavigationItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
         },
         selected = selected,
         onClick = onClick,
         colors = NavigationDrawerItemDefaults.colors(
-            selectedContainerColor = EmeraldPrimary.copy(alpha = 0.12f),
+            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
             unselectedContainerColor = Color.Transparent,
-            selectedTextColor = EmeraldLight,
+            selectedTextColor = MaterialTheme.colorScheme.primary,
             unselectedTextColor = MaterialTheme.colorScheme.onSurface
         ),
         modifier = Modifier

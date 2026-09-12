@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -81,6 +82,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -283,8 +285,9 @@ fun InteractiveGuideScreen(
         )
     }
 
+    val state by viewModel.uiState.collectAsState()
     var currentTopicIndex by remember { mutableIntStateOf(viewModel.activeGuideTopicIndex.coerceIn(0, topics.size - 1)) }
-    val completedTopics = remember { mutableSetOf(0) }
+    val completedTopics = state.completedGuides
 
     LaunchedEffect(currentTopicIndex) {
         viewModel.setGuideTopic(currentTopicIndex, topics[currentTopicIndex].title)
@@ -294,11 +297,12 @@ fun InteractiveGuideScreen(
     val progressPercent = ((completedTopics.size.toFloat() / topics.size) * 100).toInt()
 
     fun markCurrentCompleted() {
-        completedTopics.add(currentTopicIndex)
+        viewModel.markGuideTopicCompleted(topics[currentTopicIndex].id)
     }
 
     val openModule: (Int, () -> Unit) -> Unit = { idx, action ->
         viewModel.activateGuideMode(idx, topics[idx].title)
+        viewModel.markGuideTopicCompleted(topics[idx].id)
         action()
     }
 
@@ -338,22 +342,22 @@ fun InteractiveGuideScreen(
                         Text(
                             text = "Kuasai Seluruh Fitur Amanah Ledger",
                             fontSize = 11.sp,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
                 actions = {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = EmeraldPrimary.copy(alpha = 0.2f),
-                        border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f)),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                         modifier = Modifier.padding(end = 12.dp)
                     ) {
                         Text(
                             text = "$progressPercent% Selesai",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldAccent,
+                            color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
@@ -382,7 +386,7 @@ fun InteractiveGuideScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp),
-                color = GoldAccent,
+                color = MaterialTheme.colorScheme.secondary,
                 trackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
             )
 
@@ -397,19 +401,18 @@ fun InteractiveGuideScreen(
             ) {
                 itemsIndexed(topics) { idx, topic ->
                     val isSelected = idx == currentTopicIndex
-                    val isDone = completedTopics.contains(idx)
+                    val isDone = state.completedGuides.contains(topic.id)
 
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                         border = BorderStroke(
                             1.dp,
-                            if (isSelected) GoldAccent else if (isDone) EmeraldLight.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                            if (isSelected) MaterialTheme.colorScheme.secondary else if (isDone) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                         ),
                         modifier = Modifier
                             .clickable {
                                 currentTopicIndex = idx
-                                completedTopics.add(idx)
                             }
                             .testTag("guide_topic_chip_$idx")
                     ) {
@@ -421,7 +424,7 @@ fun InteractiveGuideScreen(
                                 Icon(
                                     imageVector = Icons.Default.CheckCircle,
                                     contentDescription = null,
-                                    tint = EmeraldLight,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(13.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -430,7 +433,7 @@ fun InteractiveGuideScreen(
                                 text = "${idx + 1}. ${topic.title.substringAfter(". ")}",
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -462,7 +465,10 @@ fun InteractiveGuideScreen(
                             3 -> TopicVaultContent(onTryAction = { openModule(3, onNavigateToVaultHistory) })
                             4 -> TopicSedekahSubuhContent(onTryAction = { openModule(4, onNavigateToSedekahSubuh) })
                             5 -> TopicBudgetContent(onTryAction = { openModule(5, onNavigateToBudget) })
-                            6 -> TopicHaulNisabInteractiveContent(onTryAction = { openModule(6, onNavigateToHaulNisab) })
+                            6 -> TopicHaulNisabInteractiveContent(
+                                initialGoldPrice = state.goldPricePerGram,
+                                onTryAction = { openModule(6, onNavigateToHaulNisab) }
+                            )
                             7 -> TopicModifyDeleteContent(onTryAction = { openModule(7, onNavigateBack) })
                             8 -> TopicAmilDirectoryContent(onTryAction = { openModule(8, onNavigateToAmilDirectory) })
                             9 -> TopicRoomPersistenceContent(onTryAction = { openModule(9, onNavigateToSettings) })
@@ -518,7 +524,7 @@ fun InteractiveGuideScreen(
                                 markCurrentCompleted()
                             },
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             modifier = Modifier.testTag("guide_next_button")
                         ) {
                             Text("Lanjut ke Modul ${currentTopicIndex + 2}", fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -533,12 +539,12 @@ fun InteractiveGuideScreen(
                                 onNavigateBack()
                             },
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                             modifier = Modifier.testTag("guide_finish_button")
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Selesai & Buka Aplikasi", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                            Text("Selesai & Buka Aplikasi", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
                         }
                     }
                 }
@@ -553,7 +559,7 @@ fun TopicHeaderCard(topic: GuideTopic, stepNumber: Int, totalSteps: Int) {
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
     ) {
         Row(
             modifier = Modifier
@@ -565,13 +571,13 @@ fun TopicHeaderCard(topic: GuideTopic, stepNumber: Int, totalSteps: Int) {
                 modifier = Modifier
                     .size(46.dp)
                     .clip(CircleShape)
-                    .background(EmeraldPrimary.copy(alpha = 0.2f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = topic.icon,
                     contentDescription = null,
-                    tint = GoldAccent,
+                    tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -588,18 +594,18 @@ fun TopicHeaderCard(topic: GuideTopic, stepNumber: Int, totalSteps: Int) {
                         text = "MODUL $stepNumber DARI $totalSteps",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = EmeraldLight,
+                        color = MaterialTheme.colorScheme.primary,
                         letterSpacing = 1.sp
                     )
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = GoldAccent.copy(alpha = 0.15f)
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
                     ) {
                         Text(
                             text = topic.badge,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldAccent,
+                            color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
@@ -642,7 +648,7 @@ fun TopicDoubleEntryContent(onTryAction: () -> Unit) {
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Konsep Dasar Neraca Seimbang Syariah", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -657,20 +663,20 @@ fun TopicDoubleEntryContent(onTryAction: () -> Unit) {
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.4f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("📐 Rumus Keseimbangan Neraca:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                        Text("📐 Rumus Keseimbangan Neraca:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         Text("Aset (Kas/Bank/Emas) = Kewajiban (Vault Infaq/Hutang) + Modal Bersih", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("1. Saat Pemasukan:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Debit Kas (Aset +) | Kredit Rezeki (Pendapatan +)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                            Text("Debit Kas (Aset +) | Kredit Rezeki (Pendapatan +)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("2. Saat Pengeluaran:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Debit Beban (Pengeluaran +) | Kredit Kas (Aset -)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
+                            Text("Debit Beban (Pengeluaran +) | Kredit Kas (Aset -)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -695,7 +701,7 @@ fun TopicDoubleEntryContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -729,7 +735,7 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
         Text(
             text = "Setiap rezeki yang masuk disucikan dengan menyisihkan sebagian nominal secara otomatis ke Virtual Vault.",
             fontSize = 12.sp,
-            color = Color.White70,
+            
             lineHeight = 18.sp
         )
 
@@ -738,11 +744,11 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, EmeraldPrimary)
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Calculate, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Calculate, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("🎮 Simulator Alokasi Infaq Interaktif", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -758,11 +764,11 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        focusedLabelColor = EmeraldPrimary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
                         unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     modifier = Modifier.fillMaxWidth()
@@ -777,8 +783,8 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
                         val isSel = Math.abs(testRate - r) < 0.001
                         Surface(
                             shape = RoundedCornerShape(6.dp),
-                            color = if (isSel) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                            border = BorderStroke(1.dp, if (isSel) GoldAccent else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                            color = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, if (isSel) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                             modifier = Modifier
                                 .weight(1f)
                                 .clickable { testRate = r }
@@ -793,13 +799,13 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
                 // Slider
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Tingkat Infaq:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("${String.format(Locale.US, "%.1f", testRate * 100).removeSuffix(".0")}%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                    Text("${String.format(Locale.US, "%.1f", testRate * 100).removeSuffix(".0")}%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
                 Slider(
                     value = testRate.toFloat(),
                     onValueChange = { testRate = (Math.round(it * 200.0) / 200.0).coerceIn(0.0, 1.0) },
                     valueRange = 0.0f..1.0f,
-                    colors = SliderDefaults.colors(thumbColor = EmeraldLight, activeTrackColor = EmeraldPrimary)
+                    colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary)
                 )
 
                 // Result Box
@@ -812,11 +818,11 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Dana Masuk Rekening (Bersih):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatNumber(netIncome)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                            Text("Rp ${formatNumber(netIncome)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Otomatis ke Vault Amanah:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatNumber(infaqVal)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                            Text("Rp ${formatNumber(infaqVal)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         }
                     }
                 }
@@ -842,7 +848,7 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -890,7 +896,7 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Calculate, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Calculate, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("🎮 Simulator Round-Up Interaktif", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -924,7 +930,7 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = if (isSel) Color(0xFF5E35B1) else MaterialTheme.colorScheme.surfaceVariant,
-                            border = BorderStroke(1.dp, if (isSel) GoldAccent else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                            border = BorderStroke(1.dp, if (isSel) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
                             modifier = Modifier
                                 .weight(1f)
                                 .clickable { roundStep = step }
@@ -945,11 +951,11 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Bayar ke Merchant (Murni Belanja):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatNumber(expVal)}", fontSize = 12.sp, color = ExpenseCoral)
+                            Text("Rp ${formatNumber(expVal)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("Sedekah Round-up ke Vault:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("+Rp ${formatNumber(roundUpInfaq)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                            Text("+Rp ${formatNumber(roundUpInfaq)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         }
                         androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1011,7 +1017,7 @@ fun TopicVaultContent(onTryAction: () -> Unit) {
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("🏦 Virtual Vault = Titipan Hak Mustahiq", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                Text("🏦 Virtual Vault = Titipan Hak Mustahiq", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                 Text(
                     text = "Dana infaq yang terakumulasi di Vault adalah pos titipan (Liability) yang statusnya bukan lagi milik kita. Dana ini harus segera disalurkan kepada mereka yang berhak.",
                     fontSize = 12.sp,
@@ -1025,17 +1031,17 @@ fun TopicVaultContent(onTryAction: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.4f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("📋 Fitur Penyaluran Berita Acara & Invoice:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                Text("📋 Fitur Penyaluran Berita Acara & Invoice:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 listOf(
                     "Pilihan 8 Asnaf: Fakir, Miskin, Amil, Mu'allaf, Riqab, Gharimin, Fisabilillah, Ibnu Sabil, serta Yatim Dhuafa.",
                     "Nomor Resi Resmi: Otomatis menerbitkan kode kwitansi (e.g. INV-VAULT-2026-XXXX) untuk audit akuntabilitas.",
                     "Filter & Ekspor: Pantau riwayat penyaluran per asnaf dan program sosial."
                 ).forEach { p ->
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        Text("✓ ", color = EmeraldLight, fontWeight = FontWeight.Bold)
+                        Text("✓ ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         Text(p, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
                     }
                 }
@@ -1061,7 +1067,7 @@ fun TopicVaultContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -1082,10 +1088,10 @@ fun TopicSedekahSubuhContent(onTryAction: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("🌅 Keutamaan Sedekah di Waktu Subuh", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                Text("🌅 Keutamaan Sedekah di Waktu Subuh", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                 Text(
                     text = "«Tidak ada satu subuh pun melainkan ada dua malaikat yang turun, salah satunya berdoa: 'Ya Allah, berikanlah ganti bagi orang yang berinfak.'» (HR. Bukhari & Muslim)",
                     fontSize = 12.sp,
@@ -1111,7 +1117,7 @@ fun TopicSedekahSubuhContent(onTryAction: () -> Unit) {
                     "Doa Fajar Khusus: Dilengkapi kumpulan doa mustajab pembuka rezeki."
                 ).forEach { p ->
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        Text("• ", color = GoldAccent, fontWeight = FontWeight.Bold)
+                        Text("• ", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
                         Text(p, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
                     }
                 }
@@ -1168,7 +1174,7 @@ fun TopicBudgetContent(onTryAction: () -> Unit) {
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("📊 Kaidah 50/30/20 Syariah", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                Text("📊 Kaidah 50/30/20 Syariah", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 Text(
                     text = "Amanah Ledger membantu Anda membatasi pengeluaran konsumsi agar tidak berlebih-lebihan (Israf) melalui pembagian pagu pos anggaran:",
                     fontSize = 12.sp,
@@ -1181,7 +1187,7 @@ fun TopicBudgetContent(onTryAction: () -> Unit) {
                     "20% Investasi & Tabungan Akhirat (Tahsiniyyat): Zakat, Infaq, Dana Darurat & Emas."
                 ).forEach { p ->
                     Row(modifier = Modifier.fillMaxWidth()) {
-                        Text("• ", color = EmeraldLight, fontWeight = FontWeight.Bold)
+                        Text("• ", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         Text(p, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
                     }
                 }
@@ -1192,10 +1198,10 @@ fun TopicBudgetContent(onTryAction: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("🤖 Fitur AI Budget Optimizer:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                Text("🤖 Fitur AI Budget Optimizer:", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                 Text(
                     text = "Aplikasi otomatis menganalisis pola transaksi historis Anda dan memberikan rekomendasi penyesuaian batas pagu yang dapat diterapkan hanya dalam satu kali klik!",
                     fontSize = 12.sp,
@@ -1224,7 +1230,7 @@ fun TopicBudgetContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -1239,11 +1245,14 @@ fun TopicBudgetContent(onTryAction: () -> Unit) {
 // TOPIC 7: KALKULATOR HAUL & NISAB DINAMIS + SIMULATOR
 // ----------------------------------------------------
 @Composable
-fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
-    var goldPriceText by remember { mutableStateOf("1350000") }
+fun TopicHaulNisabInteractiveContent(
+    initialGoldPrice: Double = 1350000.0,
+    onTryAction: () -> Unit
+) {
+    var goldPriceText by remember(initialGoldPrice) { mutableStateOf(initialGoldPrice.toLong().toString()) }
     var assetSimText by remember { mutableStateOf("120000000") }
 
-    val goldPrice = goldPriceText.toDoubleOrNull() ?: 1350000.0
+    val goldPrice = goldPriceText.toDoubleOrNull() ?: initialGoldPrice
     val totalSimAsset = assetSimText.toDoubleOrNull() ?: 0.0
     val nisab85g = 85.0 * goldPrice
     val isNisabReached = totalSimAsset >= nisab85g
@@ -1270,11 +1279,11 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(14.dp),
-            border = BorderStroke(1.dp, GoldAccent)
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary)
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Calculate, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Calculate, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("🎮 Simulator Nisab & Zakat Mal", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -1289,11 +1298,11 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedBorderColor = GoldAccent,
+                            focusedBorderColor = MaterialTheme.colorScheme.secondary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            focusedLabelColor = GoldAccent,
+                            focusedLabelColor = MaterialTheme.colorScheme.secondary,
                             unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         modifier = Modifier.weight(1f)
@@ -1308,11 +1317,11 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedBorderColor = GoldAccent,
+                            focusedBorderColor = MaterialTheme.colorScheme.secondary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            focusedLabelColor = GoldAccent,
+                            focusedLabelColor = MaterialTheme.colorScheme.secondary,
                             unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         modifier = Modifier.weight(1f)
@@ -1343,11 +1352,11 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
                             androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Zakat Hijriyah (2.500% / 354 hari):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Rp ${formatNumber(zakatLunar)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                                Text("Rp ${formatNumber(zakatLunar)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Zakat Masehi (2.577% / 365 hari):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Rp ${formatNumber(zakatSolar)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                                Text("Rp ${formatNumber(zakatSolar)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                             }
                         }
                     }
@@ -1374,13 +1383,15 @@ fun TopicHaulNisabInteractiveContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
             shape = RoundedCornerShape(10.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 48.dp)
         ) {
-            Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text("Buka Audit Haul & Nisab Lengkap", fontWeight = FontWeight.Bold, color = Color.Black)
+            Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Buka Audit Haul & Nisab Lengkap", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary, fontSize = 14.sp)
         }
     }
 }
@@ -1402,11 +1413,11 @@ fun TopicModifyDeleteContent(onTryAction: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Edit, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Fleksibilitas Penuh: Ubah & Hapus Kapan Saja", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -1441,13 +1452,13 @@ fun TopicModifyDeleteContent(onTryAction: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, ExpenseCoral.copy(alpha = 0.4f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.4f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Delete, contentDescription = null, tint = ExpenseCoral, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Jaminan Keamanan Saldo & Neraca", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
+                    Text("Jaminan Keamanan Saldo & Neraca", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                 }
                 Text(
                     text = "Saat transaksi diubah atau dihapus, sistem otomatis memperbarui saldo rekening aset, posisi kewajiban vault infaq, dan batas pagu bulanan secara instan dan presisi.",
@@ -1460,7 +1471,7 @@ fun TopicModifyDeleteContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -1488,11 +1499,11 @@ fun TopicAmilDirectoryContent(onTryAction: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.VolunteerActivism, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.VolunteerActivism, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Kelola Rekening & Lembaga Resmi (CRUD)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -1525,7 +1536,7 @@ fun TopicAmilDirectoryContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -1553,11 +1564,11 @@ fun TopicRoomPersistenceContent(onTryAction: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f))
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Storage, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Jaminan Data Tersimpan Permanen (Room SQLite)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
@@ -1589,13 +1600,13 @@ fun TopicRoomPersistenceContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Icons.Default.Security, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Buka Pengaturan & Status Database", fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("Buka Pengaturan & Status Database", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
         }
     }
 }

@@ -1,5 +1,12 @@
 package com.example.presentation.screens
 
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.onFocusChanged
+import com.example.presentation.components.AmanahNumpad
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+
+
 import android.app.DatePickerDialog
 import android.net.Uri
 import com.example.core.debug.AppDebugLogger
@@ -33,6 +40,8 @@ import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Warning
@@ -65,8 +74,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import com.example.core.camera.CameraXReceiptScanner
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -86,18 +95,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.accounting.AccountCategory
 import com.example.core.calendar.HijriCalendarEngine
-import com.example.core.ocr.SmartReceiptParser
 import com.example.core.receipt.ReceiptAttachment
+import com.example.core.receipt.ReceiptImageStorage
 import com.example.core.receipt.ReceiptType
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.White12
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
@@ -106,6 +108,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import java.io.File
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -123,15 +128,23 @@ fun AddTransactionScreen(
     }
     val isEditMode = existingEntry != null
 
-    // Extract values if editing
-    val initialIsIncome = remember(existingEntry) {
-        existingEntry?.transactionType != "EXPENSE"
+    val draft by viewModel.transactionDraft.collectAsState()
+    val hasActiveDraft = remember(existingEntry, draft) {
+        existingEntry == null && draft.isDraftActive
     }
-    val initialDate = remember(existingEntry) {
-        existingEntry?.gregorianDate ?: Date()
+
+    // Extract values if editing or restoring draft
+    val initialIsIncome = remember(existingEntry, hasActiveDraft) {
+        if (hasActiveDraft) draft.isIncome
+        else existingEntry?.transactionType != "EXPENSE"
     }
-    val initialAmountText = remember(existingEntry) {
-        if (existingEntry == null) ""
+    val initialDate = remember(existingEntry, hasActiveDraft) {
+        if (hasActiveDraft && draft.dateEpochMillis > 0L) Date(draft.dateEpochMillis)
+        else existingEntry?.gregorianDate ?: Date()
+    }
+    val initialAmountText = remember(existingEntry, hasActiveDraft) {
+        if (hasActiveDraft) draft.amountText
+        else if (existingEntry == null) ""
         else {
             if (existingEntry.transactionType == "INFLOW") {
                 val gross = existingEntry.lines.firstOrNull { it.accountId in listOf("acc_cash", "acc_bank", "acc_gold") }?.debit
@@ -148,11 +161,13 @@ fun AddTransactionScreen(
             }
         }
     }
-    val initialDesc = remember(existingEntry) {
-        existingEntry?.description?.replace(Regex("""\s*\(Round-up:.*?\)$"""), "") ?: ""
+    val initialDesc = remember(existingEntry, hasActiveDraft) {
+        if (hasActiveDraft) draft.descriptionText
+        else existingEntry?.description?.replace(Regex("""\s*\(Round-up:.*?\)$"""), "") ?: ""
     }
-    val initialCategory = remember(existingEntry) {
-        if (existingEntry == null) "acc_salary"
+    val initialCategory = remember(existingEntry, hasActiveDraft) {
+        if (hasActiveDraft) draft.selectedCategoryAccountId
+        else if (existingEntry == null) "acc_salary"
         else {
             if (existingEntry.transactionType == "INFLOW") {
                 existingEntry.lines.firstOrNull { it.credit > 0 && it.accountId in listOf("acc_salary", "acc_trade", "acc_gift", "acc_rikaz", "acc_syubhat") }?.accountId ?: "acc_salary"
@@ -161,8 +176,9 @@ fun AddTransactionScreen(
             }
         }
     }
-    val initialAsset = remember(existingEntry) {
-        if (existingEntry == null) "acc_bank"
+    val initialAsset = remember(existingEntry, hasActiveDraft) {
+        if (hasActiveDraft) draft.selectedAssetAccountId
+        else if (existingEntry == null) "acc_bank"
         else {
             if (existingEntry.transactionType == "INFLOW") {
                 existingEntry.lines.firstOrNull { it.debit > 0 && it.accountId in listOf("acc_cash", "acc_bank", "acc_gold") }?.accountId ?: "acc_bank"
@@ -171,15 +187,17 @@ fun AddTransactionScreen(
             }
         }
     }
-    val initialRate = remember(existingEntry) {
-        if (existingEntry != null && existingEntry.transactionType == "INFLOW") {
+    val initialRate = remember(existingEntry, hasActiveDraft) {
+        if (hasActiveDraft) draft.infaqRate
+        else if (existingEntry != null && existingEntry.transactionType == "INFLOW") {
             val gross = existingEntry.lines.firstOrNull { it.accountId in listOf("acc_cash", "acc_bank", "acc_gold") }?.debit ?: 0.0
             val infaq = existingEntry.lines.firstOrNull { it.accountId == "acc_vault" }?.credit ?: 0.0
             if (gross > 0) (infaq / gross) else 0.05
         } else 0.05
     }
-    val initialEnableRoundUp = remember(existingEntry) {
-        if (existingEntry != null && existingEntry.transactionType == "EXPENSE") {
+    val initialEnableRoundUp = remember(existingEntry, hasActiveDraft) {
+        if (hasActiveDraft) draft.enableRoundUp
+        else if (existingEntry != null && existingEntry.transactionType == "EXPENSE") {
             (existingEntry.lines.firstOrNull { it.accountId == "acc_vault" }?.credit ?: 0.0) > 0.0
         } else true
     }
@@ -200,24 +218,65 @@ fun AddTransactionScreen(
 
     // Round-up options for expense
     var enableRoundUp by remember(initialEnableRoundUp) { mutableStateOf(initialEnableRoundUp) }
-    var roundUpStep by remember { mutableDoubleStateOf(5000.0) }
+    var roundUpStep by remember(hasActiveDraft) { mutableDoubleStateOf(if (hasActiveDraft) draft.roundUpStep else 5000.0) }
 
     // Receipt Attachment State
-    var attachReceipt by remember { mutableStateOf(existingEntry?.receiptAttachment != null) }
-    var receiptMerchant by remember { mutableStateOf(existingEntry?.receiptAttachment?.merchantName ?: "") }
-    var receiptRefNumber by remember { mutableStateOf(existingEntry?.receiptAttachment?.referenceNumber ?: "") }
-    var receiptType by remember { mutableStateOf(existingEntry?.receiptAttachment?.receiptType ?: ReceiptType.STORE_RECEIPT) }
-    var receiptNotes by remember { mutableStateOf(existingEntry?.receiptAttachment?.notes ?: "") }
+    var attachReceipt by remember(hasActiveDraft) { mutableStateOf(if (hasActiveDraft) draft.attachReceipt else (existingEntry?.receiptAttachment != null)) }
+    var receiptMerchant by remember(hasActiveDraft) { mutableStateOf(if (hasActiveDraft) draft.receiptMerchant else (existingEntry?.receiptAttachment?.merchantName ?: "")) }
+    var receiptRefNumber by remember(hasActiveDraft) { mutableStateOf(if (hasActiveDraft) draft.receiptRefNumber else (existingEntry?.receiptAttachment?.referenceNumber ?: "")) }
+    var receiptType by remember(hasActiveDraft) { mutableStateOf(if (hasActiveDraft) draft.receiptType else (existingEntry?.receiptAttachment?.receiptType ?: ReceiptType.STORE_RECEIPT)) }
+    var receiptNotes by remember(hasActiveDraft) { mutableStateOf(if (hasActiveDraft) draft.receiptNotes else (existingEntry?.receiptAttachment?.notes ?: "")) }
+    var receiptImagePath by remember(hasActiveDraft) { mutableStateOf(if (hasActiveDraft) draft.receiptImagePath else existingEntry?.receiptAttachment?.imagePath) }
     var receiptTypeDropdownExpanded by remember { mutableStateOf(false) }
+
+    // Auto-save form draft whenever fields change to prevent data loss on app-switch or backgrounding
+    LaunchedEffect(
+        amountText, descriptionText, isIncome, selectedCategoryAccountId,
+        selectedAssetAccountId, infaqRate, enableRoundUp, roundUpStep,
+        attachReceipt, receiptMerchant, receiptRefNumber, receiptType,
+        receiptNotes, receiptImagePath, selectedDate
+    ) {
+        if (!isEditMode) {
+            val hasContent = amountText.isNotBlank() || descriptionText.isNotBlank() || !receiptImagePath.isNullOrBlank()
+            if (hasContent) {
+                viewModel.updateTransactionDraft(
+                    com.example.core.state.TransactionDraftState(
+                        isDraftActive = true,
+                        isIncome = isIncome,
+                        dateEpochMillis = selectedDate.time,
+                        amountText = amountText,
+                        descriptionText = descriptionText,
+                        selectedCategoryAccountId = selectedCategoryAccountId,
+                        selectedAssetAccountId = selectedAssetAccountId,
+                        infaqRate = infaqRate,
+                        enableRoundUp = enableRoundUp,
+                        roundUpStep = roundUpStep,
+                        attachReceipt = attachReceipt,
+                        receiptMerchant = receiptMerchant,
+                        receiptRefNumber = receiptRefNumber,
+                        receiptType = receiptType,
+                        receiptNotes = receiptNotes,
+                        receiptImagePath = receiptImagePath,
+                        editEntryId = null
+                    )
+                )
+            }
+        }
+    }
 
     // Error & Warning Dialogs
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showOverBudgetWarningDialog by remember { mutableStateOf(false) }
+    var showDeficitBlockedDialog by remember { mutableStateOf(false) }
+    var showDeficitWarningConfirmDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-    var showOcrScannerDialog by remember { mutableStateOf(false) }
-    var showLiveCameraScanner by remember { mutableStateOf(false) }
 
+    
+    val focusManager = LocalFocusManager.current
+    var showNumpadBottomSheet by remember { mutableStateOf(false) }
+    
     val hijriDate = remember(selectedDate) {
+
         HijriCalendarEngine.fromGregorian(selectedDate)
     }
     val isFriday = remember(selectedDate) {
@@ -250,6 +309,15 @@ fun AddTransactionScreen(
     val currentSpent = if (!isIncome) state.getMonthlySpentForAccount(selectedCategoryAccountId) else 0.0
     val willExceedBudget = budgetForCategory != null && (currentSpent + amountValue) > budgetForCategory.monthlyLimit
 
+    val currentAssetBalance = state.getAccountBalance(selectedAssetAccountId)
+    val originalExpenseForThisAccount = if (isEditMode && existingEntry?.transactionType == "EXPENSE") {
+        existingEntry.lines.firstOrNull { it.credit > 0 && it.accountId == selectedAssetAccountId }?.credit ?: 0.0
+    } else 0.0
+    val effectiveAvailableBalance = currentAssetBalance + originalExpenseForThisAccount
+    val willDeficitBalance = !isIncome && (amountValue > effectiveAvailableBalance)
+    val deficitAmount = if (willDeficitBalance) amountValue - effectiveAvailableBalance else 0.0
+    val projectedAssetBalance = effectiveAvailableBalance - amountValue
+
     fun executeSaveTransaction() {
         val desc = descriptionText.ifBlank {
             if (isIncome) "Pemasukan Rezeki Halal" else "Pengeluaran Konsumsi"
@@ -263,7 +331,8 @@ fun AddTransactionScreen(
                 amount = amountValue,
                 merchantName = receiptMerchant,
                 notes = receiptNotes,
-                isDigitalVerified = true
+                isDigitalVerified = true,
+                imagePath = receiptImagePath
             )
         } else null
 
@@ -325,7 +394,21 @@ fun AddTransactionScreen(
             "Pencatatan Transaksi",
             "Menyimpan ${if (isIncome) "Pemasukan" else "Pengeluaran"}: Rp ${amountValue.toLong()} ('$desc')"
         )
+        viewModel.clearTransactionDraft()
         onNavigateBack()
+    }
+
+    // Pembersihan berkas foto sementara jika pengguna membatalkan pembuatan transaksi baru
+    val handleCancelAndExit = {
+        if (!isEditMode && !receiptImagePath.isNullOrBlank()) {
+            ReceiptImageStorage.deleteTemporaryFile(receiptImagePath)
+        }
+        viewModel.clearTransactionDraft()
+        onNavigateBack()
+    }
+
+    LaunchedEffect(Unit) {
+        ReceiptImageStorage.cleanupTemporaryCameraCache(context)
     }
 
     Scaffold(
@@ -337,7 +420,7 @@ fun AddTransactionScreen(
                 ),
                 navigationIcon = {
                     IconButton(
-                        onClick = onNavigateBack,
+                        onClick = handleCancelAndExit,
                         modifier = Modifier.testTag("back_button")
                     ) {
                         Icon(
@@ -359,7 +442,13 @@ fun AddTransactionScreen(
                             Text(
                                 text = "Mode Modifikasi Jurnal & Neraca",
                                 fontSize = 11.sp,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        } else if (hasActiveDraft) {
+                            Text(
+                                text = "Draf input otomatis dipulihkan",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -373,7 +462,7 @@ fun AddTransactionScreen(
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Hapus Transaksi",
-                                tint = ExpenseCoral
+                                tint = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -412,7 +501,7 @@ fun AddTransactionScreen(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (isIncome) EmeraldPrimary else Color.Transparent)
+                        .background(if (isIncome) MaterialTheme.colorScheme.primary else Color.Transparent)
                         .clickable {
                             isIncome = true
                             selectedCategoryAccountId = "acc_salary"
@@ -432,7 +521,7 @@ fun AddTransactionScreen(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (!isIncome) ExpenseCoral else Color.Transparent)
+                        .background(if (!isIncome) MaterialTheme.colorScheme.error else Color.Transparent)
                         .clickable {
                             isIncome = false
                             selectedCategoryAccountId = "acc_living"
@@ -449,31 +538,6 @@ fun AddTransactionScreen(
                 }
             }
 
-            // Quick OCR Receipt Scanner Button
-            FilledTonalButton(
-                onClick = { showOcrScannerDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("open_ocr_scanner_button"),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.DocumentScanner,
-                    contentDescription = null,
-                    tint = EmeraldPrimary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "📸 Pindai Struk & Mutasi Otomatis (OCR)",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = EmeraldLight
-                )
-            }
 
             // 2. Dual-Calendar Temporal Card
             Card(
@@ -507,7 +571,7 @@ fun AddTransactionScreen(
                     Icon(
                         imageVector = Icons.Default.CalendarMonth,
                         contentDescription = "Pilih Tanggal",
-                        tint = EmeraldLight,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -520,7 +584,7 @@ fun AddTransactionScreen(
                         )
                         Text(
                             text = "Hijriah: $hijriDate (Batas Maghrib 18:00)",
-                            color = GoldAccent,
+                            color = MaterialTheme.colorScheme.secondary,
                             fontSize = 11.sp
                         )
                     }
@@ -528,7 +592,7 @@ fun AddTransactionScreen(
                         Text(
                             text = "Jumat Berkah",
                             fontSize = 10.sp,
-                            color = EmeraldLight,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -538,25 +602,28 @@ fun AddTransactionScreen(
             // 3. Amount Field
             OutlinedTextField(
                 value = amountText,
-                onValueChange = {
-                    amountText = it.filter { char -> char.isDigit() }
-                    errorMessage = null
-                },
+                onValueChange = { },
+                readOnly = true,
                 label = { Text("Nominal Transaksi (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                prefix = { Text("Rp ", color = GoldAccent, fontWeight = FontWeight.Bold) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                prefix = { Text("Rp ", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold) },
                 singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("add_transaction_amount_input")
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            showNumpadBottomSheet = true
+                            focusManager.clearFocus() // Prevent soft keyboard from showing
+                        }
+                    },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedBorderColor = EmeraldPrimary,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag("amount_input")
+                )
             )
 
             // 4. Category Dropdown
@@ -582,7 +649,7 @@ fun AddTransactionScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -630,7 +697,7 @@ fun AddTransactionScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -646,13 +713,123 @@ fun AddTransactionScreen(
                     modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                 ) {
                     assetAccounts.forEach { acc ->
+                        val accBal = state.getAccountBalance(acc.id)
                         DropdownMenuItem(
-                            text = { Text(acc.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp) },
+                            text = {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(acc.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+                                    Text(
+                                        text = "Rp ${formatRupiah(accBal)}",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (accBal < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            },
                             onClick = {
                                 selectedAssetAccountId = acc.id
                                 assetDropdownExpanded = false
                             }
                         )
+                    }
+                }
+            }
+
+            if (!isIncome) {
+                Spacer(modifier = Modifier.height(6.dp))
+                val currentAsset = state.getAccount(selectedAssetAccountId)
+                val isDeficit = willDeficitBalance && amountValue > 0.0
+
+                if (isDeficit) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("deficit_warning_banner"),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (state.isDeficitProtectionEnabled)
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+                            else
+                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (state.isDeficitProtectionEnabled) MaterialTheme.colorScheme.error.copy(alpha = 0.45f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Icon(
+                                imageVector = if (state.isDeficitProtectionEnabled) Icons.Default.Block else Icons.Default.Warning,
+                                contentDescription = "Peringatan Defisit",
+                                tint = if (state.isDeficitProtectionEnabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = if (state.isDeficitProtectionEnabled)
+                                        "Proteksi Defisit Aktif: Saldo Tidak Cukup"
+                                    else
+                                        "Peringatan: Saldo Akan Menjadi Minus",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (state.isDeficitProtectionEnabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Saldo ${currentAsset?.name ?: "Akun"}: Rp ${formatRupiah(effectiveAvailableBalance)} | Belanja: Rp ${formatRupiah(amountValue)}",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = if (state.isDeficitProtectionEnabled)
+                                        "Kekurangan dana Rp ${formatRupiah(deficitAmount)}. Transaksi tidak dapat disimpan karena proteksi saldo minus aktif."
+                                    else
+                                        "Setelah transaksi disimpan, saldo akun akan bernilai minus (-Rp ${formatRupiah(deficitAmount)}).",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.AccountBalanceWallet,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Saldo Tersedia: Rp ${formatRupiah(effectiveAvailableBalance)}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (amountValue > 0.0) {
+                            Text(
+                                text = "Sisa: Rp ${formatRupiah(projectedAssetBalance)}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
@@ -675,14 +852,14 @@ fun AddTransactionScreen(
                                 text = "Alokasi Infaq Hak Mustahiq",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                             if (selectedCategoryAccountId == "acc_rikaz") {
-                                Text("Wajib 20% (Rikaz)", fontSize = 11.sp, color = EmeraldLight)
+                                Text("Wajib 20% (Rikaz)", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                             } else if (selectedCategoryAccountId == "acc_syubhat") {
-                                Text("Wajib 100% (Syubhat)", fontSize = 11.sp, color = ExpenseCoral)
+                                Text("Wajib 100% (Syubhat)", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
                             } else {
-                                Text("${String.format(Locale.US, "%.1f", infaqRate * 100).removeSuffix(".0")}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                                Text("${String.format(Locale.US, "%.1f", infaqRate * 100).removeSuffix(".0")}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }
                         }
 
@@ -707,8 +884,8 @@ fun AddTransactionScreen(
                                     val isSelected = Math.abs(infaqRate - rate) < 0.001
                                     androidx.compose.material3.Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) GoldAccent else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                                         modifier = Modifier
                                             .weight(1f)
                                             .clickable { infaqRate = rate }
@@ -753,13 +930,13 @@ fun AddTransactionScreen(
                                         fontWeight = FontWeight.SemiBold,
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Start
                                     ),
-                                    trailingIcon = { Text("%", color = GoldAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 6.dp)) },
+                                    trailingIcon = { Text("%", color = MaterialTheme.colorScheme.secondary, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 6.dp)) },
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                        focusedBorderColor = EmeraldPrimary,
+                                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -778,8 +955,8 @@ fun AddTransactionScreen(
                                 onValueChange = { infaqRate = (Math.round(it * 200.0) / 200.0).coerceIn(0.0, 1.0) },
                                 valueRange = 0.0f..1.0f,
                                 colors = SliderDefaults.colors(
-                                    thumbColor = EmeraldLight,
-                                    activeTrackColor = EmeraldPrimary,
+                                    thumbColor = MaterialTheme.colorScheme.primary,
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
                                     inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                                 ),
                                 modifier = Modifier.testTag("infaq_slider")
@@ -802,7 +979,7 @@ fun AddTransactionScreen(
                                 text = "Rp ${formatRupiah(calculatedInfaqPreview)}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                         if (amountValue > 0.0) {
@@ -819,7 +996,7 @@ fun AddTransactionScreen(
                                 Text(
                                     text = "Rp ${formatRupiah(netAmount)}",
                                     fontSize = 11.sp,
-                                    color = EmeraldLight
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
@@ -837,12 +1014,12 @@ fun AddTransactionScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (isWillBeOver) Color(0xFF2A1515) else MaterialTheme.colorScheme.surface
+                            containerColor = if (isWillBeOver) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surface
                         ),
                         shape = RoundedCornerShape(12.dp),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (isWillBeOver) ExpenseCoral.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                            if (isWillBeOver) MaterialTheme.colorScheme.error.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         )
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
@@ -855,7 +1032,7 @@ fun AddTransactionScreen(
                                     text = "Anggaran: ${budgetForCategory.categoryName}",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isWillBeOver) ExpenseCoral else GoldAccent
+                                    color = if (isWillBeOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
                                 )
                                 Text(
                                     text = "Batas: Rp ${formatRupiah(budgetForCategory.monthlyLimit)}",
@@ -881,7 +1058,7 @@ fun AddTransactionScreen(
                                     },
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isWillBeOver) ExpenseCoral else EmeraldLight
+                                    color = if (isWillBeOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
@@ -906,7 +1083,7 @@ fun AddTransactionScreen(
                                     text = "Round-Up Micro Infaq Belanja",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = EmeraldLight
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
                                     text = "Bulatkan belanjaan ke kelipatan Rp ${formatRupiah(roundUpStep)}",
@@ -918,7 +1095,7 @@ fun AddTransactionScreen(
                                 checked = enableRoundUp,
                                 onCheckedChange = { enableRoundUp = it },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = EmeraldLight,
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
                                     checkedTrackColor = EmeraldDark
                                 ),
                                 modifier = Modifier.testTag("roundup_switch")
@@ -930,7 +1107,7 @@ fun AddTransactionScreen(
                             Text(
                                 text = "Sedekah pembulatan otomatis: Rp ${formatRupiah(calculatedInfaqPreview)}",
                                 fontSize = 12.sp,
-                                color = GoldAccent,
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -948,7 +1125,7 @@ fun AddTransactionScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedBorderColor = EmeraldPrimary,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -963,7 +1140,7 @@ fun AddTransactionScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, if (attachReceipt) EmeraldPrimary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                border = androidx.compose.foundation.BorderStroke(1.dp, if (attachReceipt) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     Row(
@@ -976,7 +1153,7 @@ fun AddTransactionScreen(
                                 text = "🧾 Bukti Transaksi / Kuitansi Digital",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (attachReceipt) EmeraldLight else MaterialTheme.colorScheme.onSurface
+                                color = if (attachReceipt) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Lampirkan nota, bukti transfer, atau struk QRIS",
@@ -988,7 +1165,7 @@ fun AddTransactionScreen(
                             checked = attachReceipt,
                             onCheckedChange = { attachReceipt = it },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = EmeraldLight,
+                                checkedThumbColor = MaterialTheme.colorScheme.primary,
                                 checkedTrackColor = EmeraldDark
                             ),
                             modifier = Modifier.testTag("attach_receipt_switch")
@@ -1011,7 +1188,7 @@ fun AddTransactionScreen(
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                    focusedBorderColor = EmeraldPrimary,
+                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -1048,7 +1225,7 @@ fun AddTransactionScreen(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                focusedBorderColor = EmeraldPrimary,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                                 focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -1069,7 +1246,7 @@ fun AddTransactionScreen(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                focusedBorderColor = EmeraldPrimary,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                                 focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -1078,6 +1255,79 @@ fun AddTransactionScreen(
                                 .fillMaxWidth()
                                 .testTag("receipt_ref_input")
                         )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Physical Receipt Photo Preview & Picker Section
+                        val directImagePicker = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.PickVisualMedia()
+                        ) { uri: Uri? ->
+                            if (uri != null) {
+                                val savedPath = ReceiptImageStorage.saveImageFromUri(context, uri)
+                                if (savedPath != null) {
+                                    receiptImagePath = savedPath
+                                }
+                            }
+                        }
+
+                        if (!receiptImagePath.isNullOrBlank() && File(receiptImagePath!!).exists()) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
+                            ) {
+                                Column(modifier = Modifier.padding(8.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Foto Fisik Tersimpan", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        }
+                                        IconButton(
+                                            onClick = {
+                                                ReceiptImageStorage.deleteImageFile(receiptImagePath)
+                                                receiptImagePath = null
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(Icons.Default.Delete, contentDescription = "Hapus Foto", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    AsyncImage(
+                                        model = File(receiptImagePath!!),
+                                        contentDescription = "Foto Struk Fisik",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(180.dp)
+                                            .clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = {
+                                    directImagePicker.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("attach_receipt_photo_button"),
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                            ) {
+                                Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Pilih / Ganti Foto Fisik Struk", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
                     }
                 }
             }
@@ -1085,7 +1335,7 @@ fun AddTransactionScreen(
             if (errorMessage != null) {
                 Text(
                     text = errorMessage ?: "",
-                    color = Color(0xFFEF5350),
+                    color = MaterialTheme.colorScheme.error,
                     fontSize = 12.sp
                 )
             }
@@ -1100,14 +1350,20 @@ fun AddTransactionScreen(
                         return@Button
                     }
 
-                    if (!isIncome && willExceedBudget) {
+                    if (!isIncome && willDeficitBalance) {
+                        if (state.isDeficitProtectionEnabled) {
+                            showDeficitBlockedDialog = true
+                        } else {
+                            showDeficitWarningConfirmDialog = true
+                        }
+                    } else if (!isIncome && willExceedBudget) {
                         showOverBudgetWarningDialog = true
                     } else {
                         executeSaveTransaction()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isIncome) EmeraldPrimary else ExpenseCoral,
+                    containerColor = if (isIncome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                     contentColor = Color.White
                 ),
                 shape = RoundedCornerShape(12.dp),
@@ -1129,22 +1385,22 @@ fun AddTransactionScreen(
                 OutlinedButton(
                     onClick = { showDeleteConfirmDialog = true },
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = ExpenseCoral
+                        contentColor = MaterialTheme.colorScheme.error
                     ),
-                    border = BorderStroke(1.dp, ExpenseCoral.copy(alpha = 0.6f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f)),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
                         .testTag("delete_transaction_bottom_button")
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, tint = ExpenseCoral)
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Hapus Transaksi (Pulihkan Saldo)",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = ExpenseCoral
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
@@ -1154,13 +1410,13 @@ fun AddTransactionScreen(
     if (showDeleteConfirmDialog && editEntryId != null) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmDialog = false },
-            containerColor = Color(0xFF1E1414),
+            containerColor = MaterialTheme.colorScheme.errorContainer,
             shape = RoundedCornerShape(16.dp),
             icon = {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = null,
-                    tint = ExpenseCoral,
+                    tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(36.dp)
                 )
             },
@@ -1184,7 +1440,7 @@ fun AddTransactionScreen(
                         text = "⚠️ Catatan: Penghapusan bersifat permanen.",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = GoldAccent
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             },
@@ -1195,10 +1451,10 @@ fun AddTransactionScreen(
                         viewModel.deleteJournalEntry(editEntryId)
                         onNavigateBack()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ExpenseCoral),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.testTag("confirm_delete_dialog_button")
                 ) {
-                    Text("Ya, Hapus Transaksi", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Ya, Hapus Transaksi", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -1225,7 +1481,7 @@ fun AddTransactionScreen(
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = null,
-                    tint = ExpenseCoral,
+                    tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(36.dp)
                 )
             },
@@ -1260,16 +1516,16 @@ fun AddTransactionScreen(
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Nominal Transaksi Ini:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("+Rp ${formatRupiah(amountValue)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
+                                Text("+Rp ${formatRupiah(amountValue)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                             }
                             androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Total Proyeksi:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                                Text("Rp ${formatRupiah(projectedTotal)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
+                                Text("Rp ${formatRupiah(projectedTotal)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Melebihi Kuota Sebesar:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
-                                Text("Rp ${formatRupiah(excessAmount)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
+                                Text("Melebihi Kuota Sebesar:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                Text("Rp ${formatRupiah(excessAmount)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
@@ -1277,7 +1533,7 @@ fun AddTransactionScreen(
                     Text(
                         text = "💡 Prinsip Syariah: Jagalah pola konsumsi dari berlebih-lebihan (Israf) agar keberkahan harta tetap terjaga.",
                         fontSize = 11.sp,
-                        color = GoldAccent
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             },
@@ -1287,10 +1543,10 @@ fun AddTransactionScreen(
                         showOverBudgetWarningDialog = false
                         executeSaveTransaction()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ExpenseCoral),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.testTag("budget_warning_confirm_button")
                 ) {
-                    Text("Tetap Lanjutkan", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Tetap Lanjutkan", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -1305,319 +1561,224 @@ fun AddTransactionScreen(
         )
     }
 
-    if (showLiveCameraScanner) {
-        CameraXReceiptScanner(
-            onReceiptCaptured = { parsed, file ->
-                if (parsed.amount > 0) {
-                    amountText = parsed.amount.toLong().toString()
-                }
-                if (parsed.merchantName.isNotBlank()) {
-                    receiptMerchant = parsed.merchantName
-                    if (descriptionText.isBlank()) {
-                        descriptionText = "${if (parsed.isIncome) "Pemasukan dari" else "Belanja di"} ${parsed.merchantName}"
-                    }
-                }
-                if (parsed.referenceNumber.isNotBlank()) {
-                    receiptRefNumber = parsed.referenceNumber
-                }
-                attachReceipt = true
-                receiptType = parsed.suggestedReceiptType
-                isIncome = parsed.isIncome
-                if (parsed.suggestedCategoryAccountId.isNotBlank()) {
-                    selectedCategoryAccountId = parsed.suggestedCategoryAccountId
-                }
-                if (parsed.date != null) {
-                    selectedDate = parsed.date
-                }
-                showLiveCameraScanner = false
-            },
-            onDismiss = { showLiveCameraScanner = false }
-        )
-    }
-
-    if (showOcrScannerDialog) {
-        OcrReceiptScannerDialog(
-            onDismiss = { showOcrScannerDialog = false },
-            onOpenLiveCamera = {
-                showOcrScannerDialog = false
-                showLiveCameraScanner = true
-            },
-            onApplyParsedData = { parsed ->
-                if (parsed.amount > 0) {
-                    amountText = parsed.amount.toLong().toString()
-                }
-                if (parsed.merchantName.isNotBlank()) {
-                    receiptMerchant = parsed.merchantName
-                    if (descriptionText.isBlank()) {
-                        descriptionText = "${if (parsed.isIncome) "Pemasukan dari" else "Belanja di"} ${parsed.merchantName}"
-                    }
-                }
-                if (parsed.referenceNumber.isNotBlank()) {
-                    receiptRefNumber = parsed.referenceNumber
-                }
-                attachReceipt = true
-                receiptType = parsed.suggestedReceiptType
-                isIncome = parsed.isIncome
-                if (parsed.suggestedCategoryAccountId.isNotBlank()) {
-                    selectedCategoryAccountId = parsed.suggestedCategoryAccountId
-                }
-                if (parsed.date != null) {
-                    selectedDate = parsed.date
-                }
-                showOcrScannerDialog = false
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun OcrReceiptScannerDialog(
-    onDismiss: () -> Unit,
-    onOpenLiveCamera: () -> Unit = {},
-    onApplyParsedData: (com.example.core.ocr.ParsedReceiptData) -> Unit
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    var rawText by remember { mutableStateOf("") }
-    var parsedPreview by remember { mutableStateOf<com.example.core.ocr.ParsedReceiptData?>(null) }
-    var isOcrProcessing by remember { mutableStateOf(false) }
-
-    val galleryPicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            isOcrProcessing = true
-            try {
-                val inputImage = com.google.mlkit.vision.common.InputImage.fromFilePath(context, uri)
-                val recognizer = com.google.mlkit.vision.text.TextRecognition.getClient(
-                    com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS
-                )
-                recognizer.process(inputImage)
-                    .addOnSuccessListener { visionText ->
-                        isOcrProcessing = false
-                        rawText = visionText.text
-                        parsedPreview = SmartReceiptParser.parseReceiptText(visionText.text)
-                        AppDebugLogger.i("ReceiptOCR", "OCR berhasil memproses teks struk (${visionText.text.length} karakter).")
-                    }
-                    .addOnFailureListener { exc ->
-                        isOcrProcessing = false
-                        AppDebugLogger.logHandledError("ReceiptOCR", "Gagal memindai teks struk: ${exc.message}", exc)
-                    }
-            } catch (e: Exception) {
-                isOcrProcessing = false
-                AppDebugLogger.logHandledError("ReceiptOCR", "Gagal membaca berkas gambar struk: ${e.message}", e)
-            }
-        }
-    }
-
-    val sampleReceipts = remember {
-        listOf(
-            "Struk Minimarket" to """
-                SUPERMARKET SAKINAH MART
-                JL. SURAPATI NO 45 BANDUNG
-                TGL: 28-08-2026 09:30
-                NO. STRUK: STR-20260828-9812
-                =============================
-                BERAS ORGANIK 5KG     68.500
-                MINYAK GORENG 2L      34.000
-                TELUR AYAM 1KG        28.500
-                KURMA AJWA 500G       85.000
-                =============================
-                TOTAL BELANJA     Rp 216.000
-                TUNAI             Rp 220.000
-                KEMBALIAN         Rp   4.000
-                TERIMA KASIH ATAS KUNJUNGANNYA
-            """.trimIndent(),
-            "Mutasi Bank BSI" to """
-                BANK SYARIAH INDONESIA
-                BUKTI TRANSFER / MUTASI MASUK
-                TANGGAL: 25/08/2026 14:15:00
-                REFF: BSI-TRX-88192031
-                DARI: PT BERKAH AMANAH INDONESIA
-                UNTUK: KAS MUKMIN
-                NOMINAL: Rp 12.500.000
-                BERITA: Gaji Bulanan Periode Agustus 2026
-                STATUS: BERHASIL
-            """.trimIndent(),
-            "Kwitansi Donasi Amil" to """
-                LEMBAGA AMIL ZAKAT BAZNAS
-                BUKTI SETOR ZAKAT (BSZ)
-                NO. BUKTI: BAZNAS-ZKT-2026-00412
-                TANGGAL: 22/08/2026
-                NAMA: MUHAMMAD IRFAN
-                JENIS DANA: INFAQ & SEDEKAH SHUBUH
-                JUMLAH DANA: Rp 500.000
-                TERBILANG: Lima Ratus Ribu Rupiah
-                SEMOGA BERKAH DAN MENJADI PEMBERSIH HARTA
-            """.trimIndent()
-        )
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
-        titleContentColor = MaterialTheme.colorScheme.onSurface,
-        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    if (showDeficitBlockedDialog) {
+        val currentAsset = state.getAccount(selectedAssetAccountId)
+        AlertDialog(
+            onDismissRequest = { showDeficitBlockedDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp),
+            icon = {
                 Icon(
-                    Icons.Default.DocumentScanner,
+                    imageVector = Icons.Default.Block,
                     contentDescription = null,
-                    tint = EmeraldPrimary,
-                    modifier = Modifier.size(24.dp)
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(36.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Pemindai Struk & Mutasi Otomatis", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Live Camera and Gallery Buttons
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = onOpenLiveCamera,
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("open_live_camerax_button"),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
-                    ) {
-                        Icon(Icons.Default.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Kamera", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-
-                    Button(
-                        onClick = {
-                            galleryPicker.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .testTag("open_gallery_picker_button"),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldDark)
-                    ) {
-                        Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Galeri Foto", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                }
-
-                if (isOcrProcessing) {
-                    Text(
-                        text = "⏳ Memindai teks struk dengan Google ML Kit OCR...",
-                        fontSize = 12.sp,
-                        color = GoldAccent,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
+            },
+            title = {
                 Text(
-                    text = "Atau tempel teks struk / OCR atau pilih sampel mutasi di bawah untuk ekstraksi otomatis nominal, toko, dan kategori akun syariah.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Quick sample buttons
-                Text(
-                    text = "Pilih Sampel Format Struk:",
-                    fontSize = 11.sp,
+                    text = "Saldo Kas/Bank Tidak Mencukupi!",
                     fontWeight = FontWeight.Bold,
-                    color = GoldAccent
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    sampleReceipts.forEach { (label, content) ->
-                        FilledTonalButton(
-                            onClick = {
-                                rawText = content
-                                parsedPreview = SmartReceiptParser.parseReceiptText(content)
-                            },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(label, fontSize = 10.sp, maxLines = 1)
-                        }
-                    }
-                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Pengeluaran ini tidak dapat disimpan karena 'Proteksi Saldo Defisit' aktif dan nominal melebihi sisa saldo fisik pada akun kas/bank yang dipilih.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                OutlinedTextField(
-                    value = rawText,
-                    onValueChange = {
-                        rawText = it
-                        parsedPreview = SmartReceiptParser.parseReceiptText(it)
-                    },
-                    label = { Text("Teks Hasil Scan Struk / Mutasi", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    placeholder = { Text("Paste teks struk minimarket, mutasi m-banking, kwitansi di sini...", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(130.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    shape = RoundedCornerShape(10.dp)
-                )
-
-                parsedPreview?.let { preview ->
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f)),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                "⚡ Hasil Ekstraksi Otomatis:",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = EmeraldLight
-                            )
-                            Text("• Nominal: Rp ${preview.amount.toLong()}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
-                            if (preview.merchantName.isNotBlank()) {
-                                Text("• Merchant/Pihak: ${preview.merchantName}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Sumber Dana:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(currentAsset?.name ?: "Akun Kas", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
-                            if (preview.referenceNumber.isNotBlank()) {
-                                Text("• No. Ref: ${preview.referenceNumber}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Saldo Tersedia:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${formatRupiah(effectiveAvailableBalance)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }
-                            Text("• Jenis: ${if (preview.isIncome) "Pemasukan (Rezeki)" else "Pengeluaran (Konsumsi)"}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("• Kategori Akun: ${preview.suggestedCategoryAccountId}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Nominal Pengeluaran:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${formatRupiah(amountValue)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            }
+                            androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Kekurangan Dana (Defisit):", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                Text("-Rp ${formatRupiah(deficitAmount)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            }
                         }
                     }
+
+                    Text(
+                        text = "💡 Prinsip Syariah: Kas riil tidak dapat dibelanjakan melebihi saldo fisik yang ada tanpa adanya akad pinjaman/talangan (Qardh). Proteksi Saldo Defisit menjaga akuntabilitas keuangan Anda.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+
+                    Text(
+                        text = "ℹ️ Jika Anda ingin mengizinkan pencatatan hingga saldo bernilai minus, Anda dapat menonaktifkan proteksi ini di menu Pengaturan Kas Mukmin.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    parsedPreview?.let { onApplyParsedData(it) }
-                },
-                enabled = parsedPreview != null && parsedPreview!!.amount > 0,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showDeficitBlockedDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    modifier = Modifier.testTag("deficit_blocked_dismiss_button")
+                ) {
+                    Text("Mengerti & Sesuaikan", fontWeight = FontWeight.Bold)
+                }
+            },
+            modifier = Modifier.testTag("deficit_blocked_dialog")
+        )
+    }
+
+    if (showDeficitWarningConfirmDialog) {
+        val currentAsset = state.getAccount(selectedAssetAccountId)
+        AlertDialog(
+            onDismissRequest = { showDeficitWarningConfirmDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp),
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Konfirmasi: Saldo Akan Bernilai Minus",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Pengeluaran ini melebihi saldo kas/bank fisik yang ada. Karena Proteksi Saldo Defisit dinonaktifkan, transaksi ini akan mengakibatkan saldo akun menjadi minus.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Sumber Dana:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(currentAsset?.name ?: "Akun Kas", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Saldo Saat Ini:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${formatRupiah(effectiveAvailableBalance)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Nominal Pengeluaran:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${formatRupiah(amountValue)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            }
+                            androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Saldo Setelah Transaksi:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                Text("-Rp ${formatRupiah(deficitAmount)}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = "Apakah Anda yakin ingin tetap menyimpan transaksi ini dan membiarkan akun kas bersaldo negatif?",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeficitWarningConfirmDialog = false
+                        if (willExceedBudget) {
+                            showOverBudgetWarningDialog = true
+                        } else {
+                            executeSaveTransaction()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    modifier = Modifier.testTag("deficit_confirm_proceed_button")
+                ) {
+                    Text("Tetap Lanjutkan (Izinkan Minus)", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeficitWarningConfirmDialog = false },
+                    modifier = Modifier.testTag("deficit_confirm_cancel_button")
+                ) {
+                    Text("Batal & Sesuaikan", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            modifier = Modifier.testTag("deficit_warning_confirm_dialog")
+        )
+    }
+
+
+    if (showNumpadBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showNumpadBottomSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Terapkan ke Form", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = "Rp $amountText",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+                
+                AmanahNumpad(
+                    onNumberClick = { num ->
+                        if (amountText == "0" || amountText.isEmpty()) {
+                            amountText = num.toString()
+                        } else {
+                            // Max 15 digits
+                            if (amountText.length < 15) {
+                                amountText += num.toString()
+                            }
+                        }
+                        errorMessage = null
+                    },
+                    onBackspaceClick = {
+                        if (amountText.isNotEmpty()) {
+                            amountText = amountText.dropLast(1)
+                            if (amountText.isEmpty()) amountText = "0"
+                        }
+                    },
+                    onOperatorClick = { op ->
+                        // Operation functionality can be implemented if needed
+                    },
+                    onDoneClick = { showNumpadBottomSheet = false }
+                )
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
-    )
+    }
+
+
 }
+

@@ -21,6 +21,28 @@ import java.util.Locale
 
 object FinancialPdfGenerator {
 
+    
+    private fun wrapText(text: String, paint: Paint, maxWidth: Float): List<String> {
+        val words = text.split(" ")
+        val lines = mutableListOf<String>()
+        var currentLine = ""
+        for (word in words) {
+            val testLine = if (currentLine.isEmpty()) word else "$currentLine $word"
+            if (paint.measureText(testLine) <= maxWidth) {
+                currentLine = testLine
+            } else {
+                if (currentLine.isNotEmpty()) {
+                    lines.add(currentLine)
+                }
+                currentLine = word
+            }
+        }
+        if (currentLine.isNotEmpty()) {
+            lines.add(currentLine)
+        }
+        return if (lines.isEmpty()) listOf(text) else lines
+    }
+
     private fun formatRp(amount: Double): String {
         val formatter = NumberFormat.getNumberInstance(Locale("id", "ID"))
         formatter.maximumFractionDigits = 0
@@ -145,13 +167,19 @@ object FinancialPdfGenerator {
                 val ratio = if (b.monthlyLimit > 0) (spent / b.monthlyLimit) * 100.0 else 0.0
                 val isOver = spent > b.monthlyLimit
 
-                paint.color = if (rowIndex % 2 == 0) bgLight else Color.WHITE
-                canvas.drawRect(RectF(30f, y, 565f, y + 16f), paint)
-
                 paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
                 paint.textSize = 8f
+                val lines = wrapText(b.categoryName, paint, 160f)
+                val rowHeight = 16f + (lines.size - 1) * 12f
+
+                paint.color = if (rowIndex % 2 == 0) bgLight else Color.WHITE
+                canvas.drawRect(RectF(30f, y, 565f, y + rowHeight), paint)
+
                 paint.color = textDark
-                canvas.drawText(b.categoryName, 38f, y + 11f, paint)
+                for (i in lines.indices) {
+                    canvas.drawText(lines[i], 38f, y + 11f + (i * 12f), paint)
+                }
+                
                 canvas.drawText("Rp ${formatRp(b.monthlyLimit)}", 210f, y + 11f, paint)
                 canvas.drawText("Rp ${formatRp(spent)}", 305f, y + 11f, paint)
 
@@ -163,7 +191,7 @@ object FinancialPdfGenerator {
                 val statusText = if (isOver) "OVER (${String.format(Locale("id", "ID"), "%.0f", ratio)}%)" else "${String.format(Locale("id", "ID"), "%.0f", ratio)}% (Aman)"
                 canvas.drawText(statusText, 495f, y + 11f, paint)
 
-                y += 16f
+                y += rowHeight
                 rowIndex++
             }
             y += 8f
@@ -248,12 +276,18 @@ object FinancialPdfGenerator {
                 "INFLOW" -> "Pemasukan"
                 "EXPENSE" -> "Pengeluaran"
                 "INFAQ_PAYOUT" -> "Penyaluran"
+                "TRANSFER" -> "Transfer Antar-Kantong"
                 else -> entry.transactionType
             }
             canvas.drawText(typeLabel, 380f, y + 10f, paint)
 
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            paint.color = if (entry.transactionType == "INFLOW") emeraldDark else if (entry.transactionType == "INFAQ_PAYOUT") emeraldPrimary else coralRed
+            paint.color = when (entry.transactionType) {
+                "INFLOW" -> emeraldDark
+                "INFAQ_PAYOUT" -> emeraldPrimary
+                "TRANSFER" -> Color.rgb(30, 136, 229)
+                else -> coralRed
+            }
             canvas.drawText("Rp ${formatRp(entry.totalDebit)}", 470f, y + 10f, paint)
 
             y += 15f
@@ -402,13 +436,19 @@ object FinancialPdfGenerator {
             y += 22f
         } else {
             for ((idx, goal) in state.ibadahGoals.take(6).withIndex()) {
+                paint.textSize = 8f
+                val lines = wrapText(goal.title, paint, 160f)
+                val rowHeight = 16f + (lines.size - 1) * 12f
+
                 paint.color = if (idx % 2 == 0) bgLight else Color.WHITE
-                canvas.drawRect(RectF(30f, y, 565f, y + 16f), paint)
+                canvas.drawRect(RectF(30f, y, 565f, y + rowHeight), paint)
 
                 paint.color = textDark
-                paint.textSize = 8f
                 paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-                canvas.drawText(goal.title, 38f, y + 11f, paint)
+                for (i in lines.indices) {
+                    canvas.drawText(lines[i], 38f, y + 11f + (i * 12f), paint)
+                }
+                
                 canvas.drawText(goal.type.title, 210f, y + 11f, paint)
                 canvas.drawText("Rp ${formatRp(goal.targetAmount)}", 330f, y + 11f, paint)
                 canvas.drawText("Rp ${formatRp(goal.currentAccumulated)}", 420f, y + 11f, paint)
@@ -418,7 +458,7 @@ object FinancialPdfGenerator {
                 paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 canvas.drawText("$pct%", 510f, y + 11f, paint)
 
-                y += 16f
+                y += rowHeight
             }
         }
 
@@ -515,21 +555,34 @@ object FinancialPdfGenerator {
 
         for ((idx, w) in state.wallets.take(4).withIndex()) {
             val bal = state.getWalletBalance(w.id)
+            paint.textSize = 8f
+            
+            val nameLines = wrapText(w.name, paint, 160f)
+            val accLines = wrapText(w.accountNumber.ifBlank { "-" }, paint, 130f)
+            val maxLines = maxOf(nameLines.size, accLines.size)
+            val rowHeight = 16f + (maxLines - 1) * 12f
+
             paint.color = if (idx % 2 == 0) bgLight else Color.WHITE
-            canvas.drawRect(RectF(30f, y, 565f, y + 16f), paint)
+            canvas.drawRect(RectF(30f, y, 565f, y + rowHeight), paint)
 
             paint.color = textDark
-            paint.textSize = 8f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            canvas.drawText(w.name, 38f, y + 11f, paint)
+            
+            for (i in nameLines.indices) {
+                canvas.drawText(nameLines[i], 38f, y + 11f + (i * 12f), paint)
+            }
+            
             canvas.drawText(w.type.displayName, 210f, y + 11f, paint)
-            canvas.drawText(w.accountNumber.ifBlank { "-" }, 330f, y + 11f, paint)
+            
+            for (i in accLines.indices) {
+                canvas.drawText(accLines[i], 330f, y + 11f + (i * 12f), paint)
+            }
 
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             paint.color = emeraldDark
             canvas.drawText("Rp ${formatRp(bal)}", 470f, y + 11f, paint)
 
-            y += 16f
+            y += rowHeight
         }
 
         y += 14f
@@ -557,23 +610,27 @@ object FinancialPdfGenerator {
         val entries = state.journalEntries.take(10)
         val sdf = SimpleDateFormat("dd/MM/yy", Locale("id", "ID"))
         for ((idx, e) in entries.withIndex()) {
+            paint.textSize = 7.5f
+            val lines = wrapText(e.description, paint, 250f)
+            val rowHeight = 16f + (lines.size - 1) * 12f
+
             paint.color = if (idx % 2 == 0) bgLight else Color.WHITE
-            canvas.drawRect(RectF(30f, y, 565f, y + 16f), paint)
+            canvas.drawRect(RectF(30f, y, 565f, y + rowHeight), paint)
 
             paint.color = textDark
-            paint.textSize = 7.5f
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             canvas.drawText(sdf.format(e.gregorianDate), 38f, y + 11f, paint)
 
-            val desc = if (e.description.length > 36) e.description.take(34) + "..." else e.description
-            canvas.drawText(desc, 120f, y + 11f, paint)
+            for (i in lines.indices) {
+                canvas.drawText(lines[i], 120f, y + 11f + (i * 12f), paint)
+            }
 
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             paint.color = if (e.transactionType == "INFLOW") emeraldDark else coralRed
             canvas.drawText(formatRp(e.totalDebit), 380f, y + 11f, paint)
             canvas.drawText(formatRp(e.totalCredit), 470f, y + 11f, paint)
 
-            y += 16f
+            y += rowHeight
         }
 
         // Footer

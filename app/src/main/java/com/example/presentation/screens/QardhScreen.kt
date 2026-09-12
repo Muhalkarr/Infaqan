@@ -1,6 +1,8 @@
 package com.example.presentation.screens
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -159,13 +161,13 @@ fun QardhScreen(
                                     modifier = Modifier
                                         .size(28.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF10B981).copy(alpha = 0.2f)),
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         Icons.Default.CallMade,
                                         contentDescription = null,
-                                        tint = Color(0xFF10B981),
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -177,7 +179,7 @@ fun QardhScreen(
                                 rupiahFormat.format(totalPiutang),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF10B981)
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Text("Tagihan Hak Anda", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -326,10 +328,10 @@ fun QardhCardItem(
 
     val isPiutang = record.type == QardhType.PIUTANG_SAYA
     val statusColor = when (record.status) {
-        QardhStatus.LUNAS -> Color(0xFF10B981)
+        QardhStatus.LUNAS -> MaterialTheme.colorScheme.primary
         QardhStatus.DIIKHLASKAN_SEDEKAH -> Color(0xFF6366F1)
         QardhStatus.SEBAGIAN_LUNAS -> Color(0xFFF59E0B)
-        QardhStatus.AKTIF -> if (isPiutang) Color(0xFF10B981) else MaterialTheme.colorScheme.error
+        QardhStatus.AKTIF -> if (isPiutang) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
     }
 
     Card(
@@ -347,11 +349,11 @@ fun QardhCardItem(
             ) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = if (isPiutang) Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
+                    color = if (isPiutang) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
                 ) {
                     Text(
                         text = record.type.badge,
-                        color = if (isPiutang) Color(0xFF10B981) else MaterialTheme.colorScheme.error,
+                        color = if (isPiutang) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -409,20 +411,25 @@ fun QardhCardItem(
                 }
             }
 
-            if (record.dueDateMillis != null) {
+if (record.dueDateMillis != null) {
                 Spacer(modifier = Modifier.height(6.dp))
+                val now = System.currentTimeMillis()
+                val daysLeft = ((record.dueDateMillis - now) / 86400000L).toInt()
+                val isWarning = daysLeft <= 3 && record.status != QardhStatus.LUNAS && record.status != QardhStatus.DIIKHLASKAN_SEDEKAH
+                
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        Icons.Default.Event,
+                        if (isWarning) Icons.Default.Warning else Icons.Default.Event,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = if (isWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        "Jatuh Tempo: ${dateFormat.format(Date(record.dueDateMillis))}",
+                        if (daysLeft < 0) "Jatuh Tempo: Terlewat ${-daysLeft} hari!" else if (daysLeft == 0) "Jatuh Tempo: HARI INI!" else "Jatuh Tempo: ${dateFormat.format(Date(record.dueDateMillis))} ($daysLeft hari lagi)",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = if (isWarning) FontWeight.Bold else FontWeight.Normal
                     )
                 }
             }
@@ -481,7 +488,7 @@ fun QardhCardItem(
                                     rupiahFormat.format(inst.amount),
                                     style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF10B981)
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
@@ -664,6 +671,10 @@ fun RecordInstallmentDialog(
     var selectedWalletId by remember { mutableStateOf(wallets.firstOrNull()?.id ?: "acc_cash") }
     var note by remember { mutableStateOf("Cicilan pelunasan hutang/piutang") }
 
+    val enteredAmount = amountText.toDoubleOrNull() ?: 0.0
+    val isAmountExceeded = enteredAmount > qardh.remainingAmount
+    val isValidAmount = enteredAmount > 0 && !isAmountExceeded
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Catat Pembayaran Cicilan", fontWeight = FontWeight.Bold) },
@@ -687,9 +698,61 @@ fun RecordInstallmentDialog(
                     value = amountText,
                     onValueChange = { amountText = it.filter { ch -> ch.isDigit() } },
                     label = { Text("Nominal Bayar (Rp)") },
+                    isError = isAmountExceeded,
+                    supportingText = {
+                        if (isAmountExceeded) {
+                            Text(
+                                "Nominal melebihi sisa ${rupiahFormat.format(qardh.remainingAmount)}",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // Dompet Riil Sumber/Tujuan Dana
+                if (wallets.isNotEmpty()) {
+                    Text(
+                        "Dompet Kas / Bank Terkait:",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        wallets.forEach { w ->
+                            val isSelected = selectedWalletId == w.id
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedWalletId = w.id },
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = if (w.type.name.contains("BANK")) Icons.Default.AccountBalance else Icons.Default.AccountBalanceWallet,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = w.name,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
 
                 OutlinedTextField(
                     value = note,
@@ -702,12 +765,11 @@ fun RecordInstallmentDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val amt = amountText.toDoubleOrNull() ?: 0.0
-                    if (amt > 0) {
-                        onConfirm(amt, selectedWalletId, note)
+                    if (isValidAmount) {
+                        onConfirm(enteredAmount, selectedWalletId, note)
                     }
                 },
-                enabled = (amountText.toDoubleOrNull() ?: 0.0) > 0
+                enabled = isValidAmount
             ) {
                 Text("Konfirmasi Pembayaran")
             }

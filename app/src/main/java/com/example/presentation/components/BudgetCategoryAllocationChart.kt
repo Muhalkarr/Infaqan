@@ -53,13 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.accounting.JournalEntry
 import com.example.core.budget.BudgetAllocation
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
-import com.example.ui.theme.DarkSurfaceVariant
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.GoldLight
 import java.text.NumberFormat
 import java.util.Locale
@@ -86,7 +79,10 @@ fun BudgetCategoryAllocationChart(
     var selectedPartitionIndex by remember { mutableStateOf<Int?>(null) }
 
     // Real Sharia Maqashid Partition Calculation from actual journal entries & budget allocations
-    val partitions = remember(budgetCategories, journalEntries) {
+    val primaryColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
+    val secondaryColor = androidx.compose.material3.MaterialTheme.colorScheme.secondary
+    val errorColor = androidx.compose.material3.MaterialTheme.colorScheme.error
+    val partitions = remember(budgetCategories, journalEntries, primaryColor, secondaryColor, errorColor) {
         val expenseEntries = journalEntries.filter { it.transactionType == "EXPENSE" }
 
         // 1. Dharuriyyat (Pokok: Makanan, Kesehatan, Rumah, Pendidikan)
@@ -165,7 +161,7 @@ fun BudgetCategoryAllocationChart(
                     shortTitle = "Dharuriyyat",
                     shariaClass = "Maqashid Pokok",
                     targetPercent = 50.0,
-                    color = EmeraldPrimary,
+                    color = primaryColor,
                     description = "Kebutuhan esensial pangan, papan, kesehatan & pendidikan."
                 ),
                 actualSpent = dharuriyyatSpent,
@@ -191,7 +187,7 @@ fun BudgetCategoryAllocationChart(
                     shortTitle = "Infaq & Tabungan",
                     shariaClass = "Investasi Akhirat",
                     targetPercent = 10.0,
-                    color = GoldAccent,
+                    color = secondaryColor,
                     description = "Infaq Kasab, Sedekah Subuh, Zakat & tabungan ibadah."
                 ),
                 actualSpent = infaqSpent,
@@ -231,7 +227,7 @@ fun BudgetCategoryAllocationChart(
                 label = "Belum Ada Pengeluaran",
                 detail = "Mulai mencatat transaksi pengeluaran kas atau pos anggaran.",
                 isPositive = true,
-                color = EmeraldLight
+                color = primaryColor
             )
         } else {
             val dharuriyyatPct = (partitions[0].actualSpent / realTotalSpent) * 100
@@ -244,25 +240,25 @@ fun BudgetCategoryAllocationChart(
                     label = "Porsi Pelengkap Tinggi (Israf)",
                     detail = "Pengeluaran gaya hidup mencapai ${tahsiniyyatPct.toInt()}%. Disarankan menahan konsumsi komplementer.",
                     isPositive = false,
-                    color = ExpenseCoral
+                    color = errorColor
                 )
                 infaqPct >= 15.0 -> ShariaComplianceStatus(
                     label = "Sangat Berkah (Infaq Unggul)",
                     detail = "Alokasi sedekah & infaq mencapai ${infaqPct.toInt()}%, melampaui target minimal 10%.",
                     isPositive = true,
-                    color = GoldAccent
+                    color = secondaryColor
                 )
                 dharuriyyatPct > 70.0 -> ShariaComplianceStatus(
                     label = "Dominan Kebutuhan Pokok",
                     detail = "Sebagian besar kas terserap untuk kebutuhan primer (${dharuriyyatPct.toInt()}%).",
                     isPositive = true,
-                    color = EmeraldLight
+                    color = primaryColor
                 )
                 else -> ShariaComplianceStatus(
                     label = "Kepatuhan: Seimbang (Proporsional)",
                     detail = "Alokasi pengeluaran selaras dengan kaidah Maqashid Syariah 50/30/10/10.",
                     isPositive = true,
-                    color = EmeraldLight
+                    color = primaryColor
                 )
             }
         }
@@ -297,13 +293,13 @@ fun BudgetCategoryAllocationChart(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(EmeraldPrimary.copy(alpha = 0.15f)),
+                            .background(primaryColor.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.PieChart,
                             contentDescription = "Grafik Alokasi Anggaran",
-                            tint = EmeraldLight,
+                            tint = primaryColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -317,23 +313,23 @@ fun BudgetCategoryAllocationChart(
                         Text(
                             text = "Kaidah Maqashid Syariah 50 / 30 / 10 / 10",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = secondaryColor
                         )
                     }
                 }
 
                 Surface(
                     onClick = onNavigateToBudget,
-                    color = EmeraldPrimary.copy(alpha = 0.15f),
+                    color = primaryColor.copy(alpha = 0.15f),
                     shape = RoundedCornerShape(8.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.3f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, primaryColor.copy(alpha = 0.3f)),
                     modifier = Modifier.testTag("btn_manage_budget_chart")
                 ) {
                     Text(
                         text = "Kelola",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryColor,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     )
                 }
@@ -348,6 +344,7 @@ fun BudgetCategoryAllocationChart(
                     .height(200.dp),
                 contentAlignment = Alignment.Center
             ) {
+                val outlineColor = MaterialTheme.colorScheme.outline
                 val strokeDp = 16.dp
                 Canvas(
                     modifier = Modifier
@@ -361,7 +358,7 @@ fun BudgetCategoryAllocationChart(
 
                     // Draw base background ring
                     drawCircle(
-                        color = Color.Gray.copy(alpha = 0.15f),
+                        color = outlineColor.copy(alpha = 0.15f),
                         radius = radius,
                         center = center,
                         style = Stroke(width = strokeWidth)
@@ -389,9 +386,9 @@ fun BudgetCategoryAllocationChart(
                     } else {
                         // Draw balanced default target guidance ring segments
                         val idealSplits = listOf(
-                            EmeraldPrimary to 180f, // 50%
+                            primaryColor to 180f, // 50%
                             Color(0xFF00B4D8) to 108f, // 30%
-                            GoldAccent to 36f, // 10%
+                            secondaryColor to 36f, // 10%
                             Color(0xFFAB47BC) to 36f // 10%
                         )
                         var guideAngle = -90f
@@ -475,7 +472,7 @@ fun BudgetCategoryAllocationChart(
                             },
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.secondary,
+                            color = secondaryColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -583,7 +580,7 @@ fun BudgetCategoryAllocationChart(
                                         Icon(
                                             imageVector = Icons.Default.Warning,
                                             contentDescription = "Mendekati Israf",
-                                            tint = ExpenseCoral,
+                                            tint = errorColor,
                                             modifier = Modifier.size(13.dp)
                                         )
                                     }

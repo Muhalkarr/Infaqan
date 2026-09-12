@@ -8,13 +8,16 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.preferences.core.floatPreferencesKey
 import com.example.core.accounting.FiscalCycleType
 import com.example.core.budget.FinancialGoalMode
 import com.example.core.security.AutoLockInterval
 import com.example.core.security.SecurityConfig
+import com.example.ui.theme.AppThemeMode
 import com.example.ui.theme.UiScaleMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -24,9 +27,11 @@ import java.io.IOException
 val Context.appDataStore: DataStore<Preferences> by preferencesDataStore(name = "amanah_user_preferences")
 
 data class AppUserPreferences(
+    val themeMode: AppThemeMode = AppThemeMode.FOLLOW_SYSTEM,
     val isDarkMode: Boolean = true,
     val isHighContrast: Boolean = false,
     val goldPricePerGram: Double = 1350000.0,
+    val goldPriceLastUpdated: Long = System.currentTimeMillis(),
     val selectedHijriOffset: Int = 0,
     val userNameKasMukmin: String = "Kas Keluarga Mukmin",
     val startDayOfMonth: Int = 1,
@@ -41,6 +46,7 @@ data class AppUserPreferences(
     val sedekahSubuhTargetDays: Int = 40,
     val israfWarningThresholdPercent: Int = 80,
     val isStrictBudgetEnforced: Boolean = false,
+    val isDeficitProtectionEnabled: Boolean = true,
     val autoExecuteRecurringEnabled: Boolean = true,
     val notifyOnRecurringDue: Boolean = true,
     val showDailyHadith: Boolean = true,
@@ -49,14 +55,18 @@ data class AppUserPreferences(
     val securityConfig: SecurityConfig = SecurityConfig(),
     val uiScaleMode: UiScaleMode = UiScaleMode.DEFAULT,
     val uiScaleFactor: Float = 1.0f
+    , val completedGuides: Set<String> = emptySet(),
+    val hasCompletedOnboarding: Boolean = false
 )
 
 class DataStoreManager(private val context: Context) {
 
     private object PreferencesKeys {
+        val THEME_MODE = stringPreferencesKey("theme_mode")
         val IS_DARK_MODE = booleanPreferencesKey("is_dark_mode")
         val IS_HIGH_CONTRAST = booleanPreferencesKey("is_high_contrast")
         val GOLD_PRICE_PER_GRAM = doublePreferencesKey("gold_price_per_gram")
+        val GOLD_PRICE_LAST_UPDATED = longPreferencesKey("gold_price_last_updated")
         val SELECTED_HIJRI_OFFSET = intPreferencesKey("selected_hijri_offset")
         val USER_NAME_KAS_MUKMIN = stringPreferencesKey("user_name_kas_mukmin")
         val START_DAY_OF_MONTH = intPreferencesKey("start_day_of_month")
@@ -71,6 +81,7 @@ class DataStoreManager(private val context: Context) {
         val SEDEKAH_SUBUH_TARGET_DAYS = intPreferencesKey("sedekah_subuh_target_days")
         val ISRAF_WARNING_THRESHOLD_PERCENT = intPreferencesKey("israf_warning_threshold_percent")
         val IS_STRICT_BUDGET_ENFORCED = booleanPreferencesKey("is_strict_budget_enforced")
+        val IS_DEFICIT_PROTECTION_ENABLED = booleanPreferencesKey("is_deficit_protection_enabled")
         val AUTO_EXECUTE_RECURRING_ENABLED = booleanPreferencesKey("auto_execute_recurring_enabled")
         val NOTIFY_ON_RECURRING_DUE = booleanPreferencesKey("notify_on_recurring_due")
         val SHOW_DAILY_HADITH = booleanPreferencesKey("show_daily_hadith")
@@ -78,6 +89,8 @@ class DataStoreManager(private val context: Context) {
         val SELECTED_GOAL_MODE = stringPreferencesKey("selected_goal_mode")
         val UI_SCALE_MODE = stringPreferencesKey("ui_scale_mode")
         val UI_SCALE_FACTOR = floatPreferencesKey("ui_scale_factor")
+        val COMPLETED_GUIDES = stringSetPreferencesKey("completed_guides")
+        val HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
 
         // Security Preferences
         val PIN_HASH = stringPreferencesKey("security_pin_hash")
@@ -100,9 +113,20 @@ class DataStoreManager(private val context: Context) {
             }
         }
         .map { preferences ->
+            val themeModeStr = preferences[PreferencesKeys.THEME_MODE]
+            val themeMode = if (themeModeStr != null) {
+                try {
+                    AppThemeMode.valueOf(themeModeStr)
+                } catch (_: Exception) {
+                    AppThemeMode.FOLLOW_SYSTEM
+                }
+            } else {
+                AppThemeMode.FOLLOW_SYSTEM
+            }
             val isDarkMode = preferences[PreferencesKeys.IS_DARK_MODE] ?: true
             val isHighContrast = preferences[PreferencesKeys.IS_HIGH_CONTRAST] ?: false
             val goldPrice = preferences[PreferencesKeys.GOLD_PRICE_PER_GRAM] ?: 1350000.0
+            val goldPriceLastUpdated = preferences[PreferencesKeys.GOLD_PRICE_LAST_UPDATED] ?: System.currentTimeMillis()
             val hijriOffset = preferences[PreferencesKeys.SELECTED_HIJRI_OFFSET] ?: 0
             val userName = preferences[PreferencesKeys.USER_NAME_KAS_MUKMIN] ?: "Kas Keluarga Mukmin"
             val startDay = preferences[PreferencesKeys.START_DAY_OF_MONTH] ?: 1
@@ -122,6 +146,7 @@ class DataStoreManager(private val context: Context) {
             val sedekahDays = preferences[PreferencesKeys.SEDEKAH_SUBUH_TARGET_DAYS] ?: 40
             val israfThreshold = preferences[PreferencesKeys.ISRAF_WARNING_THRESHOLD_PERCENT] ?: 80
             val strictBudget = preferences[PreferencesKeys.IS_STRICT_BUDGET_ENFORCED] ?: false
+            val deficitProtection = preferences[PreferencesKeys.IS_DEFICIT_PROTECTION_ENABLED] ?: true
             val autoRecurring = preferences[PreferencesKeys.AUTO_EXECUTE_RECURRING_ENABLED] ?: true
             val notifyRecurring = preferences[PreferencesKeys.NOTIFY_ON_RECURRING_DUE] ?: true
             val showHadith = preferences[PreferencesKeys.SHOW_DAILY_HADITH] ?: true
@@ -134,6 +159,8 @@ class DataStoreManager(private val context: Context) {
                 UiScaleMode.DEFAULT
             }
             val scaleFactor = preferences[PreferencesKeys.UI_SCALE_FACTOR] ?: 1.0f
+            val completedGuides = preferences[PreferencesKeys.COMPLETED_GUIDES] ?: emptySet()
+            val hasCompletedOnboarding = preferences[PreferencesKeys.HAS_COMPLETED_ONBOARDING] ?: false
 
             val goalModeStr = preferences[PreferencesKeys.SELECTED_GOAL_MODE] ?: FinancialGoalMode.BALANCED_50_30_20.name
             val goalMode = try {
@@ -173,6 +200,7 @@ class DataStoreManager(private val context: Context) {
                 isDarkMode = isDarkMode,
                 isHighContrast = isHighContrast,
                 goldPricePerGram = goldPrice,
+                goldPriceLastUpdated = goldPriceLastUpdated,
                 selectedHijriOffset = hijriOffset,
                 userNameKasMukmin = userName,
                 startDayOfMonth = startDay,
@@ -187,6 +215,7 @@ class DataStoreManager(private val context: Context) {
                 sedekahSubuhTargetDays = sedekahDays,
                 israfWarningThresholdPercent = israfThreshold,
                 isStrictBudgetEnforced = strictBudget,
+                isDeficitProtectionEnabled = deficitProtection,
                 autoExecuteRecurringEnabled = autoRecurring,
                 notifyOnRecurringDue = notifyRecurring,
                 showDailyHadith = showHadith,
@@ -194,13 +223,44 @@ class DataStoreManager(private val context: Context) {
                 selectedGoalMode = goalMode,
                 securityConfig = securityConfig,
                 uiScaleMode = scaleMode,
-                uiScaleFactor = scaleFactor
+                uiScaleFactor = scaleFactor,
+                completedGuides = completedGuides,
+                hasCompletedOnboarding = hasCompletedOnboarding,
+                themeMode = themeMode
             )
         }
+
+    suspend fun saveThemeMode(mode: AppThemeMode) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME_MODE] = mode.name
+            when (mode) {
+                AppThemeMode.FOLLOW_SYSTEM -> {
+                    // Retain existing boolean flags
+                }
+                AppThemeMode.ELEGANT_DARK -> {
+                    preferences[PreferencesKeys.IS_DARK_MODE] = true
+                    preferences[PreferencesKeys.IS_HIGH_CONTRAST] = false
+                }
+                AppThemeMode.LIGHT_MODE -> {
+                    preferences[PreferencesKeys.IS_DARK_MODE] = false
+                    preferences[PreferencesKeys.IS_HIGH_CONTRAST] = false
+                }
+                AppThemeMode.HIGH_CONTRAST_LIGHT -> {
+                    preferences[PreferencesKeys.IS_DARK_MODE] = false
+                    preferences[PreferencesKeys.IS_HIGH_CONTRAST] = true
+                }
+                AppThemeMode.HIGH_CONTRAST_DARK -> {
+                    preferences[PreferencesKeys.IS_DARK_MODE] = true
+                    preferences[PreferencesKeys.IS_HIGH_CONTRAST] = true
+                }
+            }
+        }
+    }
 
     suspend fun saveDarkMode(isDarkMode: Boolean) {
         context.appDataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_DARK_MODE] = isDarkMode
+            preferences[PreferencesKeys.THEME_MODE] = if (isDarkMode) AppThemeMode.ELEGANT_DARK.name else AppThemeMode.LIGHT_MODE.name
         }
     }
 
@@ -210,9 +270,10 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    suspend fun saveGoldPrice(price: Double) {
+    suspend fun saveGoldPrice(price: Double, timestamp: Long = System.currentTimeMillis()) {
         context.appDataStore.edit { preferences ->
             preferences[PreferencesKeys.GOLD_PRICE_PER_GRAM] = price
+            preferences[PreferencesKeys.GOLD_PRICE_LAST_UPDATED] = timestamp
         }
     }
 
@@ -273,6 +334,12 @@ class DataStoreManager(private val context: Context) {
     suspend fun saveStrictBudgetEnforced(enforced: Boolean) {
         context.appDataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_STRICT_BUDGET_ENFORCED] = enforced
+        }
+    }
+
+    suspend fun saveDeficitProtectionEnabled(enabled: Boolean) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_DEFICIT_PROTECTION_ENABLED] = enabled
         }
     }
 
@@ -360,6 +427,21 @@ class DataStoreManager(private val context: Context) {
     suspend fun clearAllPreferences() {
         context.appDataStore.edit { preferences ->
             preferences.clear()
+        }
+    }
+
+
+    
+    suspend fun setOnboardingCompleted() {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAS_COMPLETED_ONBOARDING] = true
+        }
+    }
+
+    suspend fun markGuideCompleted(guideTitle: String) {
+        context.appDataStore.edit { preferences ->
+            val currentGuides = preferences[PreferencesKeys.COMPLETED_GUIDES] ?: emptySet()
+            preferences[PreferencesKeys.COMPLETED_GUIDES] = currentGuides + guideTitle
         }
     }
 }

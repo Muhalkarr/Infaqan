@@ -68,15 +68,7 @@ import com.example.core.accounting.AccountCategory
 import com.example.core.infaq.InfaqCalculationType
 import com.example.core.infaq.InfaqRule
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
-import com.example.ui.theme.DarkSurfaceVariant
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.White12
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
@@ -140,8 +132,8 @@ fun InfaqRulesScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
-                containerColor = GoldAccent,
-                contentColor = Color(0xFF1E1A00),
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
                 modifier = Modifier.testTag("add_rule_fab")
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Tambah Aturan Infaq")
@@ -205,7 +197,7 @@ fun InfaqRuleItemCard(
             Icon(
                 imageVector = Icons.Default.AutoAwesome,
                 contentDescription = null,
-                tint = GoldAccent,
+                tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.size(24.dp)
             )
 
@@ -227,7 +219,7 @@ fun InfaqRuleItemCard(
                 Text(
                     text = "Tipe: ${rule.calculationType.displayName}",
                     fontSize = 10.sp,
-                    color = EmeraldLight
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -289,7 +281,7 @@ fun AddRuleDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -311,7 +303,7 @@ fun AddRuleDialog(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedBorderColor = EmeraldPrimary,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -349,7 +341,7 @@ fun AddRuleDialog(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedBorderColor = EmeraldPrimary,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -386,7 +378,7 @@ fun AddRuleDialog(
                         )
                         Text(
                             text = "${String.format(java.util.Locale.US, "%.1f", percentageRate * 100).removeSuffix(".0")}%",
-                            color = EmeraldLight,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -400,8 +392,8 @@ fun AddRuleDialog(
                             val isSel = Math.abs(percentageRate - rate) < 0.001
                             androidx.compose.material3.Surface(
                                 shape = RoundedCornerShape(6.dp),
-                                color = if (isSel) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, if (isSel) GoldAccent else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                color = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isSel) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable { percentageRate = rate }
@@ -423,8 +415,8 @@ fun AddRuleDialog(
                         onValueChange = { percentageRate = (Math.round(it * 200.0) / 200.0).coerceIn(0.01, 1.0) },
                         valueRange = 0.01f..1.0f,
                         colors = SliderDefaults.colors(
-                            thumbColor = EmeraldLight,
-                            activeTrackColor = EmeraldPrimary,
+                            thumbColor = MaterialTheme.colorScheme.primary,
+                            activeTrackColor = MaterialTheme.colorScheme.primary,
                             inactiveTrackColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                         )
                     )
@@ -447,7 +439,7 @@ fun AddRuleDialog(
                     onAdd(r)
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = EmeraldPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White
                 )
             ) {

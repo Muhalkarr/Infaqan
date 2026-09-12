@@ -1,5 +1,6 @@
 package com.example.presentation.screens
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -627,7 +628,7 @@ fun FaraidhShareCard(
                         rupiahFormat.format(share.totalNominal),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10B981)
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 

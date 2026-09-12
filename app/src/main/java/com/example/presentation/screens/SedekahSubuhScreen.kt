@@ -81,17 +81,9 @@ import com.example.core.infaq.SedekahSubuhState
 import com.example.core.infaq.SedekahSubuhStreakEngine
 import com.example.core.infaq.StreakBadge
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.GoldLight
 import com.example.ui.theme.White38
-import com.example.ui.theme.White60
-import com.example.ui.theme.White70
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -150,15 +142,15 @@ fun SedekahSubuhScreen(
                         Text(
                             text = "Konsistensi Kebaikan di Awal Fajar",
                             fontSize = 11.sp,
-                            color = GoldAccent
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 },
                 actions = {
                     Surface(
-                        color = GoldAccent.copy(alpha = 0.15f),
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(20.dp),
-                        border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.4f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)),
                         modifier = Modifier.padding(end = 12.dp)
                     ) {
                         Row(
@@ -174,7 +166,7 @@ fun SedekahSubuhScreen(
                                 text = "${subuhState.currentStreak} Hari",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                     }
@@ -248,7 +240,7 @@ fun SedekahSubuhScreen(
                     Text(
                         text = "${subuhState.badges.count { it.isUnlocked }} / ${subuhState.badges.size} Terbuka",
                         fontSize = 11.sp,
-                        color = GoldAccent,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -272,7 +264,7 @@ fun SedekahSubuhScreen(
                             Icon(
                                 imageVector = Icons.Default.WbSunny,
                                 contentDescription = null,
-                                tint = GoldAccent,
+                                tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -280,7 +272,7 @@ fun SedekahSubuhScreen(
                                 text = "Doa Malaikat di Waktu Subuh",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                         Spacer(modifier = Modifier.height(8.dp))
@@ -303,7 +295,7 @@ fun SedekahSubuhScreen(
                             text = "— HR. Al-Bukhari No. 1442 & Muslim No. 1010, dari Abu Hurairah RA",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = GoldAccent
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -342,7 +334,7 @@ fun SedekahSubuhScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Lencana Terbuka!",
-                        color = GoldAccent,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
@@ -365,13 +357,13 @@ fun SedekahSubuhScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Surface(
-                        color = EmeraldPrimary.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(8.dp),
-                        border = BorderStroke(1.dp, EmeraldLight.copy(alpha = 0.5f))
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
                     ) {
                         Text(
                             text = "Istiqomah ${badge.requiredDays} Hari Berturut-turut",
-                            color = EmeraldLight,
+                            color = MaterialTheme.colorScheme.primary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -382,7 +374,7 @@ fun SedekahSubuhScreen(
             confirmButton = {
                 Button(
                     onClick = { celebrationBadge = null },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Alhamdulillah", fontWeight = FontWeight.Bold)
@@ -405,10 +397,10 @@ fun SubuhStreakHeroCard(
             .clip(RoundedCornerShape(20.dp))
             .background(
                 brush = Brush.linearGradient(
-                    colors = listOf(Color(0xFF1E3A2B), Color(0xFF0F1E17), Color(0xFF081410))
+                    colors = listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.background)
                 )
             )
-            .border(1.dp, GoldAccent.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+            .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
             .padding(18.dp)
     ) {
         Column {
@@ -422,8 +414,8 @@ fun SubuhStreakHeroCard(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(CircleShape)
-                            .background(GoldAccent.copy(alpha = 0.2f))
-                            .border(1.dp, GoldAccent, CircleShape),
+                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
+                            .border(1.dp, MaterialTheme.colorScheme.secondary, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text("🔥", fontSize = 22.sp)
@@ -434,21 +426,21 @@ fun SubuhStreakHeroCard(
                             text = "${subuhState.currentStreak} HARI STREAK",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldAccent,
+                            color = MaterialTheme.colorScheme.secondary,
                             letterSpacing = 0.5.sp
                         )
                         Text(
                             text = if (isGivenToday) "Subuh Hari Ini Telah Ditunaikan ✨" else "Waktunya Menghidupkan Subuh Hari Ini",
                             fontSize = 11.sp,
-                            color = if (isGivenToday) EmeraldLight else White70
+                            color = if (isGivenToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                     }
                 }
 
                 Surface(
-                    color = if (isGivenToday) EmeraldPrimary.copy(alpha = 0.25f) else GoldAccent.copy(alpha = 0.2f),
+                    color = if (isGivenToday) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(8.dp),
-                    border = BorderStroke(1.dp, if (isGivenToday) EmeraldLight else GoldAccent)
+                    border = BorderStroke(1.dp, if (isGivenToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -457,7 +449,7 @@ fun SubuhStreakHeroCard(
                         Icon(
                             imageVector = if (isGivenToday) Icons.Default.CheckCircle else Icons.Default.WbSunny,
                             contentDescription = null,
-                            tint = if (isGivenToday) EmeraldLight else GoldAccent,
+                            tint = if (isGivenToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -465,7 +457,7 @@ fun SubuhStreakHeroCard(
                             text = if (isGivenToday) "Tercatat" else "Belum",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isGivenToday) EmeraldLight else GoldAccent
+                            color = if (isGivenToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -478,23 +470,23 @@ fun SubuhStreakHeroCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFF071512))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Total Sedekah", fontSize = 10.sp, color = White60)
-                    Text("Rp ${formatRupiah(subuhState.totalContributions)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                    Text("Total Sedekah", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                    Text("Rp ${formatRupiah(subuhState.totalContributions)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                 }
-                Box(modifier = Modifier.width(1.dp).height(24.dp).background(DarkBorder))
+                Box(modifier = Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outline))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Total Hari", fontSize = 10.sp, color = White60)
-                    Text("${subuhState.totalDaysGiven} Hari", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Total Hari", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                    Text("${subuhState.totalDaysGiven} Hari", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Box(modifier = Modifier.width(1.dp).height(24.dp).background(DarkBorder))
+                Box(modifier = Modifier.width(1.dp).height(24.dp).background(MaterialTheme.colorScheme.outline))
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Rekor Streak", fontSize = 10.sp, color = White60)
-                    Text("${subuhState.longestStreak} Hari", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                    Text("Rekor Streak", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+                    Text("${subuhState.longestStreak} Hari", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                 }
             }
 
@@ -508,13 +500,13 @@ fun SubuhStreakHeroCard(
                         Text(
                             text = "Lencana Berikutnya: ${nextBadge.iconEmoji} ${nextBadge.title}",
                             fontSize = 11.sp,
-                            color = White70
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
                         Text(
                             text = "$daysToNext hari lagi",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldAccent
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -525,7 +517,7 @@ fun SubuhStreakHeroCard(
                             .fillMaxWidth()
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp)),
-                        color = GoldAccent,
+                        color = MaterialTheme.colorScheme.secondary,
                         trackColor = Color.Black.copy(alpha = 0.5f),
                         strokeCap = StrokeCap.Round
                     )
@@ -565,7 +557,7 @@ fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>
                         Text(
                             text = item.dayName,
                             fontSize = 10.sp,
-                            color = if (item.isToday) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (item.isToday) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = if (item.isToday) FontWeight.Bold else FontWeight.Normal
                         )
 
@@ -577,16 +569,16 @@ fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>
                                 .clip(CircleShape)
                                 .background(
                                     when {
-                                        item.isCompleted -> EmeraldPrimary
-                                        item.isToday -> GoldAccent.copy(alpha = 0.25f)
+                                        item.isCompleted -> MaterialTheme.colorScheme.primary
+                                        item.isToday -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.25f)
                                         else -> MaterialTheme.colorScheme.surfaceVariant
                                     }
                                 )
                                 .border(
                                     1.dp,
                                     when {
-                                        item.isCompleted -> GoldAccent
-                                        item.isToday -> GoldAccent
+                                        item.isCompleted -> MaterialTheme.colorScheme.secondary
+                                        item.isToday -> MaterialTheme.colorScheme.secondary
                                         else -> MaterialTheme.colorScheme.outlineVariant
                                     },
                                     CircleShape
@@ -597,14 +589,14 @@ fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(16.dp)
                                 )
                             } else {
                                 Text(
                                     text = item.dayNumber,
                                     fontSize = 11.sp,
-                                    color = if (item.isToday) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (item.isToday) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = if (item.isToday) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
@@ -616,14 +608,14 @@ fun SubuhWeeklyStripSection(daysStrip: List<com.example.core.infaq.DayStripItem>
                             Text(
                                 text = "Rp ${(item.amount / 1000).toInt()}k",
                                 fontSize = 8.sp,
-                                color = EmeraldLight,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold
                             )
                         } else if (item.isToday) {
                             Text(
                                 text = "Hari Ini",
                                 fontSize = 8.sp,
-                                color = GoldAccent,
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.Bold
                             )
                         } else {
@@ -650,7 +642,7 @@ fun QuickGiveSubuhPanel(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, if (isGivenToday) MaterialTheme.colorScheme.outline else EmeraldPrimary.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, if (isGivenToday) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -662,7 +654,7 @@ fun QuickGiveSubuhPanel(
                     Icon(
                         imageVector = Icons.Default.VolunteerActivism,
                         contentDescription = null,
-                        tint = GoldAccent,
+                        tint = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -676,13 +668,13 @@ fun QuickGiveSubuhPanel(
 
                 if (isGivenToday) {
                     Surface(
-                        color = EmeraldPrimary.copy(alpha = 0.2f),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
                             text = "+ Tambah Lagi",
                             fontSize = 10.sp,
-                            color = EmeraldPrimary,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -711,7 +703,7 @@ fun QuickGiveSubuhPanel(
                             containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
                             contentColor = MaterialTheme.colorScheme.primary
                         ),
-                        border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.35f))
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
                     ) {
                         Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                     }
@@ -724,8 +716,8 @@ fun QuickGiveSubuhPanel(
                 onClick = onCustomGiveClick,
                 modifier = Modifier.fillMaxWidth().testTag("custom_subuh_button"),
                 shape = RoundedCornerShape(10.dp),
-                border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.5f)),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = GoldAccent)
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary)
             ) {
                 Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(14.dp))
                 Spacer(modifier = Modifier.width(6.dp))
@@ -747,7 +739,7 @@ fun SubuhBadgeCard(badge: StreakBadge, currentStreak: Int) {
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(
             1.dp,
-            if (badge.isUnlocked) GoldAccent.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline
+            if (badge.isUnlocked) MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.outline
         )
     ) {
         Row(
@@ -761,11 +753,11 @@ fun SubuhBadgeCard(badge: StreakBadge, currentStreak: Int) {
                     .size(46.dp)
                     .clip(CircleShape)
                     .background(
-                        if (badge.isUnlocked) GoldAccent.copy(alpha = 0.2f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                        if (badge.isUnlocked) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
                     )
                     .border(
                         1.dp,
-                        if (badge.isUnlocked) GoldAccent else MaterialTheme.colorScheme.outline,
+                        if (badge.isUnlocked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline,
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -797,7 +789,7 @@ fun SubuhBadgeCard(badge: StreakBadge, currentStreak: Int) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = EmeraldLight,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(13.dp)
                         )
                     }
@@ -811,18 +803,18 @@ fun SubuhBadgeCard(badge: StreakBadge, currentStreak: Int) {
             }
 
             Surface(
-                color = if (badge.isUnlocked) EmeraldPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                color = if (badge.isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(6.dp),
                 border = BorderStroke(
                     1.dp,
-                    if (badge.isUnlocked) EmeraldLight.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant
+                    if (badge.isUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant
                 )
             ) {
                 Text(
                     text = if (badge.isUnlocked) "Terbuka" else "${badge.requiredDays} Hari",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (badge.isUnlocked) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (badge.isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                 )
             }
@@ -863,13 +855,13 @@ fun CustomSedekahSubuhDialog(
                         errorMessage = null
                     },
                     label = { Text("Nominal Sedekah (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    prefix = { Text("Rp ", color = GoldAccent, fontWeight = FontWeight.Bold) },
+                    prefix = { Text("Rp ", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -887,7 +879,7 @@ fun CustomSedekahSubuhDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -896,7 +888,7 @@ fun CustomSedekahSubuhDialog(
                 )
 
                 if (errorMessage != null) {
-                    Text(text = errorMessage ?: "", color = Color(0xFFEF5350), fontSize = 11.sp)
+                    Text(text = errorMessage ?: "", color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
                 }
             }
         },
@@ -910,7 +902,7 @@ fun CustomSedekahSubuhDialog(
                         onConfirm(amt, noteText.ifBlank { "Sedekah Subuh Fajar" })
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Tunaikan Sedekah", fontWeight = FontWeight.Bold)
             }

@@ -64,14 +64,6 @@ import com.example.presentation.components.HijriRadialHeatmap
 import com.example.presentation.components.SankeyFlowDiagram
 import com.example.presentation.components.SpendingTrendLineChart
 import com.example.ui.theme.AssetBlue
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
-import com.example.ui.theme.DarkSurfaceVariant
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.White12
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
@@ -89,17 +81,21 @@ fun AnalyticsScreen(
     val clipboardManager = LocalClipboardManager.current
     var showExportDialog by remember { mutableStateOf(false) }
 
-    val sources = remember(state.totalIncomeKasab, state.totalIncomeNonKasab) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val errorColor = MaterialTheme.colorScheme.error
+
+    val sources = remember(state.totalIncomeKasab, state.totalIncomeNonKasab, primaryColor, secondaryColor) {
         listOf(
             FlowNode(
                 label = "Kasab (Aktif)",
                 value = state.totalIncomeKasab.coerceAtLeast(1000.0),
-                color = EmeraldPrimary
+                color = primaryColor
             ),
             FlowNode(
                 label = "Non-Kasab (Windfall)",
                 value = state.totalIncomeNonKasab.coerceAtLeast(1000.0),
-                color = GoldAccent
+                color = secondaryColor
             )
         )
     }
@@ -107,17 +103,17 @@ fun AnalyticsScreen(
     val netSavings = (state.totalIncomeKasab + state.totalIncomeNonKasab - state.totalConsumptionExpense - state.totalPurifiedInfaq)
         .coerceAtLeast(1000.0)
 
-    val targets = remember(state.totalConsumptionExpense, state.totalPurifiedInfaq, netSavings) {
+    val targets = remember(state.totalConsumptionExpense, state.totalPurifiedInfaq, netSavings, errorColor, secondaryColor) {
         listOf(
             FlowNode(
                 label = "Belanja Konsumsi",
                 value = state.totalConsumptionExpense.coerceAtLeast(1000.0),
-                color = ExpenseCoral
+                color = errorColor
             ),
             FlowNode(
                 label = "Vault Infaq Amanah",
                 value = state.totalPurifiedInfaq.coerceAtLeast(1000.0),
-                color = GoldAccent
+                color = secondaryColor
             ),
             FlowNode(
                 label = "Aset Bersih / Tabungan",
@@ -175,7 +171,7 @@ fun AnalyticsScreen(
                         Icon(
                             imageVector = Icons.Default.PictureAsPdf,
                             contentDescription = "Unduh PDF Laporan Bulanan",
-                            tint = GoldAccent
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                     IconButton(
@@ -185,7 +181,7 @@ fun AnalyticsScreen(
                         Icon(
                             imageVector = Icons.Default.FileDownload,
                             contentDescription = "Ekspor Buku Besar",
-                            tint = EmeraldLight
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     IconButton(
@@ -284,7 +280,7 @@ fun AnalyticsScreen(
                         text = "Indeks Kesehatan Finansial & Spiritual",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GoldAccent
+                        color = MaterialTheme.colorScheme.secondary
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -297,7 +293,7 @@ fun AnalyticsScreen(
                             "${String.format("%.1f", state.spiritualLiquidityIndex)}%",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                     Spacer(modifier = Modifier.height(8.dp))
@@ -325,7 +321,7 @@ fun AnalyticsScreen(
                             "Rp ${formatRupiah(state.totalDisbursedInfaq)}",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldAccent
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -358,7 +354,7 @@ fun AnalyticsScreen(
                     Text(
                         text = "Format CSV Double-Entry (${state.journalEntries.size} entri):",
                         fontSize = 12.sp,
-                        color = EmeraldLight
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Box(
@@ -386,7 +382,7 @@ fun AnalyticsScreen(
                         showExportDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = EmeraldPrimary,
+                        containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = Color.White
                     )
                 ) {
@@ -395,7 +391,7 @@ fun AnalyticsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showExportDialog = false }) {
-                    Text("Tutup", color = Color.White60)
+                    Text("Tutup", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         )

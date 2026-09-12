@@ -2,6 +2,9 @@ package com.example.presentation.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FamilyRestroom
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -73,8 +77,6 @@ import com.example.core.state.AmanahLedgerViewModel
 import com.example.core.zakat.ZakatFitrahFamilyCalculation
 import com.example.core.zakat.ZakatPerniagaanCalculation
 import com.example.core.zakat.ZakatProfesiCalculation
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -90,6 +92,7 @@ fun ZakatHubScreen(
 
     var selectedTab by remember { mutableStateOf(0) }
     var showDisburseModal by remember { mutableStateOf(false) }
+    var showGoldEditDialog by remember { mutableStateOf(false) }
     var disburseAmountPreset by remember { mutableStateOf(0.0) }
     var disburseTitlePreset by remember { mutableStateOf("Zakat Maal") }
 
@@ -141,6 +144,62 @@ fun ZakatHubScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Gold Reference Header Banner
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp)
+                    ) {
+                        Text(
+                            text = "Acuan Emas: Rp ${nf.format(state.goldPricePerGram)}/g",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Nisab 85g: Rp ${nf.format(state.goldPricePerGram * 85.0)} • ${state.goldPriceSource}",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Button(
+                        onClick = { showGoldEditDialog = true },
+                        modifier = Modifier
+                            .defaultMinSize(minWidth = 48.dp, minHeight = 44.dp)
+                            .testTag("edit_gold_price_btn"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f),
+                            contentColor = MaterialTheme.colorScheme.secondary
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = "Ubah Acuan Emas", modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Ubah", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.surface
@@ -216,6 +275,116 @@ fun ZakatHubScreen(
             }
         )
     }
+
+    if (showGoldEditDialog) {
+        EditGoldPriceDialog(
+            currentPrice = state.goldPricePerGram,
+            currentSource = state.goldPriceSource,
+            onDismiss = { showGoldEditDialog = false },
+            onConfirm = { newPrice, source ->
+                viewModel.updateGoldPriceWithMetadata(newPrice, source)
+                showGoldEditDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun EditGoldPriceDialog(
+    currentPrice: Double,
+    currentSource: String,
+    onDismiss: () -> Unit,
+    onConfirm: (newPrice: Double, source: String) -> Unit
+) {
+    var priceText by remember { mutableStateOf(currentPrice.toLong().toString()) }
+    var selectedSource by remember { mutableStateOf(currentSource) }
+
+    val presetSources = listOf(
+        "Antam (Standar Logam Mulia)",
+        "BAZNAS RI (SK Hisab Zakat)",
+        "Pegadaian Syariah",
+        "Input Manual Pengguna"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Sesuaikan Acuan Harga Emas",
+                fontWeight = FontWeight.Bold,
+                fontSize = 17.sp
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Harga emas per gram digunakan untuk menghitung batas nisab Zakat Maal, Perniagaan (85 gram emas), dan Haul secara offline.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = priceText,
+                    onValueChange = { priceText = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Harga Emas per Gram (Rp)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text(
+                    text = "Sumber Acuan Referensi:",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    presetSources.forEach { source ->
+                        val isSelected = selectedSource == source
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedSource = source },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                            )
+                        ) {
+                            Text(
+                                text = source,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val p = priceText.toDoubleOrNull() ?: 0.0
+                    if (p > 0) {
+                        onConfirm(p, selectedSource)
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Text("Simpan Acuan")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Batal")
+            }
+        }
+    )
 }
 
 @Composable
@@ -241,7 +410,7 @@ private fun ZakatProfesiTab(
         // Result Banner
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = if (calc.isObligated) EmeraldPrimary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
+                containerColor = if (calc.isObligated) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant
             ),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
@@ -270,7 +439,7 @@ private fun ZakatProfesiTab(
                     if (calc.isObligated) {
                         Button(
                             onClick = { onTunaikan(calc.zakatPayableAmount) },
-                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             modifier = Modifier.testTag("tunaikan_zakat_profesi_btn")
                         ) {
                             Text("Tunaikan", fontWeight = FontWeight.Bold)
@@ -521,7 +690,7 @@ private fun ZakatFitrahTab(
         // Result Banner
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = EmeraldPrimary.copy(alpha = 0.12f)
+                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
             ),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
@@ -549,7 +718,7 @@ private fun ZakatFitrahTab(
 
                     Button(
                         onClick = { onTunaikan(calc.totalFitrahRupiah) },
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         modifier = Modifier.testTag("tunaikan_zakat_fitrah_btn")
                     ) {
                         Text("Tunaikan", fontWeight = FontWeight.Bold)
@@ -811,7 +980,7 @@ private fun DisburseZakatDialog(
                     }
                 },
                 enabled = isValid,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Tunaikan Zakat")
             }

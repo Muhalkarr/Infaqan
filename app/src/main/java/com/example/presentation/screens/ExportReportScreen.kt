@@ -65,11 +65,7 @@ import androidx.compose.ui.unit.sp
 import com.example.core.report.DocumentExporter
 import com.example.core.report.FinancialPdfGenerator
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBorder
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import java.io.File
 import java.text.NumberFormat
 import java.util.Calendar
@@ -146,7 +142,7 @@ fun ExportReportScreen(
                         containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                     ),
                     shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.3f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp),
@@ -188,7 +184,7 @@ fun ExportReportScreen(
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -196,13 +192,13 @@ fun ExportReportScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(EmeraldPrimary.copy(alpha = 0.15f)),
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     Icons.Default.AccountBalance,
                                     contentDescription = null,
-                                    tint = EmeraldPrimary,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -288,7 +284,7 @@ fun ExportReportScreen(
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -296,13 +292,13 @@ fun ExportReportScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(GoldAccent.copy(alpha = 0.15f)),
+                                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     Icons.Default.VolunteerActivism,
                                     contentDescription = null,
-                                    tint = GoldAccent,
+                                    tint = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -388,7 +384,7 @@ fun ExportReportScreen(
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -396,13 +392,13 @@ fun ExportReportScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFFE11D48).copy(alpha = 0.15f)),
+                                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     Icons.Default.PictureAsPdf,
                                     contentDescription = null,
-                                    tint = Color(0xFFE11D48),
+                                    tint = MaterialTheme.colorScheme.error,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -500,7 +496,7 @@ fun ExportReportScreen(
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -508,13 +504,13 @@ fun ExportReportScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(EmeraldLight.copy(alpha = 0.15f)),
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     Icons.Default.TableChart,
                                     contentDescription = null,
-                                    tint = EmeraldLight,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }

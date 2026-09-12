@@ -93,10 +93,6 @@ import com.example.core.backup.RestoreResult
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.core.sync.SyncStateStatus
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -230,13 +226,13 @@ fun BackupRestoreScreen(
                                         modifier = Modifier
                                             .size(44.dp)
                                             .clip(CircleShape)
-                                            .background(EmeraldPrimary.copy(alpha = 0.2f)),
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             imageVector = if (authState.status == AuthStatus.AUTHENTICATED) Icons.Default.CheckCircle else Icons.Default.AccountCircle,
                                             contentDescription = null,
-                                            tint = if (authState.status == AuthStatus.AUTHENTICATED) EmeraldLight else GoldAccent,
+                                            tint = if (authState.status == AuthStatus.AUTHENTICATED) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                                             modifier = Modifier.size(28.dp)
                                         )
                                     }
@@ -279,7 +275,7 @@ fun BackupRestoreScreen(
                                         text = if (isSignUpMode) "Daftar Akun Cloud Amanah Baru:" else "Masuk ke Akun Cloud Amanah:",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = EmeraldLight
+                                        color = MaterialTheme.colorScheme.primary
                                     )
 
                                     if (isSignUpMode) {
@@ -322,7 +318,7 @@ fun BackupRestoreScreen(
                                         Text(
                                             text = authState.errorMessage!!,
                                             fontSize = 11.sp,
-                                            color = ExpenseCoral
+                                            color = MaterialTheme.colorScheme.error
                                         )
                                     }
 
@@ -340,12 +336,12 @@ fun BackupRestoreScreen(
                                                 }
                                             },
                                             enabled = authState.status != AuthStatus.AUTHENTICATING,
-                                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                             shape = RoundedCornerShape(10.dp),
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             if (authState.status == AuthStatus.AUTHENTICATING) {
-                                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                                CircularProgressIndicator( modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                                             } else {
                                                 Text(if (isSignUpMode) "Daftar Akun" else "Masuk", fontWeight = FontWeight.Bold)
                                             }
@@ -370,7 +366,7 @@ fun BackupRestoreScreen(
                                         Text(
                                             text = if (isSignUpMode) "Sudah punya akun? Masuk di sini" else "Belum punya akun? Daftar gratis",
                                             fontSize = 12.sp,
-                                            color = GoldAccent
+                                            color = MaterialTheme.colorScheme.secondary
                                         )
                                     }
                                 }
@@ -390,7 +386,7 @@ fun BackupRestoreScreen(
                                     Icon(
                                         imageVector = Icons.Default.CloudSync,
                                         contentDescription = null,
-                                        tint = EmeraldPrimary,
+                                        tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(24.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -420,7 +416,7 @@ fun BackupRestoreScreen(
                                         },
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 12.sp,
-                                        color = if (syncState.status == SyncStateStatus.SUCCESS) EmeraldLight else GoldAccent
+                                        color = if (syncState.status == SyncStateStatus.SUCCESS) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                                     )
                                 }
 
@@ -447,7 +443,7 @@ fun BackupRestoreScreen(
                                     Text(
                                         text = "Catatan: ${syncState.errorMessage}",
                                         fontSize = 11.sp,
-                                        color = ExpenseCoral
+                                        color = MaterialTheme.colorScheme.error
                                     )
                                 }
 
@@ -459,12 +455,12 @@ fun BackupRestoreScreen(
                                     Button(
                                         onClick = { viewModel.triggerCloudSync() },
                                         enabled = syncState.status != SyncStateStatus.SYNCING,
-                                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                         shape = RoundedCornerShape(10.dp),
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         if (syncState.status == SyncStateStatus.SYNCING) {
-                                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                            CircularProgressIndicator( modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text("Menyimpan...")
                                         } else {
@@ -511,13 +507,13 @@ fun BackupRestoreScreen(
                                         modifier = Modifier
                                             .size(36.dp)
                                             .clip(CircleShape)
-                                            .background(EmeraldPrimary.copy(alpha = 0.15f)),
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             Icons.Default.Security,
                                             contentDescription = null,
-                                            tint = EmeraldLight,
+                                            tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
@@ -610,7 +606,7 @@ fun BackupRestoreScreen(
                                         generatedChecksum = pkg?.checksumSha256 ?: "N/A"
                                         exportCopied = false
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -631,13 +627,13 @@ fun BackupRestoreScreen(
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = EmeraldLight)
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                             "Cadangan Berhasil Dibuat!",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 14.sp,
-                                            color = EmeraldLight
+                                            color = MaterialTheme.colorScheme.primary
                                         )
                                     }
 
@@ -646,7 +642,7 @@ fun BackupRestoreScreen(
                                         text = "SHA-256 Checksum: $generatedChecksum",
                                         fontFamily = FontFamily.Monospace,
                                         fontSize = 10.sp,
-                                        color = GoldAccent
+                                        color = MaterialTheme.colorScheme.secondary
                                     )
 
                                     Spacer(modifier = Modifier.height(12.dp))
@@ -662,7 +658,7 @@ fun BackupRestoreScreen(
                                                 clipboard.setPrimaryClip(clip)
                                                 exportCopied = true
                                             },
-                                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                             shape = RoundedCornerShape(10.dp),
                                             modifier = Modifier
                                                 .weight(1f)
@@ -714,7 +710,7 @@ fun BackupRestoreScreen(
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Restore, contentDescription = null, tint = GoldAccent)
+                                    Icon(Icons.Default.Restore, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         "Tempel Berkas Cadangan JSON",
@@ -785,7 +781,7 @@ fun BackupRestoreScreen(
                                         }
                                     },
                                     enabled = importJsonText.isNotBlank(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -801,7 +797,7 @@ fun BackupRestoreScreen(
                         restoreStatusMessage?.let { msg ->
                             Card(
                                 colors = CardDefaults.cardColors(
-                                    containerColor = if (isRestoreSuccess) EmeraldPrimary.copy(alpha = 0.15f) else ExpenseCoral.copy(alpha = 0.15f)
+                                    containerColor = if (isRestoreSuccess) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
                                 ),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth()
@@ -813,13 +809,13 @@ fun BackupRestoreScreen(
                                     Icon(
                                         imageVector = if (isRestoreSuccess) Icons.Default.CheckCircle else Icons.Default.Warning,
                                         contentDescription = null,
-                                        tint = if (isRestoreSuccess) EmeraldLight else ExpenseCoral
+                                        tint = if (isRestoreSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
                                         text = msg,
                                         fontSize = 12.sp,
-                                        color = if (isRestoreSuccess) EmeraldLight else ExpenseCoral,
+                                        color = if (isRestoreSuccess) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
@@ -836,7 +832,7 @@ fun BackupRestoreScreen(
             onDismissRequest = { showRestoreConfirmDialog = false },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Warning, contentDescription = null, tint = GoldAccent)
+                    Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Konfirmasi Pemulihan", fontWeight = FontWeight.Bold)
                 }
@@ -854,7 +850,8 @@ fun BackupRestoreScreen(
                         when (res) {
                             is RestoreResult.Success -> {
                                 isRestoreSuccess = true
-                                restoreStatusMessage = "Sukses memulihkan ${res.restoredEntries.size} transaksi buku kas & ${res.restoredWallets.size} kantong rekening."
+                                val migText = if (res.manifest.migrationApplied) " (Skema v${res.manifest.schemaVersion} dimigrasikan otomatis)" else " (Skema v${res.manifest.schemaVersion})"
+                                restoreStatusMessage = "Sukses memulihkan ${res.restoredEntries.size} transaksi buku kas & ${res.restoredWallets.size} kantong rekening.$migText"
                             }
                             is RestoreResult.Failure -> {
                                 isRestoreSuccess = false
@@ -863,7 +860,7 @@ fun BackupRestoreScreen(
                         }
                         showRestoreConfirmDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Lanjutkan Restore")
                 }

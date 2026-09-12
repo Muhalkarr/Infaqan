@@ -1,5 +1,6 @@
 package com.example.presentation.screens
 
+import androidx.compose.material3.MaterialTheme
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -92,7 +93,7 @@ fun AmilDirectoryScreen(
                         Text(
                             text = "Lembaga Resmi & Kelola Rekening Penyaluran",
                             fontSize = 11.sp,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -144,7 +145,7 @@ fun AmilDirectoryScreen(
                     institutionToEdit = null
                     showAddEditDialog = true
                 },
-                containerColor = EmeraldPrimary,
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.testTag("fab_add_amil")
@@ -185,13 +186,13 @@ fun AmilDirectoryScreen(
                             modifier = Modifier
                                 .size(42.dp)
                                 .clip(CircleShape)
-                                .background(EmeraldPrimary.copy(alpha = 0.18f)),
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.VerifiedUser,
                                 contentDescription = null,
-                                tint = EmeraldLight,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -221,7 +222,7 @@ fun AmilDirectoryScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder = { Text("Cari lembaga, bank, no. rekening, atau program...", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = EmeraldLight) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
                     trailingIcon = {
                         if (searchQuery.isNotBlank()) {
                             IconButton(onClick = { searchQuery = "" }) {
@@ -230,7 +231,7 @@ fun AmilDirectoryScreen(
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -255,7 +256,7 @@ fun AmilDirectoryScreen(
                         onClick = { selectedCategory = null },
                         label = { Text("Semua (${rawInstitutions.size})", fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = EmeraldPrimary,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = Color.White,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -266,7 +267,7 @@ fun AmilDirectoryScreen(
                         onClick = { selectedCategory = AmilCategory.BAZNAS },
                         label = { Text("BAZNAS", fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = EmeraldPrimary,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = Color.White,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -277,7 +278,7 @@ fun AmilDirectoryScreen(
                         onClick = { selectedCategory = AmilCategory.LAZ_NASIONAL },
                         label = { Text("LAZ Nasional", fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = EmeraldPrimary,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = Color.White,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -288,7 +289,7 @@ fun AmilDirectoryScreen(
                         onClick = { selectedCategory = AmilCategory.LEMBAGA_WAKAF },
                         label = { Text("Wakaf", fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = EmeraldPrimary,
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = Color.White,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -380,7 +381,7 @@ fun AmilDirectoryScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = null, tint = ExpenseCoral)
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                     Text("Hapus Lembaga Amil?", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp)
                 }
             },
@@ -397,7 +398,7 @@ fun AmilDirectoryScreen(
                         viewModel.deleteAmilInstitution(inst.id)
                         institutionToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ExpenseCoral)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Hapus Lembaga", fontWeight = FontWeight.Bold)
                 }
@@ -431,7 +432,7 @@ fun AmilDirectoryScreen(
                         viewModel.resetAmilInstitutionsToDefault()
                         showResetConfirmDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Ya, Reset Default", fontWeight = FontWeight.Bold)
                 }
@@ -472,14 +473,14 @@ fun AmilInstitutionCard(
             ) {
                 Surface(
                     shape = RoundedCornerShape(6.dp),
-                    color = EmeraldPrimary.copy(alpha = 0.18f),
-                    border = BorderStroke(0.5.dp, EmeraldPrimary.copy(alpha = 0.4f))
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                 ) {
                     Text(
                         text = institution.verifiedBadge,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = EmeraldLight,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
@@ -497,7 +498,7 @@ fun AmilInstitutionCard(
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = "Edit Lembaga",
-                            tint = GoldAccent,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -511,7 +512,7 @@ fun AmilInstitutionCard(
                         Icon(
                             Icons.Default.DeleteOutline,
                             contentDescription = "Hapus Lembaga",
-                            tint = ExpenseCoral.copy(alpha = 0.85f),
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.85f),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -590,7 +591,7 @@ fun AmilInstitutionCard(
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Surface(
-                                    color = GoldAccent.copy(alpha = 0.15f),
+                                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
                                     shape = RoundedCornerShape(4.dp)
                                 ) {
                                     Text(
@@ -620,7 +621,7 @@ fun AmilInstitutionCard(
                             onClick = { onCopyAccount(acc) },
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                             shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary.copy(alpha = 0.25f))
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                         ) {
                             Icon(
                                 Icons.Default.ContentCopy,
@@ -681,7 +682,7 @@ fun AmilInstitutionCard(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-                                        Icon(Icons.Default.Phone, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(14.dp))
+                                        Icon(Icons.Default.Phone, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                                         Text(institution.callCenterWhatsapp, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                                     }
                                 }
@@ -719,7 +720,7 @@ fun AmilInstitutionCard(
                         onClick = onDisburseClick,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Icon(Icons.Default.VolunteerActivism, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
@@ -741,7 +742,7 @@ fun AmilInstitutionCard(
                     text = if (expanded) "Sembunyikan Informasi Lengkap ▲" else "Lihat Info Kontak & Detail ▼",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = EmeraldLight
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -833,8 +834,8 @@ fun AmilInstitutionFormDialog(
                                     .weight(1f)
                                     .clickable { selectedCategory = cat },
                                 shape = RoundedCornerShape(8.dp),
-                                color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, if (isSelected) EmeraldLight else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
                             ) {
                                 Text(
                                     text = when (cat) {
@@ -854,11 +855,11 @@ fun AmilInstitutionFormDialog(
                     }
 
                     val inputColors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedLabelColor = EmeraldPrimary,
+                        focusedLabelColor = MaterialTheme.colorScheme.primary,
                         unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -933,7 +934,7 @@ fun AmilInstitutionFormDialog(
                             text = "Daftar Rekening Bank (${bankAccounts.size}):",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                         TextButton(
                             onClick = { showAddAccountFields = !showAddAccountFields },
@@ -941,7 +942,7 @@ fun AmilInstitutionFormDialog(
                         ) {
                             Icon(if (showAddAccountFields) Icons.Default.Close else Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(if (showAddAccountFields) "Tutup Form" else "+ Tambah Rekening", fontSize = 11.sp, color = EmeraldLight)
+                            Text(if (showAddAccountFields) "Tutup Form" else "+ Tambah Rekening", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                         }
                     }
 
@@ -960,7 +961,7 @@ fun AmilInstitutionFormDialog(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text("${acc.bankName} (${acc.category})", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                                    Text(acc.accountNumber, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                                    Text(acc.accountNumber, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     Text("a.n ${acc.accountHolder}", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 IconButton(
@@ -969,7 +970,7 @@ fun AmilInstitutionFormDialog(
                                     },
                                     modifier = Modifier.size(28.dp)
                                 ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Hapus Rekening", tint = ExpenseCoral, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Delete, contentDescription = "Hapus Rekening", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                                 }
                             }
                         }
@@ -980,7 +981,7 @@ fun AmilInstitutionFormDialog(
                         Card(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                             shape = RoundedCornerShape(10.dp),
-                            border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.4f))
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                         ) {
                             Column(
                                 modifier = Modifier.padding(12.dp),
@@ -1042,7 +1043,7 @@ fun AmilInstitutionFormDialog(
                                         }
                                     },
                                     enabled = newBankName.isNotBlank() && newAccountNumber.isNotBlank(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
@@ -1133,7 +1134,7 @@ fun AmilInstitutionFormDialog(
                             }
                         },
                         enabled = name.isNotBlank(),
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         modifier = Modifier
                             .weight(1.5f)
                             .testTag("btn_save_amil"),

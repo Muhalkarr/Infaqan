@@ -25,14 +25,17 @@ import java.util.Date
 import java.util.Locale
 
 data class BackupManifest(
-    val schemaVersion: Int = 2,
+    val schemaVersion: Int = 3,
     val appName: String = "Infaqan Syariah (Amanah Ledger)",
     val exportedAt: String,
     val journalEntriesCount: Int,
     val walletsCount: Int,
     val goalsCount: Int,
     val checksum: String,
-    val isPasswordProtected: Boolean
+    val isPasswordProtected: Boolean,
+    val appVersion: String = "2.1.0",
+    val isCompatible: Boolean = true,
+    val migrationApplied: Boolean = false
 ) {
     val checksumSha256: String get() = checksum
 }
@@ -46,26 +49,32 @@ sealed class RestoreResult {
         val restoredBudgets: List<BudgetAllocation>,
         val restoredRules: List<InfaqRule>,
         val restoredRecurring: List<RecurringTransaction>,
-        val restoredSedekahState: SedekahSubuhState
+        val restoredSedekahState: SedekahSubuhState,
+        val restoredDistributions: List<InfaqDistributionRecord> = emptyList()
     ) : RestoreResult()
 
     data class Failure(val errorMessage: String) : RestoreResult()
 }
+
 
 object BackupEngine {
 
     fun parseBackupPackage(backupText: String): BackupManifest? {
         return try {
             val root = JSONObject(backupText.trim())
+            val schema = root.optInt("schemaVersion", 1)
             BackupManifest(
-                schemaVersion = root.optInt("schemaVersion", 2),
+                schemaVersion = schema,
                 appName = root.optString("appName", "Infaqan Syariah (Amanah Ledger)"),
                 exportedAt = root.optString("exportedAt", "N/A"),
                 journalEntriesCount = root.optInt("entriesCount", 0),
                 walletsCount = root.optInt("walletsCount", 0),
                 goalsCount = root.optInt("goalsCount", 0),
                 checksum = root.optString("checksum", "N/A"),
-                isPasswordProtected = root.optBoolean("isEncrypted", false)
+                isPasswordProtected = root.optBoolean("isEncrypted", false),
+                appVersion = root.optString("appVersion", "2.0.0"),
+                isCompatible = schema <= 3,
+                migrationApplied = schema < 3
             )
         } catch (_: Exception) {
             null
@@ -101,10 +110,12 @@ object BackupEngine {
         rules: List<InfaqRule>,
         recurring: List<RecurringTransaction>,
         sedekahSubuhState: SedekahSubuhState,
+        distributions: List<InfaqDistributionRecord> = emptyList(),
         password: String = ""
     ): String {
         val rootJson = JSONObject()
         val dataJson = JSONObject()
+
 
         // 1. Journal entries
         val entriesArray = JSONArray()
@@ -140,6 +151,9 @@ object BackupEngine {
                 rObj.put("notes", receipt.notes)
                 rObj.put("amount", receipt.amount)
                 rObj.put("createdAtMillis", receipt.createdAtMillis)
+                if (!receipt.imagePath.isNullOrBlank()) {
+                    rObj.put("imagePath", receipt.imagePath)
+                }
                 eObj.put("receipt", rObj)
             }
 
@@ -204,6 +218,69 @@ object BackupEngine {
         sObj.put("totalDaysGiven", sedekahSubuhState.totalDaysGiven)
         dataJson.put("sedekahSubuh", sObj)
 
+        // 6. Infaq Rules
+        val rulesArray = JSONArray()
+        for (r in rules) {
+            val rObj = JSONObject()
+            rObj.put("id", r.id)
+            rObj.put("title", r.title)
+            rObj.put("targetCategory", r.targetCategory.name)
+            rObj.put("calculationType", r.calculationType.name)
+            rObj.put("rate", r.rate)
+            rObj.put("fixedAmount", r.fixedAmount)
+            rObj.put("roundUpStep", r.roundUpStep)
+            rObj.put("enableFridayMultiplier", r.enableFridayMultiplier)
+            rObj.put("enableRamadanMultiplier", r.enableRamadanMultiplier)
+            rulesArray.put(rObj)
+        }
+        dataJson.put("rules", rulesArray)
+
+        // 7. Recurring Transactions
+        val recArray = JSONArray()
+        for (rec in recurring) {
+            val rcObj = JSONObject()
+            rcObj.put("id", rec.id)
+            rcObj.put("title", rec.title)
+            rcObj.put("type", rec.type.name)
+            rcObj.put("amount", rec.amount)
+            rcObj.put("categoryAccountId", rec.categoryAccountId)
+            rcObj.put("assetAccountId", rec.assetAccountId)
+            rcObj.put("frequency", rec.frequency.name)
+            rcObj.put("dayOfMonthOrWeek", rec.dayOfMonthOrWeek)
+            rcObj.put("customInfaqRate", rec.customInfaqRate)
+            rcObj.put("enableRoundUp", rec.enableRoundUp)
+            rcObj.put("roundUpStep", rec.roundUpStep)
+            rcObj.put("isActive", rec.isActive)
+            rcObj.put("autoExecute", rec.autoExecute)
+            rcObj.put("lastExecutedDate", rec.lastExecutedDate?.time ?: -1L)
+            rcObj.put("lastExecutedPeriodKey", rec.lastExecutedPeriodKey ?: "")
+            rcObj.put("lastExecutionTimestamp", rec.lastExecutionTimestamp)
+            rcObj.put("nextDueDate", rec.nextDueDate.time)
+            rcObj.put("note", rec.note)
+            recArray.put(rcObj)
+        }
+        dataJson.put("recurring", recArray)
+
+        // 8. Infaq Distributions
+        val distArray = JSONArray()
+        for (d in distributions) {
+            val dObj = JSONObject()
+            dObj.put("id", d.id)
+            dObj.put("amount", d.amount)
+            dObj.put("recipientName", d.recipientName)
+            dObj.put("asnafCategory", d.asnafCategory.name)
+            dObj.put("distributionDate", d.distributionDate.time)
+            dObj.put("hijriDateString", d.hijriDateString)
+            dObj.put("sourceAccountId", d.sourceAccountId)
+            dObj.put("programName", d.programName)
+            dObj.put("receiptNumber", d.receiptNumber)
+            dObj.put("notes", d.notes)
+            dObj.put("isVerified", d.isVerified)
+            distArray.put(dObj)
+        }
+        dataJson.put("distributions", distArray)
+
+
         val rawJsonString = dataJson.toString()
         val dataChecksum = calculateSha256(rawJsonString)
 
@@ -215,7 +292,8 @@ object BackupEngine {
         }
         val encodedPayload = Base64.encodeToString(encryptedBytes, Base64.NO_WRAP)
 
-        rootJson.put("schemaVersion", 2)
+        rootJson.put("schemaVersion", 3)
+        rootJson.put("appVersion", "2.1.0")
         rootJson.put("appName", "Infaqan Syariah (Amanah Ledger)")
         rootJson.put("exportedAt", isoDateFormat.format(Date()))
         rootJson.put("entriesCount", journalEntries.size)
@@ -229,6 +307,41 @@ object BackupEngine {
     }
 
     /**
+     * Otomatis migrasi skema payload berkas cadangan versi terdahulu ke versi terbaru secara aman dan toleran.
+     */
+    fun migratePayload(dataJson: JSONObject, fromVersion: Int, targetVersion: Int): JSONObject {
+        // Migrasi v1 -> v2: Pastikan dompet memiliki linkedAccountId dan anggaran memiliki iconKey
+        if (fromVersion < 2) {
+            val wallets = dataJson.optJSONArray("wallets")
+            if (wallets != null) {
+                for (i in 0 until wallets.length()) {
+                    val w = wallets.optJSONObject(i) ?: continue
+                    if (!w.has("linkedAccountId")) {
+                        val type = w.optString("type", "CASH")
+                        w.put("linkedAccountId", if (type.contains("BANK")) "acc_bank" else "acc_cash")
+                    }
+                }
+            }
+        }
+        // Migrasi v2 -> v3: Pastikan recurring memiliki period key dan timestamp eksekusi idempotensi
+        if (fromVersion < 3) {
+            val recurring = dataJson.optJSONArray("recurring")
+            if (recurring != null) {
+                for (i in 0 until recurring.length()) {
+                    val r = recurring.optJSONObject(i) ?: continue
+                    if (!r.has("lastExecutedPeriodKey")) {
+                        r.put("lastExecutedPeriodKey", "")
+                    }
+                    if (!r.has("lastExecutionTimestamp")) {
+                        r.put("lastExecutionTimestamp", 0L)
+                    }
+                }
+            }
+        }
+        return dataJson
+    }
+
+    /**
      * Restore and verify backup package
      */
     fun parseAndRestore(backupText: String, password: String = ""): RestoreResult {
@@ -237,6 +350,7 @@ object BackupEngine {
             val rootJson = JSONObject(trimmed)
 
             val schemaVersion = rootJson.optInt("schemaVersion", 1)
+            val appVersion = rootJson.optString("appVersion", "2.0.0")
             val exportedAt = rootJson.optString("exportedAt", "Tidak Diketahui")
             val entriesCount = rootJson.optInt("entriesCount", 0)
             val walletsCount = rootJson.optInt("walletsCount", 0)
@@ -263,7 +377,9 @@ object BackupEngine {
                 return RestoreResult.Failure("Verifikasi Integritas Gagal (Checksum Mismatch). Sandi mungkin keliru atau berkas rusak/termodifikasi.")
             }
 
-            val dataJson = JSONObject(decryptedJsonString)
+            val rawDataJson = JSONObject(decryptedJsonString)
+            // Jalankan migrasi skema otomatis jika berasal dari versi terdahulu
+            val dataJson = migratePayload(rawDataJson, schemaVersion, 3)
 
             // Parse journal entries
             val restoredEntries = mutableListOf<JournalEntry>()
@@ -299,7 +415,8 @@ object BackupEngine {
                         digitalVerificationHash = rObj.optString("digitalVerificationHash", ""),
                         notes = rObj.optString("notes", ""),
                         amount = rObj.optDouble("amount", 0.0),
-                        createdAtMillis = rObj.optLong("createdAtMillis", System.currentTimeMillis())
+                        createdAtMillis = rObj.optLong("createdAtMillis", System.currentTimeMillis()),
+                        imagePath = if (rObj.has("imagePath") && rObj.getString("imagePath").isNotBlank()) rObj.getString("imagePath") else null
                     )
                 }
 
@@ -397,6 +514,78 @@ object BackupEngine {
                 SedekahSubuhState()
             }
 
+            // Parse Infaq Rules
+            val restoredRules = mutableListOf<InfaqRule>()
+            val rulesArray = dataJson.optJSONArray("rules") ?: JSONArray()
+            for (i in 0 until rulesArray.length()) {
+                val rObj = rulesArray.getJSONObject(i)
+                restoredRules.add(
+                    InfaqRule(
+                        id = rObj.getString("id"),
+                        title = rObj.getString("title"),
+                        targetCategory = try { AccountCategory.valueOf(rObj.getString("targetCategory")) } catch (_: Exception) { AccountCategory.EXPENSE },
+                        calculationType = try { com.example.core.infaq.InfaqCalculationType.valueOf(rObj.getString("calculationType")) } catch (_: Exception) { com.example.core.infaq.InfaqCalculationType.PERCENTAGE },
+                        rate = rObj.optDouble("rate", 0.05),
+                        fixedAmount = rObj.optDouble("fixedAmount", 0.0),
+                        roundUpStep = rObj.optDouble("roundUpStep", 5000.0),
+                        enableFridayMultiplier = rObj.optBoolean("enableFridayMultiplier", true),
+                        enableRamadanMultiplier = rObj.optBoolean("enableRamadanMultiplier", true)
+                    )
+                )
+            }
+
+            // Parse Recurring Transactions
+            val restoredRecurring = mutableListOf<RecurringTransaction>()
+            val recArray = dataJson.optJSONArray("recurring") ?: JSONArray()
+            for (i in 0 until recArray.length()) {
+                val rcObj = recArray.getJSONObject(i)
+                val lastExecMillis = rcObj.optLong("lastExecutedDate", -1L)
+                restoredRecurring.add(
+                    RecurringTransaction(
+                        id = rcObj.getString("id"),
+                        title = rcObj.getString("title"),
+                        type = try { com.example.core.scheduler.RecurringType.valueOf(rcObj.getString("type")) } catch (_: Exception) { com.example.core.scheduler.RecurringType.EXPENSE },
+                        amount = rcObj.getDouble("amount"),
+                        categoryAccountId = rcObj.getString("categoryAccountId"),
+                        assetAccountId = rcObj.getString("assetAccountId"),
+                        frequency = try { com.example.core.scheduler.RecurringFrequency.valueOf(rcObj.getString("frequency")) } catch (_: Exception) { com.example.core.scheduler.RecurringFrequency.MONTHLY },
+                        dayOfMonthOrWeek = rcObj.optInt("dayOfMonthOrWeek", 1),
+                        customInfaqRate = rcObj.optDouble("customInfaqRate", 0.05),
+                        enableRoundUp = rcObj.optBoolean("enableRoundUp", true),
+                        roundUpStep = rcObj.optDouble("roundUpStep", 5000.0),
+                        isActive = rcObj.optBoolean("isActive", true),
+                        autoExecute = rcObj.optBoolean("autoExecute", true),
+                        lastExecutedDate = if (lastExecMillis > 0) Date(lastExecMillis) else null,
+                        lastExecutedPeriodKey = rcObj.optString("lastExecutedPeriodKey", "").ifBlank { null },
+                        lastExecutionTimestamp = rcObj.optLong("lastExecutionTimestamp", 0L),
+                        nextDueDate = Date(rcObj.optLong("nextDueDate", System.currentTimeMillis())),
+                        note = rcObj.optString("note", "")
+                    )
+                )
+            }
+
+            // Parse Infaq Distributions
+            val restoredDistributions = mutableListOf<InfaqDistributionRecord>()
+            val distArray = dataJson.optJSONArray("distributions") ?: JSONArray()
+            for (i in 0 until distArray.length()) {
+                val dObj = distArray.getJSONObject(i)
+                restoredDistributions.add(
+                    InfaqDistributionRecord(
+                        id = dObj.getString("id"),
+                        amount = dObj.getDouble("amount"),
+                        recipientName = dObj.getString("recipientName"),
+                        asnafCategory = try { com.example.core.infaq.AsnafCategory.valueOf(dObj.getString("asnafCategory")) } catch (_: Exception) { com.example.core.infaq.AsnafCategory.UMUM },
+                        distributionDate = Date(dObj.optLong("distributionDate", System.currentTimeMillis())),
+                        hijriDateString = dObj.optString("hijriDateString", ""),
+                        sourceAccountId = dObj.optString("sourceAccountId", "acc_bank"),
+                        programName = dObj.optString("programName", "Penyaluran Mandiri"),
+                        receiptNumber = dObj.optString("receiptNumber", ""),
+                        notes = dObj.optString("notes", ""),
+                        isVerified = dObj.optBoolean("isVerified", true)
+                    )
+                )
+            }
+
             val manifest = BackupManifest(
                 schemaVersion = schemaVersion,
                 exportedAt = exportedAt,
@@ -404,7 +593,10 @@ object BackupEngine {
                 walletsCount = restoredWallets.size,
                 goalsCount = restoredGoals.size,
                 checksum = expectedChecksum,
-                isPasswordProtected = isEncrypted
+                isPasswordProtected = isEncrypted,
+                appVersion = appVersion,
+                isCompatible = schemaVersion <= 3,
+                migrationApplied = schemaVersion < 3
             )
 
             RestoreResult.Success(
@@ -413,10 +605,12 @@ object BackupEngine {
                 restoredWallets = restoredWallets,
                 restoredGoals = restoredGoals,
                 restoredBudgets = restoredBudgets,
-                restoredRules = emptyList(),
-                restoredRecurring = emptyList(),
-                restoredSedekahState = restoredSedekah
+                restoredRules = restoredRules,
+                restoredRecurring = restoredRecurring,
+                restoredSedekahState = restoredSedekah,
+                restoredDistributions = restoredDistributions
             )
+
         } catch (e: Exception) {
             RestoreResult.Failure("Gagal memproses berkas cadangan: ${e.localizedMessage ?: e.message}")
         }

@@ -30,11 +30,30 @@ data class RecurringTransaction(
     val isActive: Boolean = true,
     val autoExecute: Boolean = true,
     val lastExecutedDate: Date? = null,
+    val lastExecutedPeriodKey: String? = null,
+    val lastExecutionTimestamp: Long = 0L,
     val nextDueDate: Date = calculateInitialDueDate(frequency, dayOfMonthOrWeek),
     val note: String = ""
 ) {
+    /**
+     * Menghasilkan kunci periode unik (misal: "2026-09" untuk bulanan, "2026-W37" untuk mingguan, "2026-09-11" untuk harian)
+     * Kunci ini mencegah double-posting jika aplikasi dibuka berulang kali pada periode yang sama.
+     */
+    fun generatePeriodKey(date: Date = Date()): String {
+        val cal = Calendar.getInstance().apply { time = date }
+        val year = cal.get(Calendar.YEAR)
+        return when (frequency) {
+            RecurringFrequency.MONTHLY -> String.format(java.util.Locale.US, "%04d-%02d", year, cal.get(Calendar.MONTH) + 1)
+            RecurringFrequency.WEEKLY -> String.format(java.util.Locale.US, "%04d-W%02d", year, cal.get(Calendar.WEEK_OF_YEAR))
+            RecurringFrequency.DAILY -> String.format(java.util.Locale.US, "%04d-%02d-%02d", year, cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH))
+        }
+    }
+
     fun isDue(currentDate: Date = Date()): Boolean {
-        return isActive && (currentDate.after(nextDueDate) || isSameDay(currentDate, nextDueDate))
+        if (!isActive) return false
+        val currentPeriodKey = generatePeriodKey(currentDate)
+        if (lastExecutedPeriodKey == currentPeriodKey) return false
+        return currentDate.after(nextDueDate) || isSameDay(currentDate, nextDueDate)
     }
 
     companion object {

@@ -84,9 +84,6 @@ import com.example.core.state.AmanahLedgerViewModel
 import com.example.core.wallet.WalletAccount
 import com.example.core.wallet.WalletType
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -138,7 +135,7 @@ fun MultiWalletScreen(
                         onClick = { showTransferDialog = true },
                         modifier = Modifier.testTag("wallet_top_transfer_button")
                     ) {
-                        Icon(Icons.Default.SwapHoriz, contentDescription = "Mutasi Saldo", tint = GoldAccent)
+                        Icon(Icons.Default.SwapHoriz, contentDescription = "Mutasi Saldo", tint = MaterialTheme.colorScheme.secondary)
                     }
                     IconButton(
                         onClick = onOpenDrawer,
@@ -159,7 +156,7 @@ fun MultiWalletScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddWalletDialog = true },
-                containerColor = EmeraldPrimary,
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 modifier = Modifier.testTag("add_wallet_fab")
             ) {
@@ -200,18 +197,18 @@ fun MultiWalletScreen(
                                 text = if (state.securityConfig.isMaskBalance) "Rp ••••••••" else "Rp ${nf.format(state.totalWalletBalance)}",
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Black,
-                                color = EmeraldLight
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Surface(
-                            color = EmeraldPrimary.copy(alpha = 0.15f),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
                                 text = "${state.wallets.size} Kantong",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = EmeraldLight,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
@@ -225,7 +222,7 @@ fun MultiWalletScreen(
                     ) {
                         Button(
                             onClick = { showTransferDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             modifier = Modifier
                                 .weight(1f)
                                 .testTag("wallet_quick_transfer_btn")
@@ -352,13 +349,13 @@ fun MultiWalletScreen(
                                                 modifier = Modifier
                                                     .size(36.dp)
                                                     .clip(CircleShape)
-                                                    .background(EmeraldPrimary.copy(alpha = 0.15f)),
+                                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Icon(
                                                     Icons.Default.SwapHoriz,
                                                     contentDescription = null,
-                                                    tint = EmeraldLight,
+                                                    tint = MaterialTheme.colorScheme.primary,
                                                     modifier = Modifier.size(20.dp)
                                                 )
                                             }
@@ -383,7 +380,7 @@ fun MultiWalletScreen(
                                             text = "Rp ${nf.format(mutation.amount)}",
                                             fontWeight = FontWeight.Black,
                                             fontSize = 15.sp,
-                                            color = EmeraldLight
+                                            color = MaterialTheme.colorScheme.primary
                                         )
                                     }
 
@@ -406,7 +403,7 @@ fun MultiWalletScreen(
                                                 Text(
                                                     text = "Biaya Admin: Rp ${nf.format(mutation.adminFee)}",
                                                     fontSize = 11.sp,
-                                                    color = Color(0xFFFFB74D)
+                                                    color = MaterialTheme.colorScheme.secondary
                                                 )
                                             }
                                         }
@@ -448,6 +445,8 @@ fun MultiWalletScreen(
     if (showTransferDialog) {
         WalletTransferDialog(
             wallets = state.wallets,
+            getWalletBalance = { state.getWalletBalance(it) },
+            isDeficitProtectionEnabled = state.isDeficitProtectionEnabled,
             onDismiss = { showTransferDialog = false },
             onTransfer = { fromId, toId, amount, adminFee, note, receipt ->
                 viewModel.transferBetweenWallets(
@@ -529,14 +528,14 @@ private fun WalletCardItem(
                             if (wallet.isDefault) {
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Surface(
-                                    color = EmeraldPrimary.copy(alpha = 0.15f),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                                     shape = RoundedCornerShape(4.dp)
                                 ) {
                                     Text(
                                         text = "UTAMA",
                                         fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = EmeraldLight,
+                                        color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                     )
                                 }
@@ -722,7 +721,7 @@ private fun WalletFormDialog(
                     }
                 },
                 enabled = name.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Simpan")
             }
@@ -739,6 +738,8 @@ private fun WalletFormDialog(
 @Composable
 private fun WalletTransferDialog(
     wallets: List<WalletAccount>,
+    getWalletBalance: (String) -> Double,
+    isDeficitProtectionEnabled: Boolean,
     onDismiss: () -> Unit,
     onTransfer: (fromId: String, toId: String, amount: Double, adminFee: Double, note: String, receipt: ReceiptAttachment?) -> Unit
 ) {
@@ -769,7 +770,7 @@ private fun WalletTransferDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = EmeraldLight)
+                Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Mutasi Antar-Kantong", fontWeight = FontWeight.Bold)
             }
@@ -808,8 +809,23 @@ private fun WalletTransferDialog(
                         onDismissRequest = { fromExpanded = false }
                     ) {
                         wallets.forEach { w ->
+                            val bal = getWalletBalance(w.id)
                             DropdownMenuItem(
-                                text = { Text(w.name) },
+                                text = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(w.name, fontSize = 13.sp)
+                                        Text(
+                                            text = "Rp ${NumberFormat.getNumberInstance(Locale("id", "ID")).format(bal)}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (bal < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                },
                                 onClick = {
                                     fromWalletId = w.id
                                     fromExpanded = false
@@ -871,6 +887,55 @@ private fun WalletTransferDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
+                val curAmount = amountText.toDoubleOrNull() ?: 0.0
+                val curAdminFee = adminFeeText.toDoubleOrNull() ?: 0.0
+                val totalDeduction = curAmount + curAdminFee
+                val fromWalletBal = getWalletBalance(fromWalletId)
+                val willWalletDeficit = totalDeduction > fromWalletBal
+
+                if (curAmount > 0.0 && willWalletDeficit) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isDeficitProtectionEnabled) MaterialTheme.colorScheme.error.copy(alpha = 0.12f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            if (isDeficitProtectionEnabled) MaterialTheme.colorScheme.error.copy(alpha = 0.4f) else MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Text(
+                                text = if (isDeficitProtectionEnabled) "⚠️ Proteksi Defisit: Saldo Tidak Cukup" else "⚠️ Peringatan: Saldo Kantong Asal Menjadi Minus",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDeficitProtectionEnabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
+                            )
+                            Text(
+                                text = "Saldo kantong: Rp ${nf.format(fromWalletBal)} | Total mutasi: Rp ${nf.format(totalDeduction)} (Defisit: -Rp ${nf.format(totalDeduction - fromWalletBal)}).",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (isDeficitProtectionEnabled) {
+                                Text(
+                                    text = "Mutasi saldo ditolak karena proteksi saldo minus diaktifkan.",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                } else if (fromWalletId.isNotBlank()) {
+                    Text(
+                        text = "Saldo kantong asal: Rp ${nf.format(fromWalletBal)}" + if (curAmount > 0) " (Sisa: Rp ${nf.format(fromWalletBal - totalDeduction)})" else "",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
@@ -906,7 +971,10 @@ private fun WalletTransferDialog(
         confirmButton = {
             val amount = amountText.toDoubleOrNull() ?: 0.0
             val adminFee = adminFeeText.toDoubleOrNull() ?: 0.0
-            val isValid = fromWalletId != toWalletId && amount > 0.0
+            val totalDeduction = amount + adminFee
+            val fromWalletBal = getWalletBalance(fromWalletId)
+            val willWalletDeficit = totalDeduction > fromWalletBal
+            val isValid = fromWalletId != toWalletId && amount > 0.0 && (!isDeficitProtectionEnabled || !willWalletDeficit)
 
             Button(
                 onClick = {
@@ -925,7 +993,7 @@ private fun WalletTransferDialog(
                     }
                 },
                 enabled = isValid,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Eksekusi Mutasi")
             }

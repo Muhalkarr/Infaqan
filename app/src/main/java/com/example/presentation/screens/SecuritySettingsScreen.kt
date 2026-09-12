@@ -76,14 +76,7 @@ import com.example.core.security.AutoLockInterval
 import com.example.core.security.SecurityEventType
 import com.example.core.security.SecurityLogEntry
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.White60
 import com.example.ui.theme.White70
 
@@ -113,7 +106,7 @@ fun SecuritySettingsScreen(
                         Icon(
                             imageVector = Icons.Default.Shield,
                             contentDescription = null,
-                            tint = GoldAccent,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -132,7 +125,7 @@ fun SecuritySettingsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Kembali ke Dashboard",
-                            tint = EmeraldLight
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -176,7 +169,7 @@ fun SecuritySettingsScreen(
                     shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(
                         1.dp,
-                        if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else ExpenseCoral.copy(alpha = 0.5f)
+                        if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
                     )
                 ) {
                     Row(
@@ -190,14 +183,14 @@ fun SecuritySettingsScreen(
                                 .size(50.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else ExpenseCoral.copy(alpha = 0.15f)
+                                    if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = if (securityConfig.isPinEnabled) Icons.Default.Lock else Icons.Default.LockOpen,
                                 contentDescription = null,
-                                tint = if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary else ExpenseCoral,
+                                tint = if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(28.dp)
                             )
                         }
@@ -209,7 +202,7 @@ fun SecuritySettingsScreen(
                                 text = if (securityConfig.isPinEnabled) "Proteksi Aktif (PIN Terpasang)" else "Proteksi Belum Diaktifkan",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary else ExpenseCoral
+                                color = if (securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
@@ -232,7 +225,7 @@ fun SecuritySettingsScreen(
                     text = "KUNCI APLIKASI (APP LOCK)",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = GoldAccent,
+                    color = MaterialTheme.colorScheme.secondary,
                     letterSpacing = 0.8.sp
                 )
             }
@@ -254,7 +247,7 @@ fun SecuritySettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Icon(Icons.Default.Password, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(22.dp))
+                                Icon(Icons.Default.Password, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text("Gunakan Kunci PIN 6-Digit", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
@@ -271,8 +264,8 @@ fun SecuritySettingsScreen(
                                     }
                                 },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = EmeraldLight,
-                                    checkedTrackColor = EmeraldPrimary,
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary,
                                     uncheckedThumbColor = Color.Gray,
                                     uncheckedTrackColor = Color.DarkGray
                                 ),
@@ -281,7 +274,7 @@ fun SecuritySettingsScreen(
                         }
 
                         if (securityConfig.isPinEnabled) {
-                            HorizontalDivider(color = DarkBorder)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
                             // Ubah PIN
                             Row(
@@ -294,17 +287,17 @@ fun SecuritySettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.VpnKey, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Default.VpnKey, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text("Ubah PIN Keamanan", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                                         Text("Ganti kombinasi 6-digit PIN Anda", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
-                                Icon(Icons.Default.LockReset, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.LockReset, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(20.dp))
                             }
 
-                            HorizontalDivider(color = DarkBorder)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
                             // Pertanyaan Pemulihan Darurat PIN
                             Row(
@@ -317,22 +310,22 @@ fun SecuritySettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                    Icon(Icons.Default.Shield, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Default.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text("Pertanyaan Pemulihan PIN", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                                         Text(
                                             text = if (securityConfig.securityQuestion.isNotBlank()) securityConfig.securityQuestion else "Belum disetel (Ketuk untuk atur)",
                                             fontSize = 11.sp,
-                                            color = EmeraldLight,
+                                            color = MaterialTheme.colorScheme.primary,
                                             maxLines = 1
                                         )
                                     }
                                 }
-                                Icon(Icons.Default.VpnKey, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                                Icon(Icons.Default.VpnKey, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                             }
 
-                            HorizontalDivider(color = DarkBorder)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
                             // Biometric Unlock Switch
                             Row(
@@ -344,7 +337,7 @@ fun SecuritySettingsScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Icon(Icons.Default.Fingerprint, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(22.dp))
+                                    Icon(Icons.Default.Fingerprint, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text("Buka dengan Sidik Jari (Biometrik)", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
@@ -355,14 +348,14 @@ fun SecuritySettingsScreen(
                                     checked = securityConfig.isBiometricEnabled,
                                     onCheckedChange = { viewModel.setBiometricEnabled(it) },
                                     colors = SwitchDefaults.colors(
-                                        checkedThumbColor = EmeraldLight,
-                                        checkedTrackColor = EmeraldPrimary
+                                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                        checkedTrackColor = MaterialTheme.colorScheme.primary
                                     ),
                                     modifier = Modifier.testTag("toggle_biometric_switch")
                                 )
                             }
 
-                            HorizontalDivider(color = DarkBorder)
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
                             // Auto-Lock Timeout
                             Row(
@@ -375,14 +368,14 @@ fun SecuritySettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Timer, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Default.Timer, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text("Kunci Otomatis", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
-                                        Text(securityConfig.autoLockInterval.label, fontSize = 11.sp, color = EmeraldLight)
+                                        Text(securityConfig.autoLockInterval.label, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
-                                Text("Pilih", fontSize = 12.sp, color = GoldAccent, fontWeight = FontWeight.Bold)
+                                Text("Pilih", fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -395,7 +388,7 @@ fun SecuritySettingsScreen(
                     text = "PRIVASI & PENYAMARAN SALDO",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = GoldAccent,
+                    color = MaterialTheme.colorScheme.secondary,
                     letterSpacing = 0.8.sp
                 )
             }
@@ -420,7 +413,7 @@ fun SecuritySettingsScreen(
                                 Icon(
                                     imageVector = if (securityConfig.isMaskBalance) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                     contentDescription = null,
-                                    tint = GoldAccent,
+                                    tint = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier.size(22.dp)
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
@@ -433,14 +426,14 @@ fun SecuritySettingsScreen(
                                 checked = securityConfig.isMaskBalance,
                                 onCheckedChange = { viewModel.toggleBalancePrivacy() },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = GoldAccent,
-                                    checkedTrackColor = GoldAccent.copy(alpha = 0.5f)
+                                    checkedThumbColor = MaterialTheme.colorScheme.secondary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
                                 ),
                                 modifier = Modifier.testTag("toggle_mask_balance_switch")
                             )
                         }
 
-                        HorizontalDivider(color = DarkBorder)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
                         // Privasi Layar & Screenshot Prevention
                         Row(
@@ -452,7 +445,7 @@ fun SecuritySettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Icon(Icons.Default.Security, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(22.dp))
+                                Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text("Perlindungan Tangkapan Layar", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
@@ -463,8 +456,8 @@ fun SecuritySettingsScreen(
                                 checked = securityConfig.isScreenshotProtected,
                                 onCheckedChange = { viewModel.setScreenshotProtection(it) },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = EmeraldLight,
-                                    checkedTrackColor = EmeraldPrimary
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary
                                 ),
                                 modifier = Modifier.testTag("toggle_screenshot_protection_switch")
                             )
@@ -479,7 +472,7 @@ fun SecuritySettingsScreen(
                     text = "AKSI CEPAT",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = GoldAccent,
+                    color = MaterialTheme.colorScheme.secondary,
                     letterSpacing = 0.8.sp
                 )
             }
@@ -497,7 +490,7 @@ fun SecuritySettingsScreen(
                                 showEnablePinDialog = true
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -519,13 +512,13 @@ fun SecuritySettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.History, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.History, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "LOG AKTIVITAS KEAMANAN",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GoldAccent,
+                            color = MaterialTheme.colorScheme.secondary,
                             letterSpacing = 0.8.sp
                         )
                     }
@@ -535,7 +528,7 @@ fun SecuritySettingsScreen(
                             onClick = { showClearLogsDialog = true },
                             modifier = Modifier.testTag("clear_security_logs_button")
                         ) {
-                            Text("Bersihkan", fontSize = 11.sp, color = ExpenseCoral)
+                            Text("Bersihkan", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -619,10 +612,10 @@ fun SecuritySettingsScreen(
                         viewModel.clearSecurityLogs()
                         showClearLogsDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ExpenseCoral),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.testTag("confirm_clear_logs_button")
                 ) {
-                    Text("Bersihkan", color = Color.White)
+                    Text("Bersihkan")
                 }
             },
             dismissButton = {
@@ -640,7 +633,7 @@ fun SecurityLogCard(log: SecurityLogEntry) {
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(10.dp),
-        border = BorderStroke(1.dp, if (log.isWarning) ExpenseCoral.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+        border = BorderStroke(1.dp, if (log.isWarning) MaterialTheme.colorScheme.error.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
     ) {
         Row(
             modifier = Modifier
@@ -653,7 +646,7 @@ fun SecurityLogCard(log: SecurityLogEntry) {
                     .size(36.dp)
                     .clip(CircleShape)
                     .background(
-                        if (log.isWarning) ExpenseCoral.copy(alpha = 0.2f) else EmeraldPrimary.copy(alpha = 0.2f)
+                        if (log.isWarning) MaterialTheme.colorScheme.error.copy(alpha = 0.2f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -668,7 +661,7 @@ fun SecurityLogCard(log: SecurityLogEntry) {
                         else -> Icons.Default.Shield
                     },
                     contentDescription = null,
-                    tint = if (log.isWarning) ExpenseCoral else MaterialTheme.colorScheme.primary,
+                    tint = if (log.isWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -680,7 +673,7 @@ fun SecurityLogCard(log: SecurityLogEntry) {
                     text = log.description,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (log.isWarning) ExpenseCoral else MaterialTheme.colorScheme.onSurface
+                    color = if (log.isWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = log.formattedTime,
@@ -725,8 +718,8 @@ fun EnablePinDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
-                        focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("setup_pin_field")
@@ -739,8 +732,8 @@ fun EnablePinDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
-                        focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("setup_confirm_pin_field")
@@ -753,8 +746,8 @@ fun EnablePinDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
-                        focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("setup_question_field")
@@ -767,15 +760,15 @@ fun EnablePinDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White,
-                        focusedBorderColor = EmeraldLight,
-                        unfocusedBorderColor = DarkBorder
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     ),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth().testTag("setup_answer_field")
                 )
 
                 if (error != null) {
-                    Text(error ?: "", color = ExpenseCoral, fontSize = 12.sp)
+                    Text(error ?: "", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                 }
             }
         },
@@ -797,10 +790,10 @@ fun EnablePinDialog(
                     val ok = onConfirm(pin, question, answer)
                     if (!ok) error = "Gagal menyimpan konfigurasi PIN"
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.testTag("submit_setup_pin_button")
             ) {
-                Text("Aktifkan PIN", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Aktifkan PIN", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -823,7 +816,7 @@ fun DisablePinDialog(
         shape = RoundedCornerShape(18.dp),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.LockOpen, contentDescription = null, tint = ExpenseCoral, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.LockOpen, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Nonaktifkan Kunci PIN?", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
@@ -839,7 +832,7 @@ fun DisablePinDialog(
                     modifier = Modifier.fillMaxWidth().testTag("disable_pin_field")
                 )
                 if (error != null) {
-                    Text(error ?: "", color = ExpenseCoral, fontSize = 12.sp)
+                    Text(error ?: "", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                 }
             }
         },
@@ -849,10 +842,10 @@ fun DisablePinDialog(
                     val ok = onConfirm(pin)
                     if (!ok) error = "PIN salah. Gagal menonaktifkan."
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = ExpenseCoral),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.testTag("submit_disable_pin_button")
             ) {
-                Text("Nonaktifkan", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Nonaktifkan", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -909,7 +902,7 @@ fun ChangePinDialog(
                 )
 
                 if (error != null) {
-                    Text(error ?: "", color = ExpenseCoral, fontSize = 12.sp)
+                    Text(error ?: "", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                 }
             }
         },
@@ -927,10 +920,10 @@ fun ChangePinDialog(
                     val ok = onConfirm(oldPin, newPin)
                     if (!ok) error = "PIN lama tidak sesuai"
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.testTag("submit_change_pin_button")
             ) {
-                Text("Simpan PIN Baru", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Simpan PIN Baru", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -1065,10 +1058,10 @@ fun UpdateRecoveryQuestionDialog(
                         error = "PIN otentikasi salah!"
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.testTag("submit_update_recovery_button")
             ) {
-                Text("Simpan", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Simpan", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

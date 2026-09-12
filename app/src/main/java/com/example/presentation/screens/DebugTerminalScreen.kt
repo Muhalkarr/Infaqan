@@ -92,8 +92,6 @@ import com.example.core.debug.AppDebugLogger
 import com.example.core.debug.DebugLogEntry
 import com.example.core.debug.DebugLogLevel
 import com.example.core.debug.GlobalCrashHandler
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -232,7 +230,7 @@ fun DebugTerminalScreen(
                         Icon(
                             imageVector = Icons.Default.DeleteSweep,
                             contentDescription = "Bersihkan Log",
-                            tint = ExpenseCoral
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -405,7 +403,7 @@ fun DebugTerminalScreen(
                                 DebugLogLevel.DEBUG -> Color(0xFF0284C7)
                                 DebugLogLevel.INFO -> MaterialTheme.colorScheme.primary
                                 DebugLogLevel.WARN -> MaterialTheme.colorScheme.secondary
-                                DebugLogLevel.ERROR -> ExpenseCoral
+                                DebugLogLevel.ERROR -> MaterialTheme.colorScheme.error
                                 DebugLogLevel.CRASH -> Color(0xFFEF4444)
                             }
                             FilterChip(
@@ -500,10 +498,10 @@ fun DebugTerminalScreen(
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                         modifier = Modifier.height(28.dp),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = ExpenseCoral
+                            contentColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text("Tes Crash", fontSize = 10.sp, color = ExpenseCoral)
+                        Text("Tes Crash", fontSize = 10.sp, color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -680,7 +678,7 @@ fun TerminalLogRow(log: DebugLogEntry) {
         DebugLogLevel.DEBUG -> Color(0xFF0284C7)
         DebugLogLevel.INFO -> MaterialTheme.colorScheme.primary
         DebugLogLevel.WARN -> MaterialTheme.colorScheme.secondary
-        DebugLogLevel.ERROR -> ExpenseCoral
+        DebugLogLevel.ERROR -> MaterialTheme.colorScheme.error
         DebugLogLevel.CRASH -> Color(0xFFEF4444)
     }
 
@@ -723,7 +721,7 @@ fun TerminalLogRow(log: DebugLogEntry) {
                 fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace,
-                color = Color(0xFF7C3AED),
+                color = MaterialTheme.colorScheme.secondary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.width(90.dp)

@@ -129,6 +129,66 @@ data class CustomRulingEntity(
     val updatedAtMillis: Long = System.currentTimeMillis()
 )
 
+@Entity(
+    tableName = "recurring_transactions",
+    indices = [Index(value = ["nextDueDateMillis"])]
+)
+data class RecurringTransactionEntity(
+    @PrimaryKey val id: String,
+    val title: String,
+    val type: String,
+    val amount: Double,
+    val categoryAccountId: String,
+    val assetAccountId: String,
+    val frequency: String,
+    val dayOfMonthOrWeek: Int,
+    val customInfaqRate: Double,
+    val enableRoundUp: Boolean,
+    val roundUpStep: Double,
+    val isActive: Boolean,
+    val autoExecute: Boolean,
+    val lastExecutedDateMillis: Long?,
+    val lastExecutedPeriodKey: String? = null,
+    val lastExecutionTimestamp: Long = 0L,
+    val nextDueDateMillis: Long,
+    val note: String,
+    val updatedAtMillis: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "infaq_rules")
+data class InfaqRuleEntity(
+    @PrimaryKey val id: String,
+    val title: String,
+    val targetCategory: String,
+    val calculationType: String,
+    val rate: Double,
+    val fixedAmount: Double,
+    val roundUpStep: Double,
+    val enableFridayMultiplier: Boolean,
+    val enableRamadanMultiplier: Boolean,
+    val updatedAtMillis: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "infaq_distributions",
+    indices = [Index(value = ["distributionDateMillis"])]
+)
+data class InfaqDistributionEntity(
+    @PrimaryKey val id: String,
+    val amount: Double,
+    val recipientName: String,
+    val asnafCategory: String,
+    val distributionDateMillis: Long,
+    val hijriDateString: String,
+    val sourceAccountId: String,
+    val programName: String,
+    val receiptNumber: String,
+    val notes: String,
+    val isVerified: Boolean,
+    val updatedAtMillis: Long = System.currentTimeMillis()
+)
+
 typealias TransactionEntity = JournalEntryEntity
 typealias BudgetEntity = BudgetAllocationEntity
+
 

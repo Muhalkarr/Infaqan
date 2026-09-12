@@ -13,6 +13,9 @@ import com.example.core.infaq.SedekahSubuhState
 import com.example.core.qardh.QardhRecord
 import com.example.core.security.SecurityConfig
 import com.example.core.wallet.WalletAccount
+import com.example.core.scheduler.RecurringTransaction
+import com.example.core.infaq.InfaqRule
+import com.example.core.infaq.InfaqDistributionRecord
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -23,9 +26,11 @@ import kotlinx.coroutines.withContext
 interface AmanahRepository {
     // User Preferences / Settings via DataStore
     val userPreferencesFlow: Flow<AppUserPreferences>
+    suspend fun saveThemeMode(mode: com.example.ui.theme.AppThemeMode)
     suspend fun saveDarkMode(isDarkMode: Boolean)
     suspend fun saveHighContrast(isHighContrast: Boolean)
     suspend fun saveGoldPrice(price: Double)
+    suspend fun saveGoldPriceWithMetadata(price: Double, source: String = "Antam / Standar BAZNAS", timestampMillis: Long = System.currentTimeMillis())
     suspend fun saveHijriOffset(offset: Int)
     suspend fun saveUserName(name: String)
     suspend fun saveStartDayOfMonth(day: Int)
@@ -41,6 +46,7 @@ interface AmanahRepository {
     suspend fun saveSedekahSubuhTargetDays(days: Int)
     suspend fun saveIsrafWarningThreshold(percent: Int)
     suspend fun saveStrictBudgetEnforced(enforced: Boolean)
+    suspend fun saveDeficitProtectionEnabled(enabled: Boolean)
     suspend fun saveAutoExecuteRecurring(enabled: Boolean)
     suspend fun saveNotifyOnRecurringDue(enabled: Boolean)
     suspend fun saveShowDailyHadith(show: Boolean)
@@ -52,7 +58,11 @@ interface AmanahRepository {
 
     // Room Persistent Transactions / Journal Entries
     fun getAllTransactionsFlow(): Flow<List<JournalEntry>>
+    fun getPagedTransactionsFlow(limit: Int, offset: Int): Flow<List<JournalEntry>>
     suspend fun getAllTransactions(): List<JournalEntry>
+    suspend fun getPagedTransactions(limit: Int, offset: Int): List<JournalEntry>
+    suspend fun getTransactionsCount(): Int
+    fun getRecentTransactionsFlow(startMillis: Long): Flow<List<JournalEntry>>
     suspend fun saveTransaction(entry: JournalEntry)
     suspend fun saveAllTransactions(entries: List<JournalEntry>)
     suspend fun deleteTransaction(id: String)
@@ -118,7 +128,34 @@ interface AmanahRepository {
     suspend fun deleteShariahRuling(id: String)
     suspend fun getShariahConfig(): com.example.core.shariah.ShariahRulesConfig?
     suspend fun saveShariahConfig(config: com.example.core.shariah.ShariahRulesConfig)
+
+    // Recurring Transactions
+    fun getAllRecurringTransactionsFlow(): Flow<List<RecurringTransaction>>
+    suspend fun getAllRecurringTransactions(): List<RecurringTransaction>
+    suspend fun saveRecurringTransaction(transaction: RecurringTransaction)
+    suspend fun saveAllRecurringTransactions(transactions: List<RecurringTransaction>)
+    suspend fun deleteRecurringTransaction(id: String)
+    suspend fun clearAllRecurringTransactions()
+
+    // Infaq Rules Engine
+    fun getAllInfaqRulesFlow(): Flow<List<InfaqRule>>
+    suspend fun getAllInfaqRules(): List<InfaqRule>
+    suspend fun saveInfaqRule(rule: InfaqRule)
+    suspend fun saveAllInfaqRules(rules: List<InfaqRule>)
+    suspend fun deleteInfaqRule(id: String)
+    suspend fun clearAllInfaqRules()
+
+    // Infaq Vault Distributions
+    fun getAllInfaqDistributionsFlow(): Flow<List<InfaqDistributionRecord>>
+    suspend fun getAllInfaqDistributions(): List<InfaqDistributionRecord>
+    suspend fun saveInfaqDistribution(record: InfaqDistributionRecord)
+    suspend fun saveAllInfaqDistributions(records: List<InfaqDistributionRecord>)
+    suspend fun deleteInfaqDistribution(id: String)
+    suspend fun clearAllInfaqDistributions()
+    suspend fun markGuideCompleted(guideTitle: String)
+    suspend fun setOnboardingCompleted()
 }
+
 
 class AmanahRepositoryImpl(
     private val database: AmanahDatabase,
@@ -128,6 +165,32 @@ class AmanahRepositoryImpl(
 
     override val userPreferencesFlow: Flow<AppUserPreferences> =
         dataStoreManager.userPreferencesFlow.flowOn(ioDispatcher)
+
+    override suspend fun saveThemeMode(mode: com.example.ui.theme.AppThemeMode) = withContext(ioDispatcher) {
+        dataStoreManager.saveThemeMode(mode)
+        database.settingsDao().insertOrUpdate(SettingsEntity("theme_mode", mode.name))
+        when (mode) {
+            com.example.ui.theme.AppThemeMode.ELEGANT_DARK -> {
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_dark_mode", "true"))
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_high_contrast", "false"))
+            }
+            com.example.ui.theme.AppThemeMode.LIGHT_MODE -> {
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_dark_mode", "false"))
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_high_contrast", "false"))
+            }
+            com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_LIGHT -> {
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_dark_mode", "false"))
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_high_contrast", "true"))
+            }
+            com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_DARK -> {
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_dark_mode", "true"))
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_high_contrast", "true"))
+            }
+            com.example.ui.theme.AppThemeMode.FOLLOW_SYSTEM -> {
+                // Keep existing flags
+            }
+        }
+    }
 
     override suspend fun saveDarkMode(isDarkMode: Boolean) = withContext(ioDispatcher) {
         dataStoreManager.saveDarkMode(isDarkMode)
@@ -142,6 +205,17 @@ class AmanahRepositoryImpl(
     override suspend fun saveGoldPrice(price: Double) = withContext(ioDispatcher) {
         dataStoreManager.saveGoldPrice(price)
         database.settingsDao().insertOrUpdate(SettingsEntity("gold_price_per_gram", price.toString()))
+    }
+
+    override suspend fun saveGoldPriceWithMetadata(
+        price: Double,
+        source: String,
+        timestampMillis: Long
+    ) = withContext(ioDispatcher) {
+        dataStoreManager.saveGoldPrice(price)
+        database.settingsDao().insertOrUpdate(SettingsEntity("gold_price_per_gram", price.toString()))
+        database.settingsDao().insertOrUpdate(SettingsEntity("gold_price_source", source))
+        database.settingsDao().insertOrUpdate(SettingsEntity("gold_price_last_updated", timestampMillis.toString()))
     }
 
     override suspend fun saveHijriOffset(offset: Int) = withContext(ioDispatcher) {
@@ -220,6 +294,11 @@ class AmanahRepositoryImpl(
         database.settingsDao().insertOrUpdate(SettingsEntity("is_strict_budget_enforced", enforced.toString()))
     }
 
+    override suspend fun saveDeficitProtectionEnabled(enabled: Boolean) = withContext(ioDispatcher) {
+        dataStoreManager.saveDeficitProtectionEnabled(enabled)
+        database.settingsDao().insertOrUpdate(SettingsEntity("is_deficit_protection_enabled", enabled.toString()))
+    }
+
     override suspend fun saveAutoExecuteRecurring(enabled: Boolean) = withContext(ioDispatcher) {
         dataStoreManager.saveAutoExecuteRecurring(enabled)
         database.settingsDao().insertOrUpdate(SettingsEntity("auto_execute_recurring_enabled", enabled.toString()))
@@ -262,6 +341,14 @@ class AmanahRepositoryImpl(
         dataStoreManager.saveMaskBalance(isMasked)
     }
 
+    override suspend fun markGuideCompleted(guideTitle: String) = withContext(ioDispatcher) {
+        dataStoreManager.markGuideCompleted(guideTitle)
+    }
+
+    override suspend fun setOnboardingCompleted() = withContext(ioDispatcher) {
+        dataStoreManager.setOnboardingCompleted()
+    }
+
     override suspend fun clearAllPreferences() = withContext(ioDispatcher) {
         dataStoreManager.clearAllPreferences()
         database.settingsDao().clearAll()
@@ -273,9 +360,27 @@ class AmanahRepositoryImpl(
             list.map { EntityMappers.toDomain(it) }
         }.flowOn(ioDispatcher)
 
+    override fun getPagedTransactionsFlow(limit: Int, offset: Int): Flow<List<JournalEntry>> =
+        database.journalDao().getPagedEntriesFlow(limit, offset).map { list ->
+            list.map { EntityMappers.toDomain(it) }
+        }.flowOn(ioDispatcher)
+
     override suspend fun getAllTransactions(): List<JournalEntry> = withContext(ioDispatcher) {
         database.journalDao().getAllEntries().map { EntityMappers.toDomain(it) }
     }
+
+    override suspend fun getPagedTransactions(limit: Int, offset: Int): List<JournalEntry> = withContext(ioDispatcher) {
+        database.journalDao().getPagedEntries(limit, offset).map { EntityMappers.toDomain(it) }
+    }
+
+    override suspend fun getTransactionsCount(): Int = withContext(ioDispatcher) {
+        database.journalDao().getEntriesCount()
+    }
+
+    override fun getRecentTransactionsFlow(startMillis: Long): Flow<List<JournalEntry>> =
+        database.journalDao().getRecentEntriesFlow(startMillis).map { list ->
+            list.map { EntityMappers.toDomain(it) }
+        }.flowOn(ioDispatcher)
 
     override suspend fun saveTransaction(entry: JournalEntry) = withContext(ioDispatcher) {
         database.journalDao().insertOrUpdate(EntityMappers.toEntity(entry))
@@ -448,7 +553,11 @@ class AmanahRepositoryImpl(
         database.ibadahGoalDao().clearAll()
         database.qardhDao().clearAll()
         database.sedekahSubuhDao().clearAll()
+        database.recurringTransactionDao().clearAll()
+        database.infaqRuleDao().clearAll()
+        database.infaqDistributionDao().clearAll()
     }
+
 
     // Settings Dao Key-Value
     override fun getAllCustomSettingsFlow(): Flow<List<SettingsEntity>> =
@@ -550,4 +659,83 @@ class AmanahRepositoryImpl(
     override suspend fun saveShariahConfig(config: com.example.core.shariah.ShariahRulesConfig) = withContext(ioDispatcher) {
         saveShariahRulesConfig(config)
     }
+
+    // Recurring Transactions Implementation
+    override fun getAllRecurringTransactionsFlow(): Flow<List<RecurringTransaction>> =
+        database.recurringTransactionDao().getAllFlow().map { list ->
+            list.map { EntityMappers.toDomain(it) }
+        }.flowOn(ioDispatcher)
+
+    override suspend fun getAllRecurringTransactions(): List<RecurringTransaction> = withContext(ioDispatcher) {
+        database.recurringTransactionDao().getAll().map { EntityMappers.toDomain(it) }
+    }
+
+    override suspend fun saveRecurringTransaction(transaction: RecurringTransaction) = withContext(ioDispatcher) {
+        database.recurringTransactionDao().insertOrUpdate(EntityMappers.toEntity(transaction))
+    }
+
+    override suspend fun saveAllRecurringTransactions(transactions: List<RecurringTransaction>) = withContext(ioDispatcher) {
+        database.recurringTransactionDao().insertAll(transactions.map { EntityMappers.toEntity(it) })
+    }
+
+    override suspend fun deleteRecurringTransaction(id: String) = withContext(ioDispatcher) {
+        database.recurringTransactionDao().deleteById(id)
+    }
+
+    override suspend fun clearAllRecurringTransactions() = withContext(ioDispatcher) {
+        database.recurringTransactionDao().clearAll()
+    }
+
+    // Infaq Rules Engine Implementation
+    override fun getAllInfaqRulesFlow(): Flow<List<InfaqRule>> =
+        database.infaqRuleDao().getAllFlow().map { list ->
+            list.map { EntityMappers.toDomain(it) }
+        }.flowOn(ioDispatcher)
+
+    override suspend fun getAllInfaqRules(): List<InfaqRule> = withContext(ioDispatcher) {
+        database.infaqRuleDao().getAll().map { EntityMappers.toDomain(it) }
+    }
+
+    override suspend fun saveInfaqRule(rule: InfaqRule) = withContext(ioDispatcher) {
+        database.infaqRuleDao().insertOrUpdate(EntityMappers.toEntity(rule))
+    }
+
+    override suspend fun saveAllInfaqRules(rules: List<InfaqRule>) = withContext(ioDispatcher) {
+        database.infaqRuleDao().insertAll(rules.map { EntityMappers.toEntity(it) })
+    }
+
+    override suspend fun deleteInfaqRule(id: String) = withContext(ioDispatcher) {
+        database.infaqRuleDao().deleteById(id)
+    }
+
+    override suspend fun clearAllInfaqRules() = withContext(ioDispatcher) {
+        database.infaqRuleDao().clearAll()
+    }
+
+    // Infaq Vault Distributions Implementation
+    override fun getAllInfaqDistributionsFlow(): Flow<List<InfaqDistributionRecord>> =
+        database.infaqDistributionDao().getAllFlow().map { list ->
+            list.map { EntityMappers.toDomain(it) }
+        }.flowOn(ioDispatcher)
+
+    override suspend fun getAllInfaqDistributions(): List<InfaqDistributionRecord> = withContext(ioDispatcher) {
+        database.infaqDistributionDao().getAll().map { EntityMappers.toDomain(it) }
+    }
+
+    override suspend fun saveInfaqDistribution(record: InfaqDistributionRecord) = withContext(ioDispatcher) {
+        database.infaqDistributionDao().insertOrUpdate(EntityMappers.toEntity(record))
+    }
+
+    override suspend fun saveAllInfaqDistributions(records: List<InfaqDistributionRecord>) = withContext(ioDispatcher) {
+        database.infaqDistributionDao().insertAll(records.map { EntityMappers.toEntity(it) })
+    }
+
+    override suspend fun deleteInfaqDistribution(id: String) = withContext(ioDispatcher) {
+        database.infaqDistributionDao().deleteById(id)
+    }
+
+    override suspend fun clearAllInfaqDistributions() = withContext(ioDispatcher) {
+        database.infaqDistributionDao().clearAll()
+    }
 }
+

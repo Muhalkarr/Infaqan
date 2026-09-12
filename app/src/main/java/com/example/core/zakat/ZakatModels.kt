@@ -28,7 +28,7 @@ data class ZakatProfesiCalculation(
     val nisabThreshold: Double get() = nisabMonthly
     val isObligatory: Boolean = taxableBase >= nisabMonthly
     val isObligated: Boolean get() = isObligatory
-    val zakatAmount: Double = if (isObligatory) taxableBase * 0.025 else 0.0
+    val zakatAmount: Double = if (isObligatory) kotlin.math.round(taxableBase * 0.025) else 0.0
     val zakatPayableAmount: Double get() = zakatAmount
 }
 
@@ -53,7 +53,7 @@ data class ZakatPerniagaanCalculation(
     val isObligatory: Boolean = netTaxableAssets >= nisabGold85g
     val isObligated: Boolean get() = isObligatory
     val rate: Double = if (isLunarCalendar) 0.025 else 0.02577
-    val zakatAmount: Double = if (isObligatory) netTaxableAssets * rate else 0.0
+    val zakatAmount: Double = if (isObligatory) kotlin.math.round(netTaxableAssets * rate) else 0.0
     val zakatPayableAmount: Double get() = zakatAmount
 }
 

@@ -83,8 +83,6 @@ import com.example.core.receipt.ReceiptAttachment
 import com.example.core.receipt.ReceiptType
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -155,7 +153,7 @@ fun IbadahGoalsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddGoalDialog = true },
-                containerColor = GoldAccent,
+                containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = Color.Black,
                 modifier = Modifier.testTag("add_ibadah_goal_fab")
             ) {
@@ -196,18 +194,18 @@ fun IbadahGoalsScreen(
                                 text = if (state.securityConfig.isMaskBalance) "Rp ••••••••" else "Rp ${nf.format(totalAccumulated)}",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Black,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                         Surface(
-                            color = GoldAccent.copy(alpha = 0.2f),
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
                                 text = "$overallPercent% Terkumpul",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent,
+                                color = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
@@ -221,7 +219,7 @@ fun IbadahGoalsScreen(
                             .fillMaxWidth()
                             .height(8.dp)
                             .clip(RoundedCornerShape(4.dp)),
-                        color = GoldAccent,
+                        color = MaterialTheme.colorScheme.secondary,
                         trackColor = MaterialTheme.colorScheme.surface
                     )
 
@@ -276,7 +274,7 @@ fun IbadahGoalsScreen(
                                 Icons.Default.Mosque,
                                 contentDescription = null,
                                 modifier = Modifier.size(52.dp),
-                                tint = GoldAccent.copy(alpha = 0.5f)
+                                tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
@@ -294,7 +292,7 @@ fun IbadahGoalsScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Button(
                                 onClick = { showAddGoalDialog = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                             ) {
                                 Text("Buat Target Ibadah")
                             }
@@ -482,14 +480,14 @@ private fun IbadahGoalCard(
                         modifier = Modifier
                             .size(42.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(GoldAccent.copy(alpha = 0.18f))
-                            .border(1.dp, GoldAccent.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
+                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f))
+                            .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             icon,
                             contentDescription = null,
-                            tint = GoldAccent,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -732,7 +730,7 @@ private fun IbadahGoalFormDialog(
                     }
                 },
                 enabled = title.isNotBlank() && targetAmount > 0.0,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Simpan Target")
             }
@@ -779,7 +777,7 @@ private fun IbadahDepositDialog(
                 Text(
                     text = "Kekurangan target: Rp ${nf.format(remaining)}",
                     fontSize = 12.sp,
-                    color = GoldAccent,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.SemiBold
                 )
 
@@ -877,7 +875,7 @@ private fun IbadahDepositDialog(
                     }
                 },
                 enabled = amount > 0.0,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Konfirmasi Setor")
             }

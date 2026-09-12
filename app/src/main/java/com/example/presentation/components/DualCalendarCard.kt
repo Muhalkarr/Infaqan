@@ -49,13 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.calendar.HijriCalendarEngine
 import com.example.core.calendar.HijriDate
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
-import com.example.ui.theme.DarkSurfaceVariant
+import com.example.ui.theme.AssetBlue
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.GoldLight
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -191,7 +186,7 @@ fun DualCalendarCard(
 
                         Surface(
                             onClick = { currentDateOffsetDays = 0 },
-                            color = if (currentDateOffsetDays != 0) EmeraldPrimary.copy(alpha = 0.25f) else Color.Transparent,
+                            color = if (currentDateOffsetDays != 0) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else Color.Transparent,
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
@@ -300,12 +295,12 @@ fun DualCalendarCard(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    EmeraldPrimary.copy(alpha = 0.15f),
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                                 )
                             )
                         )
-                        .border(1.dp, EmeraldPrimary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
                         .padding(12.dp)
                 ) {
                     Column(

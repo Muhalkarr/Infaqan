@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -45,7 +46,9 @@ import com.example.navigation.AmanahNavHost
 import com.example.navigation.AmanahRoutes
 import com.example.presentation.components.AppNavigationDrawerContent
 import com.example.presentation.screens.AppLockScreen
+import com.example.presentation.screens.OnboardingScreen
 import com.example.ui.theme.AmanahLedgerTheme
+import com.example.ui.theme.AppThemeMode
 import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.EmeraldPrimary
@@ -63,15 +66,35 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             val state by viewModel.uiState.collectAsState()
+            val systemInDarkTheme = isSystemInDarkTheme()
+            val effectiveDarkMode = when (state.themeMode) {
+                AppThemeMode.FOLLOW_SYSTEM -> systemInDarkTheme
+                AppThemeMode.ELEGANT_DARK, AppThemeMode.HIGH_CONTRAST_DARK -> true
+                AppThemeMode.LIGHT_MODE, AppThemeMode.HIGH_CONTRAST_LIGHT -> false
+            }
+            val effectiveHighContrast = when (state.themeMode) {
+                AppThemeMode.HIGH_CONTRAST_LIGHT, AppThemeMode.HIGH_CONTRAST_DARK -> true
+                else -> state.isHighContrast
+            }
+
             AmanahLedgerTheme(
-                darkTheme = state.isDarkMode,
-                highContrast = state.isHighContrast,
+                darkTheme = effectiveDarkMode,
+                highContrast = effectiveHighContrast,
                 uiScaleFactor = state.uiScaleFactor
             ) {
-                if (state.securityConfig.isPinEnabled && state.securityConfig.isAppLocked) {
-                    AppLockScreen(viewModel = viewModel)
-                } else {
+                androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
                     AmanahMainApp(viewModel = viewModel)
+
+                    if (!state.hasCompletedOnboarding) {
+                        OnboardingScreen(
+                            viewModel = viewModel,
+                            onComplete = { viewModel.completeOnboarding() }
+                        )
+                    }
+
+                    if (state.securityConfig.isPinEnabled && state.securityConfig.isAppLocked) {
+                        AppLockScreen(viewModel = viewModel)
+                    }
                 }
             }
         }

@@ -12,8 +12,20 @@ interface JournalEntryDao {
     @Query("SELECT * FROM journal_entries ORDER BY dateMillis DESC")
     fun getAllEntriesFlow(): Flow<List<JournalEntryEntity>>
 
+    @Query("SELECT * FROM journal_entries ORDER BY dateMillis DESC LIMIT :limit OFFSET :offset")
+    fun getPagedEntriesFlow(limit: Int, offset: Int): Flow<List<JournalEntryEntity>>
+
     @Query("SELECT * FROM journal_entries ORDER BY dateMillis DESC")
     suspend fun getAllEntries(): List<JournalEntryEntity>
+
+    @Query("SELECT * FROM journal_entries ORDER BY dateMillis DESC LIMIT :limit OFFSET :offset")
+    suspend fun getPagedEntries(limit: Int, offset: Int): List<JournalEntryEntity>
+
+    @Query("SELECT COUNT(*) FROM journal_entries")
+    suspend fun getEntriesCount(): Int
+
+    @Query("SELECT * FROM journal_entries WHERE dateMillis >= :startMillis ORDER BY dateMillis DESC")
+    fun getRecentEntriesFlow(startMillis: Long): Flow<List<JournalEntryEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(entry: JournalEntryEntity)
@@ -178,5 +190,69 @@ interface RulingDao {
     suspend fun clearCustomRulings()
 }
 
+@Dao
+interface RecurringTransactionDao {
+    @Query("SELECT * FROM recurring_transactions ORDER BY nextDueDateMillis ASC")
+    fun getAllFlow(): Flow<List<RecurringTransactionEntity>>
+
+    @Query("SELECT * FROM recurring_transactions ORDER BY nextDueDateMillis ASC")
+    suspend fun getAll(): List<RecurringTransactionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(transaction: RecurringTransactionEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(transactions: List<RecurringTransactionEntity>)
+
+    @Query("DELETE FROM recurring_transactions WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM recurring_transactions")
+    suspend fun clearAll()
+}
+
+@Dao
+interface InfaqRuleDao {
+    @Query("SELECT * FROM infaq_rules ORDER BY updatedAtMillis DESC")
+    fun getAllFlow(): Flow<List<InfaqRuleEntity>>
+
+    @Query("SELECT * FROM infaq_rules ORDER BY updatedAtMillis DESC")
+    suspend fun getAll(): List<InfaqRuleEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(rule: InfaqRuleEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(rules: List<InfaqRuleEntity>)
+
+    @Query("DELETE FROM infaq_rules WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM infaq_rules")
+    suspend fun clearAll()
+}
+
+@Dao
+interface InfaqDistributionDao {
+    @Query("SELECT * FROM infaq_distributions ORDER BY distributionDateMillis DESC")
+    fun getAllFlow(): Flow<List<InfaqDistributionEntity>>
+
+    @Query("SELECT * FROM infaq_distributions ORDER BY distributionDateMillis DESC")
+    suspend fun getAll(): List<InfaqDistributionEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdate(distribution: InfaqDistributionEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(distributions: List<InfaqDistributionEntity>)
+
+    @Query("DELETE FROM infaq_distributions WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM infaq_distributions")
+    suspend fun clearAll()
+}
+
 typealias TransactionDao = JournalEntryDao
+
 

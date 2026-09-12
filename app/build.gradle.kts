@@ -41,8 +41,9 @@ android {
 
   buildTypes {
     release {
-      isCrunchPngs = false
-      isMinifyEnabled = false
+      isCrunchPngs = true
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       signingConfig = signingConfigs.getByName("release")
     }
@@ -79,11 +80,11 @@ dependencies {
   implementation(platform(libs.androidx.compose.bom))
   implementation(platform(libs.firebase.bom))
   // implementation(libs.accompanist.permissions)
-  implementation(libs.androidx.activity.compose)
-  implementation(libs.androidx.camera.camera2)
-  implementation(libs.androidx.camera.core)
-  implementation(libs.androidx.camera.lifecycle)
-  implementation(libs.androidx.camera.view)
+  implementation(libs.androidx.activity.compose)//
+  implementation(libs.androidx.camera.camera2)//
+  implementation(libs.androidx.camera.core)//
+  implementation(libs.androidx.camera.lifecycle)//
+  implementation(libs.androidx.camera.view)//
   implementation(libs.mlkit.text.recognition)
   implementation(libs.androidx.biometric)
   implementation(libs.androidx.compose.material.icons.core)
@@ -100,8 +101,8 @@ dependencies {
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
-  // implementation(libs.coil.compose)
-  implementation(libs.converter.moshi)
+  implementation(libs.coil.compose)
+  implementation(libs.converter.moshi)//
   implementation(libs.firebase.ai)
   // Uncomment to use Firestore:
   implementation(libs.firebase.firestore)

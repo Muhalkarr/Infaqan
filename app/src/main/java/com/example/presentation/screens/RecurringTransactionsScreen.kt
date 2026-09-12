@@ -71,10 +71,6 @@ import com.example.core.scheduler.RecurringFrequency
 import com.example.core.scheduler.RecurringTransaction
 import com.example.core.scheduler.RecurringType
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -151,7 +147,7 @@ fun RecurringTransactionsScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
-                containerColor = EmeraldPrimary,
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.testTag("add_recurring_fab")
@@ -181,9 +177,9 @@ fun RecurringTransactionsScreen(
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = EmeraldPrimary.copy(alpha = 0.15f)),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                         shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary)
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
                     ) {
                         Row(
                             modifier = Modifier.padding(12.dp),
@@ -194,7 +190,7 @@ fun RecurringTransactionsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Check,
                                     contentDescription = null,
-                                    tint = EmeraldLight,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -247,7 +243,7 @@ fun RecurringTransactionsScreen(
                                         viewModel.processAllDueRecurringTransactions()
                                         executionSuccessMsg = "Berhasil memproses ${state.dueRecurringCount} transaksi jatuh tempo!"
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.testTag("process_all_due_button")
                                 ) {
@@ -255,7 +251,7 @@ fun RecurringTransactionsScreen(
                                         text = "Eksekusi Semua (${state.dueRecurringCount})",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.Black
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
@@ -265,7 +261,7 @@ fun RecurringTransactionsScreen(
                         Text(
                             text = "💡 Jadwal rutin akan mencatat transaksi seimbang (Double-Entry), menyucikan infaq kasab otomatis, dan memperbarui alokasi anggaran.",
                             fontSize = 11.sp,
-                            color = GoldAccent
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -319,7 +315,7 @@ fun RecurringTransactionsScreen(
                         shape = RoundedCornerShape(14.dp),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (isDue) GoldAccent else MaterialTheme.colorScheme.outline
+                            if (isDue) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
                         )
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
@@ -337,15 +333,15 @@ fun RecurringTransactionsScreen(
                                             .size(36.dp)
                                             .clip(CircleShape)
                                             .background(
-                                                if (item.type == RecurringType.INCOME) EmeraldPrimary.copy(alpha = 0.2f)
-                                                else ExpenseCoral.copy(alpha = 0.2f)
+                                                if (item.type == RecurringType.INCOME) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                                else MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             imageVector = if (item.type == RecurringType.INCOME) Icons.Default.ArrowDownward else Icons.Default.ArrowUpward,
                                             contentDescription = null,
-                                            tint = if (item.type == RecurringType.INCOME) EmeraldLight else ExpenseCoral,
+                                            tint = if (item.type == RecurringType.INCOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -369,8 +365,8 @@ fun RecurringTransactionsScreen(
                                     checked = item.isActive,
                                     onCheckedChange = { viewModel.toggleRecurringTransaction(item.id) },
                                     colors = SwitchDefaults.colors(
-                                        checkedThumbColor = EmeraldPrimary,
-                                        checkedTrackColor = EmeraldPrimary.copy(alpha = 0.3f)
+                                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                                     ),
                                     modifier = Modifier.testTag("recurring_toggle_${item.id}")
                                 )
@@ -393,7 +389,7 @@ fun RecurringTransactionsScreen(
                                         text = "Rp ${formatRupiah(item.amount)}",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 15.sp,
-                                        color = if (item.type == RecurringType.INCOME) EmeraldLight else ExpenseCoral
+                                        color = if (item.type == RecurringType.INCOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                                     )
                                 }
 
@@ -407,7 +403,7 @@ fun RecurringTransactionsScreen(
                                         text = dateFormat.format(item.nextDueDate),
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 12.sp,
-                                        color = if (isDue) GoldAccent else MaterialTheme.colorScheme.onSurface
+                                        color = if (isDue) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }
@@ -418,14 +414,14 @@ fun RecurringTransactionsScreen(
                                     Icon(
                                         imageVector = Icons.Default.VolunteerActivism,
                                         contentDescription = null,
-                                        tint = GoldAccent,
+                                        tint = MaterialTheme.colorScheme.secondary,
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = "Auto-Infaq: ${(item.customInfaqRate * 100).toInt()}% (Rp ${formatRupiah(item.amount * item.customInfaqRate)} masuk Vault)",
                                         fontSize = 11.sp,
-                                        color = GoldAccent
+                                        color = MaterialTheme.colorScheme.secondary
                                     )
                                 }
                             }
@@ -464,7 +460,7 @@ fun RecurringTransactionsScreen(
                                             executionSuccessMsg = "Transaksi '${item.title}' berhasil dieksekusi!"
                                         },
                                         colors = ButtonDefaults.buttonColors(
-                                            containerColor = if (item.type == RecurringType.INCOME) EmeraldPrimary else ExpenseCoral
+                                            containerColor = if (item.type == RecurringType.INCOME) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                                         ),
                                         shape = RoundedCornerShape(8.dp),
                                         modifier = Modifier
@@ -561,7 +557,7 @@ fun AddRecurringDialog(
                             selectedCategoryId = incomeCategories.firstOrNull()?.id ?: "acc_salary"
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isIncome) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
+                            containerColor = if (isIncome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(8.dp),
@@ -576,7 +572,7 @@ fun AddRecurringDialog(
                             selectedCategoryId = expenseCategories.firstOrNull()?.id ?: "acc_living"
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!isIncome) ExpenseCoral else MaterialTheme.colorScheme.surfaceVariant,
+                            containerColor = if (!isIncome) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = if (!isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(8.dp),
@@ -652,7 +648,7 @@ fun AddRecurringDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("Persentase Infaq Rutin:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("${String.format(java.util.Locale.US, "%.1f", infaqRatePercent).removeSuffix(".0")}% Kasab", fontWeight = FontWeight.Bold, color = GoldAccent, fontSize = 12.sp)
+                            Text("${String.format(java.util.Locale.US, "%.1f", infaqRatePercent).removeSuffix(".0")}% Kasab", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary, fontSize = 12.sp)
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Row(
@@ -663,8 +659,8 @@ fun AddRecurringDialog(
                                 val isSel = Math.abs(infaqRatePercent - rate) < 0.001
                                 androidx.compose.material3.Surface(
                                     shape = RoundedCornerShape(6.dp),
-                                    color = if (isSel) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isSel) GoldAccent else MaterialTheme.colorScheme.outline),
+                                    color = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, if (isSel) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline),
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable { infaqRatePercent = rate }
@@ -705,10 +701,10 @@ fun AddRecurringDialog(
                         onSaved()
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.testTag("save_recurring_button")
             ) {
-                Text("Simpan Jadwal", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Simpan Jadwal", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

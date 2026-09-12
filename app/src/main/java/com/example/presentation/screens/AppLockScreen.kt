@@ -64,17 +64,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.compose.ui.platform.LocalContext
 import com.example.core.security.BiometricAuthHelper
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
-import com.example.ui.theme.White60
-import com.example.ui.theme.White70
-import com.example.ui.theme.White80
 import kotlinx.coroutines.delay
 
 @Composable
@@ -153,9 +143,9 @@ fun AppLockScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        DarkBackground,
-                        Color(0xFF0D1B17),
-                        Color(0xFF07120F)
+                        MaterialTheme.colorScheme.background,
+                        MaterialTheme.colorScheme.surface,
+                        MaterialTheme.colorScheme.background
                     )
                 )
             )
@@ -180,16 +170,16 @@ fun AppLockScreen(
                         .clip(CircleShape)
                         .background(
                             brush = Brush.linearGradient(
-                                colors = listOf(EmeraldPrimary.copy(alpha = 0.3f), GoldAccent.copy(alpha = 0.2f))
+                                colors = listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
                             )
                         )
-                        .border(2.dp, GoldAccent.copy(alpha = 0.6f), CircleShape),
+                        .border(2.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = if (biometricSuccessAnimation) Icons.Default.CheckCircle else Icons.Default.Shield,
                         contentDescription = "Amanah Security Shield",
-                        tint = if (biometricSuccessAnimation) EmeraldLight else GoldAccent,
+                        tint = if (biometricSuccessAnimation) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(36.dp)
                     )
                 }
@@ -200,33 +190,33 @@ fun AppLockScreen(
                     text = "Amanah Ledger Guard",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     letterSpacing = 0.5.sp
                 )
 
                 Text(
                     text = "Buku Besar Keuangan Syariah Terproteksi",
                     fontSize = 12.sp,
-                    color = White70
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
 
                 if (lockoutSeconds > 0) {
                     Surface(
-                        color = ExpenseCoral.copy(alpha = 0.15f),
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(8.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, ExpenseCoral.copy(alpha = 0.5f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
                         modifier = Modifier.padding(top = 8.dp)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = ExpenseCoral, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Terlalu banyak percobaan. Tunggu $lockoutSeconds detik.",
                                 fontSize = 12.sp,
-                                color = ExpenseCoral,
+                                color = MaterialTheme.colorScheme.error,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -235,7 +225,7 @@ fun AppLockScreen(
                     Text(
                         text = errorMessage ?: "",
                         fontSize = 12.sp,
-                        color = ExpenseCoral,
+                        color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(top = 6.dp)
                     )
@@ -243,7 +233,7 @@ fun AppLockScreen(
                     Text(
                         text = "Masukkan 6-Digit PIN Anda",
                         fontSize = 13.sp,
-                        color = EmeraldLight,
+                        color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(top = 6.dp)
                     )
@@ -271,11 +261,11 @@ fun AppLockScreen(
                             .scale(scale)
                             .clip(CircleShape)
                             .background(
-                                if (isFilled) GoldAccent else Color.Transparent
+                                if (isFilled) MaterialTheme.colorScheme.secondary else Color.Transparent
                             )
                             .border(
                                 width = 1.5.dp,
-                                color = if (isFilled) GoldAccent else White60,
+                                color = if (isFilled) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                 shape = CircleShape
                             )
                     )
@@ -313,7 +303,7 @@ fun AppLockScreen(
                                                 .size(68.dp)
                                                 .clip(CircleShape)
                                                 .background(EmeraldDark.copy(alpha = 0.5f))
-                                                .border(1.dp, EmeraldPrimary.copy(alpha = 0.6f), CircleShape)
+                                                .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), CircleShape)
                                                 .clickable(enabled = !isLockedOut) {
                                                     triggerBiometricPrompt()
                                                 }
@@ -323,7 +313,7 @@ fun AppLockScreen(
                                             Icon(
                                                 imageVector = Icons.Default.Fingerprint,
                                                 contentDescription = "Buka dengan Sidik Jari",
-                                                tint = GoldAccent,
+                                                tint = MaterialTheme.colorScheme.secondary,
                                                 modifier = Modifier.size(32.dp)
                                             )
                                         }
@@ -348,7 +338,7 @@ fun AppLockScreen(
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Filled.Backspace,
                                             contentDescription = "Hapus Angka",
-                                            tint = if (enteredPin.isNotEmpty()) White80 else White60.copy(alpha = 0.3f),
+                                            tint = if (enteredPin.isNotEmpty()) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f).copy(alpha = 0.3f),
                                             modifier = Modifier.size(26.dp)
                                         )
                                     }
@@ -358,8 +348,8 @@ fun AppLockScreen(
                                         modifier = Modifier
                                             .size(68.dp)
                                             .clip(CircleShape)
-                                            .background(DarkSurface.copy(alpha = 0.8f))
-                                            .border(1.dp, DarkBorder, CircleShape)
+                                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f))
+                                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                                             .clickable(enabled = !isLockedOut && enteredPin.length < 6) {
                                                 if (enteredPin.length < 6) {
                                                     enteredPin += key
@@ -373,7 +363,7 @@ fun AppLockScreen(
                                             text = key,
                                             fontSize = 24.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color.White
+                                            color = MaterialTheme.colorScheme.onBackground
                                         )
                                     }
                                 }
@@ -390,12 +380,12 @@ fun AppLockScreen(
                 onClick = { showRecoveryDialog = true },
                 modifier = Modifier.testTag("forgot_pin_button")
             ) {
-                Icon(Icons.Default.HelpOutline, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.HelpOutline, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "Lupa PIN? Pulihkan dengan Jawaban Keamanan",
                     fontSize = 12.sp,
-                    color = GoldAccent,
+                    color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -437,7 +427,7 @@ fun RecoveryPinDialog(
         shape = RoundedCornerShape(18.dp),
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Shield, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(24.dp))
+                Icon(Icons.Default.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Pemulihan PIN Keamanan", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
@@ -453,10 +443,10 @@ fun RecoveryPinDialog(
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     shape = RoundedCornerShape(10.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.3f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
-                        Text("Pertanyaan Keamanan:", fontSize = 10.sp, color = EmeraldLight)
+                        Text("Pertanyaan Keamanan:", fontSize = 10.sp, color = MaterialTheme.colorScheme.primary)
                         Text(question, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
@@ -471,7 +461,7 @@ fun RecoveryPinDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldLight,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -492,7 +482,7 @@ fun RecoveryPinDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldLight,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -513,7 +503,7 @@ fun RecoveryPinDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldLight,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -526,7 +516,7 @@ fun RecoveryPinDialog(
                     Text(
                         text = recoveryError ?: "",
                         fontSize = 12.sp,
-                        color = ExpenseCoral,
+                        color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -553,10 +543,10 @@ fun RecoveryPinDialog(
                         recoveryError = "Jawaban keamanan salah. Gagal mereset PIN."
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.testTag("submit_recovery_button")
             ) {
-                Text("Simpan PIN Baru", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Simpan PIN Baru", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

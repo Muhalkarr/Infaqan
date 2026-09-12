@@ -60,10 +60,6 @@ import androidx.compose.ui.unit.sp
 import com.example.core.calendar.HijriCalendarEngine
 import com.example.core.report.FinancialPdfGenerator
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import java.io.File
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -202,7 +198,7 @@ fun MonthlyReportScreen(
                             Text(
                                 text = "${hijriDate.monthName} ${hijriDate.year} H",
                                 fontSize = 11.sp,
-                                color = GoldAccent,
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -228,9 +224,9 @@ fun MonthlyReportScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = EmeraldPrimary.copy(alpha = 0.12f)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                     shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, EmeraldPrimary)
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -238,13 +234,13 @@ fun MonthlyReportScreen(
                                 modifier = Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(EmeraldPrimary),
+                                    .background(MaterialTheme.colorScheme.primary),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.FileDownload,
                                     contentDescription = null,
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
@@ -289,7 +285,7 @@ fun MonthlyReportScreen(
                                         isGenerating = false
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
                                     .weight(1f)
@@ -354,7 +350,7 @@ fun MonthlyReportScreen(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text("Total Aset Halal", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatRupiah(state.totalAssets)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                            Text("Rp ${formatRupiah(state.totalAssets)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                     }
 
@@ -366,7 +362,39 @@ fun MonthlyReportScreen(
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
                             Text("Titipan Infaq Vault", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatRupiah(state.virtualInfaqVaultBalance)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                            Text("Rp ${formatRupiah(state.virtualInfaqVaultBalance)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                        }
+                    }
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Total Beban Konsumsi", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Rp ${formatRupiah(state.totalConsumptionExpense)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        shape = RoundedCornerShape(12.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text("Transfer Antar-Kantong", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Rp ${formatRupiah(state.totalInternalTransfer)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Arus internal (non-beban)", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -387,7 +415,7 @@ fun MonthlyReportScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(imageVector = Icons.Default.PieChart, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                                Icon(imageVector = Icons.Default.PieChart, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text("Realisasi Anggaran", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
@@ -419,7 +447,7 @@ fun MonthlyReportScreen(
                                             text = if (isOver) "OVER (${String.format("%.0f", percentage)}%)" else "${String.format("%.0f", percentage)}%",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isOver) ExpenseCoral else EmeraldLight
+                                            color = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -429,7 +457,7 @@ fun MonthlyReportScreen(
                                             .fillMaxWidth()
                                             .height(5.dp)
                                             .clip(RoundedCornerShape(3.dp)),
-                                        color = if (isOver) ExpenseCoral else EmeraldLight,
+                                        color = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
@@ -457,7 +485,7 @@ fun MonthlyReportScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.VolunteerActivism, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(18.dp))
+                            Icon(imageVector = Icons.Default.VolunteerActivism, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Distribusi Tabarru' & Infaq", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         }
@@ -470,11 +498,11 @@ fun MonthlyReportScreen(
                         ) {
                             Column {
                                 Text("Infaq Tersucikan Masuk", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Rp ${formatRupiah(state.totalPurifiedInfaq)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = EmeraldLight)
+                                Text("Rp ${formatRupiah(state.totalPurifiedInfaq)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 Text("Tersalurkan ke Mustahiq", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("Rp ${formatRupiah(state.totalDisbursedInfaq)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GoldAccent)
+                                Text("Rp ${formatRupiah(state.totalDisbursedInfaq)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                             }
                         }
                     }

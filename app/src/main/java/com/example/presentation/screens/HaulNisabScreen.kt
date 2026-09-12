@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -59,13 +61,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
-import com.example.ui.theme.DarkSurfaceVariant
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.White12
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
@@ -147,7 +142,7 @@ fun HaulNisabScreen(
                 shape = RoundedCornerShape(14.dp),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    if (state.isNisabReached) GoldAccent else MaterialTheme.colorScheme.outline
+                    if (state.isNisabReached) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
                 )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -166,20 +161,20 @@ fun HaulNisabScreen(
                                 text = "Rp ${formatRupiah(state.nisabThreshold)}",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (state.isNisabReached) GoldAccent.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant)
+                                .background(if (state.isNisabReached) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant)
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
                                 text = if (state.isNisabReached) "WAJIB ZAKAT (Jika Haul)" else "BELUM WAJIB",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (state.isNisabReached) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (state.isNisabReached) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -200,7 +195,7 @@ fun HaulNisabScreen(
                             .fillMaxWidth()
                             .height(8.dp)
                             .clip(RoundedCornerShape(4.dp)),
-                        color = if (state.isNisabReached) GoldAccent else EmeraldPrimary,
+                        color = if (state.isNisabReached) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
@@ -236,15 +231,15 @@ fun HaulNisabScreen(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(EmeraldPrimary.copy(alpha = 0.12f))
-                                .border(1.dp, EmeraldPrimary, RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                                .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
                                 .padding(12.dp)
                         ) {
                             Text(
                                 text = "Tahun Hijriah (Qomariyah)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = EmeraldLight
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Text("354 Hari • Tarif 2,500%", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(modifier = Modifier.height(8.dp))
@@ -315,13 +310,13 @@ fun HaulNisabScreen(
                             }
                         },
                         label = { Text("Harga Emas per Gram (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                        prefix = { Text("Rp ", color = GoldAccent, fontWeight = FontWeight.Bold) },
+                        prefix = { Text("Rp ", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedBorderColor = EmeraldPrimary,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -330,6 +325,49 @@ fun HaulNisabScreen(
                             .fillMaxWidth()
                             .testTag("gold_price_input")
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val updateTimeStr = if (state.goldPriceLastUpdatedMillis > 0) {
+                        java.text.SimpleDateFormat("dd MMM yyyy, HH:mm", java.util.Locale("id", "ID")).format(java.util.Date(state.goldPriceLastUpdatedMillis))
+                    } else {
+                        "Standar Acuan BAZNAS"
+                    }
+                    Text(
+                        text = "Terakhir Diperbarui: $updateTimeStr • ${state.goldPriceSource}",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "Rekomendasi Acuan Pasar Emas Terkini:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(
+                            1450000.0 to "Antam 1.45jt",
+                            1485000.0 to "Pegadaian 1.485jt",
+                            1500000.0 to "Pasar 1.5jt"
+                        ).forEach { (presetPrice, label) ->
+                            OutlinedButton(
+                                onClick = {
+                                    goldPriceInput = presetPrice.toLong().toString()
+                                    viewModel.updateGoldPriceWithMetadata(presetPrice, label, System.currentTimeMillis())
+                                },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
+                            ) {
+                                Text(label, fontSize = 10.sp, maxLines = 1)
+                            }
+                        }
+                    }
                 }
             }
         }

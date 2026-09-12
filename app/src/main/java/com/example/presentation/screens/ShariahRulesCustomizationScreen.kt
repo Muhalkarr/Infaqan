@@ -1,5 +1,6 @@
 package com.example.presentation.screens
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,9 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.shariah.*
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,7 +87,7 @@ fun ShariahRulesCustomizationScreen(
                         Icon(
                             Icons.Default.RestartAlt,
                             contentDescription = "Reset Standar",
-                            tint = GoldAccent
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                 },
@@ -100,7 +98,7 @@ fun ShariahRulesCustomizationScreen(
             if (selectedTab == 1) {
                 FloatingActionButton(
                     onClick = { showAddRulingDialog = true },
-                    containerColor = EmeraldPrimary,
+                    containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White,
                     modifier = Modifier.testTag("add_shariah_ruling_fab")
                 ) {
@@ -118,7 +116,7 @@ fun ShariahRulesCustomizationScreen(
             PrimaryTabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = EmeraldPrimary
+                contentColor = MaterialTheme.colorScheme.primary
             ) {
                 Tab(
                     selected = selectedTab == 0,
@@ -200,7 +198,7 @@ fun ShariahRulesCustomizationScreen(
                         viewModel.resetShariahRulingsToDefault()
                         showResetConfirmDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Reset ke Default")
                 }
@@ -257,10 +255,10 @@ fun HisabVariablesCustomizationContent(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .background(GoldAccent.copy(alpha = 0.2f)),
+                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Balance, contentDescription = null, tint = GoldAccent)
+                    Icon(Icons.Default.Balance, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
@@ -307,10 +305,10 @@ fun HisabVariablesCustomizationContent(
                                     silverNisabInput = "595.0"
                                 }
                             }
-                            .background(if (isSelected) EmeraldPrimary.copy(alpha = 0.1f) else Color.Transparent)
+                            .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
                             .border(
                                 width = 1.dp,
-                                color = if (isSelected) EmeraldPrimary else Color.Transparent,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(10.dp),
@@ -326,7 +324,7 @@ fun HisabVariablesCustomizationContent(
                                 mazhab.displayName,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (isSelected) EmeraldLight else MaterialTheme.colorScheme.onSurface
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 mazhab.description,
@@ -411,10 +409,10 @@ fun HisabVariablesCustomizationContent(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { profesiFormula = f }
-                            .background(if (isChosen) EmeraldPrimary.copy(alpha = 0.1f) else Color.Transparent)
+                            .background(if (isChosen) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
                             .border(
                                 width = 1.dp,
-                                color = if (isChosen) EmeraldPrimary else Color.Transparent,
+                                color = if (isChosen) MaterialTheme.colorScheme.primary else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(10.dp),
@@ -430,7 +428,7 @@ fun HisabVariablesCustomizationContent(
                                 f.title,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (isChosen) EmeraldLight else MaterialTheme.colorScheme.onSurface
+                                color = if (isChosen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 f.formulaDesc,
@@ -472,10 +470,10 @@ fun HisabVariablesCustomizationContent(
                                     zakatRateInput = "2.5"
                                 }
                             }
-                            .background(if (isChosen) EmeraldPrimary.copy(alpha = 0.1f) else Color.Transparent)
+                            .background(if (isChosen) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent)
                             .border(
                                 width = 1.dp,
-                                color = if (isChosen) EmeraldPrimary else Color.Transparent,
+                                color = if (isChosen) MaterialTheme.colorScheme.primary else Color.Transparent,
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(10.dp),
@@ -494,7 +492,7 @@ fun HisabVariablesCustomizationContent(
                                 h.title,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (isChosen) EmeraldLight else MaterialTheme.colorScheme.onSurface
+                                color = if (isChosen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 h.description,
@@ -581,7 +579,7 @@ fun HisabVariablesCustomizationContent(
                 )
                 onSaveConfig(newConfig)
             },
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -635,8 +633,8 @@ fun DalilAndFatwaCatalogContent(
                         onClick = { selectedCategory = cat },
                         label = { Text(cat, fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = EmeraldPrimary.copy(alpha = 0.2f),
-                            selectedLabelColor = EmeraldLight
+                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                            selectedLabelColor = MaterialTheme.colorScheme.primary
                         )
                     )
                 }
@@ -699,7 +697,7 @@ fun ShariahRulingCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
                         color = when (ruling.authority) {
-                            "DSN-MUI" -> EmeraldPrimary.copy(alpha = 0.2f)
+                            "DSN-MUI" -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                             "BAZNAS Daerah", "BAZNAS" -> MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
                             else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                         },
@@ -708,7 +706,7 @@ fun ShariahRulingCard(
                         Text(
                             text = ruling.authority,
                             color = when (ruling.authority) {
-                                "DSN-MUI" -> EmeraldLight
+                                "DSN-MUI" -> MaterialTheme.colorScheme.primary
                                 "BAZNAS Daerah", "BAZNAS" -> MaterialTheme.colorScheme.secondary
                                 else -> MaterialTheme.colorScheme.primary
                             },
@@ -731,8 +729,8 @@ fun ShariahRulingCard(
                         checked = ruling.isEnabled,
                         onCheckedChange = { onToggle() },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = EmeraldLight,
-                            checkedTrackColor = EmeraldPrimary
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
                         ),
                         modifier = Modifier.size(36.dp)
                     )
@@ -806,7 +804,7 @@ fun ShariahRulingCard(
             // Formula (if present)
             if (ruling.calculationFormula.isNotBlank()) {
                 Surface(
-                    color = EmeraldPrimary.copy(alpha = 0.1f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -814,13 +812,13 @@ fun ShariahRulingCard(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Functions, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Functions, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Kaidah Formula: ${ruling.calculationFormula}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -864,7 +862,7 @@ fun ShariahRulingCard(
 
 @Composable
 private fun borderStrokeEmerald(): androidx.compose.foundation.BorderStroke {
-    return androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.3f))
+    return androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
 }
 
 /**
@@ -1035,7 +1033,7 @@ fun AddEditRulingDialog(
                     )
                     onSave(item)
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
                 Text("Simpan Entri")
             }

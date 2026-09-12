@@ -96,10 +96,6 @@ import com.example.core.budget.SuggestionStatus
 import com.example.core.state.AmanahLedgerUiState
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.GoldLight
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
@@ -187,7 +183,7 @@ fun BudgetAllocationScreen(
                     editingBudget = null
                     showAddEditDialog = true
                 },
-                containerColor = EmeraldPrimary,
+                containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
                 shape = CircleShape,
                 modifier = Modifier.testTag("add_budget_fab")
@@ -358,9 +354,9 @@ fun BudgetAllocationScreen(
                         viewModel.deleteBudget(budgetToDelete.id)
                         deletingBudget = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = ExpenseCoral)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Hapus", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Hapus", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -381,7 +377,7 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
     val remainingBudget = (totalLimit - totalSpent).coerceAtLeast(0.0)
 
     val progressColor = when {
-        usagePercentage >= 100.0 -> ExpenseCoral
+        usagePercentage >= 100.0 -> MaterialTheme.colorScheme.error
         usagePercentage >= 80.0 -> MaterialTheme.colorScheme.secondary
         else -> MaterialTheme.colorScheme.primary
     }
@@ -490,7 +486,7 @@ fun BudgetSummaryCard(state: AmanahLedgerUiState) {
                     text = "Sisa Kuota Belanja: Rp ${formatRupiah(remainingBudget)}",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (remainingBudget > 0) MaterialTheme.colorScheme.primary else ExpenseCoral
+                    color = if (remainingBudget > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                 )
                 Text(
                     text = "${state.budgets.size} Kategori",
@@ -554,7 +550,7 @@ fun BudgetItemCard(
     val remaining = budget.getRemainingAmount(spentAmount)
 
     val itemColor = when {
-        isOver -> ExpenseCoral
+        isOver -> MaterialTheme.colorScheme.error
         isNear -> MaterialTheme.colorScheme.secondary
         else -> MaterialTheme.colorScheme.primary
     }
@@ -567,7 +563,7 @@ fun BudgetItemCard(
             .testTag("budget_card_${budget.accountId}"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, if (isOver) ExpenseCoral.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
+        border = BorderStroke(1.dp, if (isOver) MaterialTheme.colorScheme.error.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -645,7 +641,7 @@ fun BudgetItemCard(
                         Icon(
                             imageVector = Icons.Default.Delete,
                             contentDescription = "Hapus Anggaran",
-                            tint = ExpenseCoral.copy(alpha = 0.7f),
+                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -685,7 +681,7 @@ fun BudgetItemCard(
                     },
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (isOver) ExpenseCoral else MaterialTheme.colorScheme.primary
+                    color = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -880,7 +876,7 @@ fun AddEditBudgetDialog(
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage ?: "",
-                        color = ExpenseCoral,
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 11.sp
                     )
                 }
@@ -985,7 +981,7 @@ fun SpendingPatternOptimizerSection(
             .testTag("budget_optimizer_section"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.4f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Header with AI / Smart Icon
@@ -999,14 +995,14 @@ fun SpendingPatternOptimizerSection(
                         modifier = Modifier
                             .size(34.dp)
                             .clip(CircleShape)
-                            .background(GoldAccent.copy(alpha = 0.2f))
-                            .border(1.dp, GoldAccent.copy(alpha = 0.6f), CircleShape),
+                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
+                            .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
                             contentDescription = null,
-                            tint = GoldAccent,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -1021,22 +1017,22 @@ fun SpendingPatternOptimizerSection(
                         Text(
                             text = "Rekomendasi Cerdas Bebas Riba & Israf",
                             fontSize = 10.sp,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
 
                 Surface(
-                    color = EmeraldPrimary.copy(alpha = 0.2f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, EmeraldLight.copy(alpha = 0.3f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                     modifier = Modifier.clickable { isExpanded = !isExpanded }
                 ) {
                     Text(
                         text = if (isExpanded) "Tutup" else "Buka (${analysis.suggestions.size})",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = EmeraldLight,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
@@ -1062,8 +1058,8 @@ fun SpendingPatternOptimizerSection(
                         val isSelected = selectedGoalMode == mode
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                            border = BorderStroke(1.dp, if (isSelected) GoldAccent else MaterialTheme.colorScheme.outlineVariant),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
                             modifier = Modifier
                                 .weight(1f)
                                 .clickable { onSelectGoalMode(mode) }
@@ -1083,7 +1079,7 @@ fun SpendingPatternOptimizerSection(
                                 Text(
                                     text = "${(mode.essentialWeight * 100).toInt()}/${(mode.discretionaryWeight * 100).toInt()}/${(mode.savingsInfaqWeight * 100).toInt()}",
                                     fontSize = 8.sp,
-                                    color = if (isSelected) GoldAccent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                    color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                             }
                         }
@@ -1104,7 +1100,7 @@ fun SpendingPatternOptimizerSection(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text("Distribusi Pola Belanja Saat Ini", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Total: Rp ${formatRupiah(analysis.totalMonthlyBurnRate)}/bln", fontSize = 10.sp, color = GoldAccent, fontWeight = FontWeight.SemiBold)
+                            Text("Total: Rp ${formatRupiah(analysis.totalMonthlyBurnRate)}/bln", fontSize = 10.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1122,7 +1118,7 @@ fun SpendingPatternOptimizerSection(
 
                             Box(modifier = Modifier.weight(essentialWeight).fillMaxSize().background(Color(0xFF29B6F6)))
                             Box(modifier = Modifier.weight(discretionaryWeight).fillMaxSize().background(Color(0xFFFFB74D)))
-                            Box(modifier = Modifier.weight(spiritualWeight).fillMaxSize().background(EmeraldLight))
+                            Box(modifier = Modifier.weight(spiritualWeight).fillMaxSize().background(MaterialTheme.colorScheme.primary))
                         }
 
                         Spacer(modifier = Modifier.height(6.dp))
@@ -1142,7 +1138,7 @@ fun SpendingPatternOptimizerSection(
                                 Text("Gaya Hidup ${(analysis.discretionaryRatio * 100).toInt()}%", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(EmeraldLight))
+                                Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("Spiritual/Tab ${(analysis.spiritualRatio * 100).toInt()}%", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -1177,7 +1173,7 @@ fun SpendingPatternOptimizerSection(
 
                     Button(
                         onClick = { onApplyAllSuggestions(analysis.suggestions) },
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1221,7 +1217,7 @@ fun SuggestionItemCard(
                     Icon(
                         imageVector = getIconForBudget(suggestion.iconKey),
                         contentDescription = null,
-                        tint = EmeraldLight,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -1236,7 +1232,7 @@ fun SuggestionItemCard(
                 Surface(
                     color = when (suggestion.status) {
                         SuggestionStatus.RECOMMEND_CUT -> Color(0xFFEF5350).copy(alpha = 0.2f)
-                        SuggestionStatus.OPTIMAL -> EmeraldPrimary.copy(alpha = 0.2f)
+                        SuggestionStatus.OPTIMAL -> MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                         SuggestionStatus.RECOMMEND_EXPAND -> Color(0xFF42A5F5).copy(alpha = 0.2f)
                     },
                     shape = RoundedCornerShape(4.dp)
@@ -1251,7 +1247,7 @@ fun SuggestionItemCard(
                         fontWeight = FontWeight.Bold,
                         color = when (suggestion.status) {
                             SuggestionStatus.RECOMMEND_CUT -> Color(0xFFFF8A80)
-                            SuggestionStatus.OPTIMAL -> EmeraldLight
+                            SuggestionStatus.OPTIMAL -> MaterialTheme.colorScheme.primary
                             SuggestionStatus.RECOMMEND_EXPAND -> Color(0xFF90CAF9)
                         },
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -1299,10 +1295,10 @@ fun SuggestionItemCard(
                         onClick = onApply,
                         shape = RoundedCornerShape(8.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                        border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.6f)),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = EmeraldPrimary.copy(alpha = 0.15f),
-                            contentColor = EmeraldLight
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            contentColor = MaterialTheme.colorScheme.primary
                         ),
                         modifier = Modifier
                             .defaultMinSize(minHeight = 36.dp)

@@ -35,13 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.budget.BudgetAllocation
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.White60
 import com.example.ui.theme.White70
 import java.text.NumberFormat
@@ -92,7 +86,7 @@ fun BudgetAllocationHealthChart(
 
                 val overCount = budgets.count { getMonthlySpent(it.accountId) > it.monthlyLimit }
                 val statusText = if (overCount == 0) "Kondisi Sehat" else "$overCount Melebihi Batas"
-                val statusColor = if (overCount == 0) EmeraldLight else ExpenseCoral
+                val statusColor = if (overCount == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
@@ -136,9 +130,9 @@ fun BudgetAllocationHealthChart(
                     )
 
                     val barColor = when {
-                        isOver -> ExpenseCoral
-                        ratio > 0.8f -> GoldAccent
-                        else -> EmeraldPrimary
+                        isOver -> MaterialTheme.colorScheme.error
+                        ratio > 0.8f -> MaterialTheme.colorScheme.secondary
+                        else -> MaterialTheme.colorScheme.primary
                     }
 
                     Column(
@@ -162,7 +156,7 @@ fun BudgetAllocationHealthChart(
                                 text = "Rp ${numberFormat.format(spent)} / Rp ${numberFormat.format(budget.monthlyLimit)} (${(ratio * 100).toInt()}%)",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = if (isOver) ExpenseCoral else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 

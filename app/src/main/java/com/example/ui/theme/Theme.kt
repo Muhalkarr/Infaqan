@@ -1,5 +1,6 @@
 package com.example.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -19,10 +20,11 @@ enum class UiScaleMode(val displayName: String, val scaleFactor: Float, val desc
 }
 
 enum class AppThemeMode(val title: String, val description: String) {
-    ELEGANT_DARK("Elegant Dark", "Tema bernuansa emerald gelap & aksen emas berkilau"),
-    LIGHT_MODE("Light", "Tema terang bersih dengan tipografi jelas & teduh"),
-    HIGH_CONTRAST_LIGHT("High Contrast Light", "Kontras maksimal latar putih & teks hitam pekat untuk aksesibilitas"),
-    HIGH_CONTRAST_DARK("High Contrast Dark", "Latar hitam murni & teks kontras tinggi untuk keterbacaan tajam")
+    FOLLOW_SYSTEM("Ikuti Sistem (Otomatis)", "Menyesuaikan otomatis dengan mode gelap/terang pada pengaturan ponsel Anda"),
+    ELEGANT_DARK("Gelap Elegan", "Tema bernuansa emerald gelap & aksen emas berkilau"),
+    LIGHT_MODE("Terang Bersih", "Tema terang bersih dengan tipografi jelas & teduh"),
+    HIGH_CONTRAST_LIGHT("Kontras Tinggi (Terang)", "Kontras maksimal latar putih & teks hitam pekat untuk aksesibilitas"),
+    HIGH_CONTRAST_DARK("Kontras Tinggi (Gelap)", "Latar hitam murni & teks kontras tinggi untuk keterbacaan tajam")
 }
 
 private val IslamicDarkColorScheme = darkColorScheme(
@@ -116,7 +118,7 @@ private val HighContrastDarkColorScheme = darkColorScheme(
 
 @Composable
 fun AmanahLedgerTheme(
-    darkTheme: Boolean = true,
+    darkTheme: Boolean = isSystemInDarkTheme(),
     highContrast: Boolean = false,
     uiScaleFactor: Float = 1.0f,
     content: @Composable () -> Unit

@@ -10,6 +10,9 @@ import com.example.core.accounting.Account
 import com.example.core.accounting.AccountCategory
 import com.example.core.accounting.JournalEntry
 import com.example.core.accounting.JournalLine
+import com.example.core.accounting.CurrencyPrecisionUtils
+import com.example.core.receipt.ReceiptImageStorage
+import kotlinx.coroutines.flow.Flow
 import com.example.core.backup.BackupEngine
 import com.example.core.backup.RestoreResult
 import com.example.core.budget.BudgetAllocation
@@ -33,6 +36,7 @@ import com.example.core.qardh.QardhRecord
 import com.example.core.qardh.QardhStatus
 import com.example.core.qardh.QardhType
 import com.example.core.receipt.ReceiptAttachment
+import com.example.core.receipt.ReceiptType
 import com.example.core.report.DocumentExporter
 import com.example.core.scheduler.RecurringFrequency
 import com.example.core.scheduler.RecurringTransaction
@@ -82,6 +86,39 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
+/**
+ * Menyimpan draf form transaksi yang sedang diisi pengguna
+ * agar data (angka, teks, struk) tidak hilang saat berpindah aplikasi atau ter-lock.
+ */
+data class TransactionDraftState(
+    val isDraftActive: Boolean = false,
+    val isIncome: Boolean = false,
+    val dateEpochMillis: Long = System.currentTimeMillis(),
+    val amountText: String = "",
+    val descriptionText: String = "",
+    val selectedCategoryAccountId: String = "acc_living",
+    val selectedAssetAccountId: String = "acc_cash",
+    val infaqRate: Double = 0.05,
+    val enableRoundUp: Boolean = true,
+    val roundUpStep: Double = 5000.0,
+    val attachReceipt: Boolean = false,
+    val receiptMerchant: String = "",
+    val receiptRefNumber: String = "",
+    val receiptType: ReceiptType = ReceiptType.STORE_RECEIPT,
+    val receiptNotes: String = "",
+    val receiptImagePath: String? = null,
+    val editEntryId: String? = null
+)
+
+data class LedgerAggregates(
+    val totalIncomeKasab: Double = 0.0,
+    val totalIncomeNonKasab: Double = 0.0,
+    val totalConsumptionExpense: Double = 0.0,
+    val totalPurifiedInfaq: Double = 0.0,
+    val totalDisbursedInfaq: Double = 0.0,
+    val totalInternalTransfer: Double = 0.0
+)
+
 data class AmanahLedgerUiState(
     val accounts: List<Account> = emptyList(),
     val journalEntries: List<JournalEntry> = emptyList(),
@@ -99,9 +136,13 @@ data class AmanahLedgerUiState(
     val zakatPerniagaan: ZakatPerniagaanCalculation = ZakatPerniagaanCalculation(),
     val zakatFitrah: ZakatFitrahFamilyCalculation = ZakatFitrahFamilyCalculation(),
     val selectedGoalMode: FinancialGoalMode = FinancialGoalMode.BALANCED_50_30_20,
+    val themeMode: com.example.ui.theme.AppThemeMode = com.example.ui.theme.AppThemeMode.FOLLOW_SYSTEM,
     val isDarkMode: Boolean = true,
     val isHighContrast: Boolean = false,
     val goldPricePerGram: Double = 1350000.0, // Rp 1.350.000 per gram
+    val goldPriceLastUpdatedMillis: Long = System.currentTimeMillis(),
+    val goldPriceSource: String = "Antam / Standar BAZNAS",
+    val transactionDisplayLimit: Int = 50,
     val selectedHijriOffset: Int = 0,
     val securityConfig: SecurityConfig = SecurityConfig(),
     val userNameKasMukmin: String = "Kas Keluarga Mukmin",
@@ -117,6 +158,7 @@ data class AmanahLedgerUiState(
     val sedekahSubuhTargetDays: Int = 40,
     val israfWarningThresholdPercent: Int = 80,
     val isStrictBudgetEnforced: Boolean = false,
+    val isDeficitProtectionEnabled: Boolean = true,
     val autoExecuteRecurringEnabled: Boolean = true,
     val notifyOnRecurringDue: Boolean = true,
     val showDailyHadith: Boolean = true,
@@ -126,6 +168,8 @@ data class AmanahLedgerUiState(
     val shariahRulings: List<ShariahRuling> = emptyList(),
     val uiScaleMode: com.example.ui.theme.UiScaleMode = com.example.ui.theme.UiScaleMode.DEFAULT,
     val uiScaleFactor: Float = 1.0f,
+    val completedGuides: Set<String> = emptySet(),
+    val hasCompletedOnboarding: Boolean = false,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false
 ) {
@@ -134,15 +178,26 @@ data class AmanahLedgerUiState(
     val nisabThreshold: Double
         get() = shariahConfig.goldNisabGram * goldPricePerGram // Variabel bobot hisab dinamis dari Rules Engine (default 85g emas)
 
+    val pagedJournalEntries: List<JournalEntry>
+        get() = journalEntries.take(transactionDisplayLimit)
+
     val spendingPatternAnalysis: SpendingPatternAnalysis by lazy {
-        BudgetOptimizerEngine.analyzeAndOptimize(accounts, budgets, journalEntries, selectedGoalMode)
+        // Optimasi skala dataset: batasi jendela analisis ke 12 bulan terakhir untuk komputasi instan
+        val cutoff = System.currentTimeMillis() - (365L * 24 * 3600 * 1000)
+        val recentEntries = journalEntries.filter { it.gregorianDate.time >= cutoff }
+        BudgetOptimizerEngine.analyzeAndOptimize(
+            accounts = accounts,
+            budgets = budgets,
+            journalEntries = if (recentEntries.isNotEmpty()) recentEntries else journalEntries,
+            goalMode = selectedGoalMode
+        )
     }
 
     fun getAccount(id: String): Account? = accounts.firstOrNull { it.id == id }
 
     fun getWallet(id: String): WalletAccount? = wallets.firstOrNull { it.id == id }
 
-    // Fast O(1) single-pass pre-calculated balance lookup
+    // Fast O(1) single-pass pre-calculated balance lookup dengan presisi moneter bulat Rupiah
     val accountBalances: Map<String, Double> by lazy {
         val debitMap = mutableMapOf<String, Double>()
         val creditMap = mutableMapOf<String, Double>()
@@ -156,12 +211,12 @@ data class AmanahLedgerUiState(
         for (acc in accounts) {
             val d = debitMap[acc.id] ?: 0.0
             val c = creditMap[acc.id] ?: 0.0
-            val bal = if (acc.category == AccountCategory.ASSET || acc.category == AccountCategory.EXPENSE) {
+            val rawBal = if (acc.category == AccountCategory.ASSET || acc.category == AccountCategory.EXPENSE) {
                 d - c
             } else {
                 c - d
             }
-            result[acc.id] = bal
+            result[acc.id] = kotlin.math.round(rawBal)
         }
         result
     }
@@ -185,10 +240,12 @@ data class AmanahLedgerUiState(
         val curYear = cal.get(Calendar.YEAR)
         val map = mutableMapOf<String, Double>()
         for (entry in journalEntries) {
+            if (entry.transactionType != "EXPENSE") continue
             cal.time = entry.gregorianDate
             if (cal.get(Calendar.MONTH) == curMonth && cal.get(Calendar.YEAR) == curYear) {
                 for (line in entry.lines) {
-                    if (line.debit > 0.0) {
+                    val acc = getAccount(line.accountId)
+                    if (line.accountId != "acc_disbursed" && line.accountId != "acc_vault" && (acc == null || acc.category == AccountCategory.EXPENSE) && line.debit > 0.0) {
                         map[line.accountId] = (map[line.accountId] ?: 0.0) + line.debit
                     }
                 }
@@ -199,6 +256,7 @@ data class AmanahLedgerUiState(
 
     /**
      * Hitung total pengeluaran untuk akun tertentu pada bulan dan tahun berjalan
+     * Secara tegas mengecualikan transaksi bertipe TRANSFER dan hanya menyaring EXPENSE
      */
     fun getMonthlySpentForAccount(
         accountId: String,
@@ -212,10 +270,11 @@ data class AmanahLedgerUiState(
         val cal = Calendar.getInstance()
         var total = 0.0
         for (entry in journalEntries) {
+            if (entry.transactionType != "EXPENSE") continue
             cal.time = entry.gregorianDate
             if (cal.get(Calendar.MONTH) == targetMonth && cal.get(Calendar.YEAR) == targetYear) {
                 for (line in entry.lines) {
-                    if (line.accountId == accountId) {
+                    if (line.accountId == accountId && line.debit > 0.0) {
                         total += line.debit
                     }
                 }
@@ -234,7 +293,15 @@ data class AmanahLedgerUiState(
         get() = budgets.count { it.isOverBudget(getMonthlySpentForAccount(it.accountId)) }
 
     val totalAssets: Double
-        get() = getAccountBalance("acc_cash") + getAccountBalance("acc_bank") + getAccountBalance("acc_gold")
+        get() = accounts
+            .filter { it.category == AccountCategory.ASSET && it.id != "acc_vault" }
+            .sumOf { getAccountBalance(it.id) }
+            .coerceAtLeast(0.0)
+
+    val totalInternalTransfer: Double
+        get() = journalEntries
+            .filter { it.transactionType == "TRANSFER" }
+            .sumOf { it.totalDebit }
 
     val virtualInfaqVaultBalance: Double
         get() = getAccountBalance("acc_vault")
@@ -315,15 +382,29 @@ class AmanahLedgerViewModel : ViewModel() {
         if (title.isNotEmpty()) activeGuideTopicTitle = title
     }
 
+    fun deactivateGuideMode() {
+        isGuideModeActive = false
+    }
+
+    
+    fun completeOnboarding() {
+        viewModelScope.launch {
+            repository?.setOnboardingCompleted()
+        }
+    }
+
+    fun markGuideTopicCompleted(title: String) {
+        viewModelScope.launch {
+            repository?.markGuideCompleted(title)
+        }
+    }
+
     fun activateGuideMode(topicIndex: Int, topicTitle: String) {
         activeGuideTopicIndex = topicIndex
         activeGuideTopicTitle = topicTitle
         isGuideModeActive = true
     }
 
-    fun deactivateGuideMode() {
-        isGuideModeActive = false
-    }
 
     init {
         initDefaultData()
@@ -334,6 +415,7 @@ class AmanahLedgerViewModel : ViewModel() {
             Account("acc_cash", "101", "Kas Utama / Dompet Tunai", AccountCategory.ASSET, "Uang kas fisik di dompet"),
             Account("acc_bank", "102", "Rekening Bank Syariah (BSI/Muamalat)", AccountCategory.ASSET, "Tabungan mudharabah/wadiah"),
             Account("acc_gold", "103", "Tabungan Emas Fisik", AccountCategory.ASSET, "Logam mulia batangan"),
+            Account("acc_receivable", "104", "Piutang Qardh Hasan Diberikan", AccountCategory.ASSET, "Dana pinjaman kebajikan tanpa riba yang belum kembali"),
             Account("acc_vault", "201", "Virtual Infaq Vault (Titipan Amanah)", AccountCategory.LIABILITY, "Hak Mustahiq yang wajib disalurkan"),
             Account("acc_debt", "202", "Hutang Qardh / Cicilan", AccountCategory.LIABILITY, "Kewajiban pihak ketiga"),
             Account("acc_equity", "301", "Modal Awal / Harta Bersih", AccountCategory.EQUITY, "Saldo awal harta"),
@@ -347,49 +429,15 @@ class AmanahLedgerViewModel : ViewModel() {
             Account("acc_utility", "503", "Tagihan Listrik, Air & Pulsa", AccountCategory.EXPENSE, "PLN, PDAM, pulsa & paket internet"),
             Account("acc_education", "504", "Pendidikan & Majelis Dakwah", AccountCategory.EXPENSE, "SPP sekolah, buku kajian & majelis ilmu"),
             Account("acc_health", "505", "Kesehatan & Pengobatan", AccountCategory.EXPENSE, "Obat, vitamin & medis keluarga"),
+            Account("acc_entertainment", "507", "Hiburan & Rekreasi Halal", AccountCategory.EXPENSE, "Kebutuhan rekreasi dan hiburan keluarga"),
             Account("acc_other_exp", "506", "Pengeluaran Rutin Lainnya", AccountCategory.EXPENSE, "Kebutuhan operasional rumah tangga"),
             Account("acc_disbursed", "599", "Penyaluran Infaq Terbayar", AccountCategory.EXPENSE, "Realisasi distribusi ke mustahiq")
         )
 
-        val defaultRules = listOf(
-            InfaqRule(
-                id = "r_kasab_std",
-                title = "Infaq Kasab Gaji Bulanan (5%)",
-                targetCategory = AccountCategory.INCOME_KASAB,
-                calculationType = InfaqCalculationType.PERCENTAGE,
-                rate = 0.05
-            ),
-            InfaqRule(
-                id = "r_non_kasab_std",
-                title = "Infaq Non-Kasab Hadiah (10%)",
-                targetCategory = AccountCategory.INCOME_NON_KASAB,
-                calculationType = InfaqCalculationType.PERCENTAGE,
-                rate = 0.10
-            ),
-            InfaqRule(
-                id = "r_roundup_living",
-                title = "Round-Up Belanja Konsumsi (Rp 5.000)",
-                targetCategory = AccountCategory.EXPENSE,
-                calculationType = InfaqCalculationType.ROUND_UP,
-                roundUpStep = 5000.0
-            ),
-            InfaqRule(
-                id = "r_rikaz_auto",
-                title = "Rikaz Temuan (20% Wajib)",
-                targetCategory = AccountCategory.INCOME_NON_KASAB,
-                calculationType = InfaqCalculationType.RIKAZ,
-                rate = 0.20
-            ),
-            InfaqRule(
-                id = "r_syubhat_purge",
-                title = "Pembersihan Syubhat / Bunga (100%)",
-                targetCategory = AccountCategory.INCOME_NON_KASAB,
-                calculationType = InfaqCalculationType.SYUBHAT,
-                rate = 1.00
-            )
-        )
+        val defaultRules = DEFAULT_INFAQ_RULES
 
         _uiState.update {
+
             it.copy(
                 accounts = defaultAccounts,
                 rules = defaultRules,
@@ -670,12 +718,45 @@ class AmanahLedgerViewModel : ViewModel() {
                 state.infaqDistributions
             }
 
+            // Jika transaksi ini terhubung dengan cicilan Qardh, pulihkan saldo sisa dan status akad
+            var qardhRestored: QardhRecord? = null
+            val updatedQardhRecords = state.qardhRecords.map { q ->
+                val linkedInstallment = q.installments.firstOrNull { it.linkedJournalEntryId == entryId }
+                if (linkedInstallment != null) {
+                    val restoredRemaining = (q.remainingAmount + linkedInstallment.amount).coerceAtMost(q.totalAmount)
+                    val restoredStatus = if (restoredRemaining >= q.totalAmount) QardhStatus.AKTIF else QardhStatus.SEBAGIAN_LUNAS
+                    val restoredQ = q.copy(
+                        remainingAmount = restoredRemaining,
+                        status = restoredStatus,
+                        installments = q.installments.filterNot { it.id == linkedInstallment.id }
+                    )
+                    qardhRestored = restoredQ
+                    restoredQ
+                } else {
+                    q
+                }
+            }
+            if (qardhRestored != null) {
+                persistQardhAsync(qardhRestored!!)
+            }
+
             state.copy(
                 journalEntries = state.journalEntries.filterNot { it.id == entryId },
-                infaqDistributions = updatedDistributions
+                infaqDistributions = updatedDistributions,
+                qardhRecords = updatedQardhRecords
             )
         }
         deleteEntryAsync(entryId)
+        if (target.receiptAttachment?.imagePath != null) {
+            ReceiptImageStorage.deleteImageFile(target.receiptAttachment.imagePath)
+        }
+        if (target.transactionType == "INFAQ_PAYOUT") {
+            viewModelScope.launch(Dispatchers.IO) {
+                val distId = if (entryId.startsWith("j_")) entryId.removePrefix("j_") else entryId
+                repository?.deleteInfaqDistribution(distId)
+                repository?.deleteInfaqDistribution(entryId)
+            }
+        }
 
         appStateNotifier.notify(
             title = "Transaksi Dihapus",
@@ -686,6 +767,32 @@ class AmanahLedgerViewModel : ViewModel() {
 
     fun getJournalEntry(entryId: String): JournalEntry? {
         return _uiState.value.journalEntries.firstOrNull { it.id == entryId }
+    }
+
+    /**
+     * Skalabilitas Memori: Aliran data transaksi terpaginasi (limit & offset) dari Room DB
+     */
+    fun getPagedJournalEntries(limit: Int, offset: Int): Flow<List<JournalEntry>> {
+        val repo = repository
+        return if (repo != null) {
+            repo.getPagedTransactionsFlow(limit, offset)
+        } else {
+            kotlinx.coroutines.flow.flowOf(_uiState.value.journalEntries.drop(offset).take(limit))
+        }
+    }
+
+    suspend fun fetchPagedEntries(limit: Int, offset: Int): List<JournalEntry> {
+        val repo = repository
+        return if (repo != null) {
+            repo.getPagedTransactions(limit, offset)
+        } else {
+            _uiState.value.journalEntries.drop(offset).take(limit)
+        }
+    }
+
+    suspend fun getTotalEntriesCount(): Int {
+        val repo = repository
+        return repo?.getTransactionsCount() ?: _uiState.value.journalEntries.size
     }
 
     /**
@@ -721,16 +828,40 @@ class AmanahLedgerViewModel : ViewModel() {
         notes: String = "",
         date: Date = Date()
     ) {
+        val cleanAmount = kotlin.math.round(amount)
+        if (cleanAmount <= 0.0) {
+            appStateNotifier.notify(
+                title = "Gagal Menyalurkan Infaq",
+                message = "Nominal penyaluran harus lebih besar dari Rp 0.",
+                severity = NotificationSeverity.WARNING
+            )
+            return
+        }
+
+        val currentVaultBalance = _uiState.value.virtualInfaqVaultBalance
+        if (cleanAmount > currentVaultBalance) {
+            appStateNotifier.notify(
+                title = "Saldo Vault Tidak Mencukupi",
+                message = "Saldo Brankas Infaq (Rp ${currentVaultBalance.toLong()}) tidak mencukupi untuk penyaluran Rp ${cleanAmount.toLong()}.",
+                severity = NotificationSeverity.WARNING
+            )
+            return
+        }
+
+        // Resolusi dompet riil: pastikan akun kas/bank riil yang dipotong
+        val realWallet = _uiState.value.getWallet(fromAccountId)
+        val resolvedAssetAccountId = realWallet?.linkedAccountId ?: fromAccountId
+
         val hijri = HijriCalendarEngine.fromGregorian(date)
         val journalId = UUID.randomUUID().toString()
         val distId = "dist_${UUID.randomUUID().toString().take(8)}"
         val receiptNo = "INV-VAULT-${SimpleDateFormat("yyyyMMdd", Locale.US).format(date)}-${(1000..9999).random()}"
 
         val lines = listOf(
-            // 1. Debit Virtual Vault (Kewajiban lunas)
-            JournalLine(accountId = "acc_vault", debit = amount, credit = 0.0),
-            // 2. Kredit Kas/Bank (Kas keluar ke mustahiq)
-            JournalLine(accountId = fromAccountId, debit = 0.0, credit = amount)
+            // 1. Debit Virtual Vault (Kewajiban amanah terlaksana & lunas)
+            JournalLine(accountId = "acc_vault", debit = cleanAmount, credit = 0.0),
+            // 2. Kredit Kas/Bank riil (Uang fisik benar-benar keluar dari rekening dompet riil pengguna)
+            JournalLine(accountId = resolvedAssetAccountId, debit = 0.0, credit = cleanAmount)
         )
 
         val entry = JournalEntry(
@@ -746,12 +877,12 @@ class AmanahLedgerViewModel : ViewModel() {
 
         val distRecord = InfaqDistributionRecord(
             id = distId,
-            amount = amount,
+            amount = cleanAmount,
             recipientName = recipientName,
             asnafCategory = asnafCategory,
             distributionDate = date,
             hijriDateString = "${hijri.day} ${hijri.monthName} ${hijri.year} H",
-            sourceAccountId = fromAccountId,
+            sourceAccountId = resolvedAssetAccountId,
             programName = programName.ifBlank { "Penyaluran Tabarru'" },
             receiptNumber = receiptNo,
             notes = notes,
@@ -765,11 +896,14 @@ class AmanahLedgerViewModel : ViewModel() {
             )
         }
         persistEntryAsync(entry)
-        AppDebugLogger.i("AmanahInfaq", "Penyaluran Infaq: Rp ${amount.toLong()} ke $recipientName (${asnafCategory.displayName})")
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveInfaqDistribution(distRecord)
+        }
+        AppDebugLogger.i("AmanahInfaq", "Penyaluran Infaq: Rp ${cleanAmount.toLong()} ke $recipientName (${asnafCategory.displayName}) via $resolvedAssetAccountId")
 
         appStateNotifier.notify(
             title = "Penyaluran Infaq Berhasil",
-            message = "Dana Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount)} disalurkan ke $recipientName (${asnafCategory.displayName})",
+            message = "Dana Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(cleanAmount)} disalurkan ke $recipientName (${asnafCategory.displayName})",
             severity = NotificationSeverity.SUCCESS
         )
     }
@@ -917,57 +1051,86 @@ class AmanahLedgerViewModel : ViewModel() {
         _uiState.update { state ->
             state.copy(rules = state.rules + rule)
         }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveInfaqRule(rule)
+        }
     }
 
     fun deleteRule(id: String) {
         _uiState.update { state ->
             state.copy(rules = state.rules.filterNot { it.id == id })
         }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.deleteInfaqRule(id)
+        }
     }
+
 
     fun toggleDarkMode() {
         val newMode = !_uiState.value.isDarkMode
+        val newThemeMode = if (newMode) com.example.ui.theme.AppThemeMode.ELEGANT_DARK else com.example.ui.theme.AppThemeMode.LIGHT_MODE
         _uiState.update { state ->
-            state.copy(isDarkMode = newMode)
+            state.copy(isDarkMode = newMode, themeMode = newThemeMode)
         }
-        viewModelScope.launch { repository?.saveDarkMode(newMode) }
+        viewModelScope.launch { repository?.saveThemeMode(newThemeMode) }
     }
 
     fun setDarkMode(isDark: Boolean) {
+        val newThemeMode = if (isDark) com.example.ui.theme.AppThemeMode.ELEGANT_DARK else com.example.ui.theme.AppThemeMode.LIGHT_MODE
         _uiState.update { state ->
-            state.copy(isDarkMode = isDark)
+            state.copy(isDarkMode = isDark, themeMode = newThemeMode)
         }
-        viewModelScope.launch { repository?.saveDarkMode(isDark) }
+        viewModelScope.launch { repository?.saveThemeMode(newThemeMode) }
     }
 
     fun toggleHighContrast() {
         val newContrast = !_uiState.value.isHighContrast
-        _uiState.update { state ->
-            state.copy(isHighContrast = newContrast)
+        val newThemeMode = when {
+            newContrast && _uiState.value.isDarkMode -> com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_DARK
+            newContrast && !_uiState.value.isDarkMode -> com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_LIGHT
+            !newContrast && _uiState.value.isDarkMode -> com.example.ui.theme.AppThemeMode.ELEGANT_DARK
+            else -> com.example.ui.theme.AppThemeMode.LIGHT_MODE
         }
-        viewModelScope.launch { repository?.saveHighContrast(newContrast) }
+        _uiState.update { state ->
+            state.copy(isHighContrast = newContrast, themeMode = newThemeMode)
+        }
+        viewModelScope.launch { repository?.saveThemeMode(newThemeMode) }
     }
 
     fun setHighContrast(isHigh: Boolean) {
-        _uiState.update { state ->
-            state.copy(isHighContrast = isHigh)
+        val newThemeMode = when {
+            isHigh && _uiState.value.isDarkMode -> com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_DARK
+            isHigh && !_uiState.value.isDarkMode -> com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_LIGHT
+            !isHigh && _uiState.value.isDarkMode -> com.example.ui.theme.AppThemeMode.ELEGANT_DARK
+            else -> com.example.ui.theme.AppThemeMode.LIGHT_MODE
         }
-        viewModelScope.launch { repository?.saveHighContrast(isHigh) }
+        _uiState.update { state ->
+            state.copy(isHighContrast = isHigh, themeMode = newThemeMode)
+        }
+        viewModelScope.launch { repository?.saveThemeMode(newThemeMode) }
     }
 
     fun setThemeMode(mode: com.example.ui.theme.AppThemeMode) {
         val (isDark, isHigh) = when (mode) {
+            com.example.ui.theme.AppThemeMode.FOLLOW_SYSTEM -> _uiState.value.isDarkMode to false
             com.example.ui.theme.AppThemeMode.ELEGANT_DARK -> true to false
             com.example.ui.theme.AppThemeMode.LIGHT_MODE -> false to false
             com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_LIGHT -> false to true
             com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_DARK -> true to true
         }
         _uiState.update { state ->
-            state.copy(isDarkMode = isDark, isHighContrast = isHigh)
+            state.copy(themeMode = mode, isDarkMode = isDark, isHighContrast = isHigh)
         }
         viewModelScope.launch {
-            repository?.saveDarkMode(isDark)
-            repository?.saveHighContrast(isHigh)
+            repository?.saveThemeMode(mode)
+        }
+    }
+
+    fun setFollowSystemTheme(enabled: Boolean) {
+        if (enabled) {
+            setThemeMode(com.example.ui.theme.AppThemeMode.FOLLOW_SYSTEM)
+        } else {
+            setThemeMode(if (_uiState.value.isDarkMode) com.example.ui.theme.AppThemeMode.ELEGANT_DARK else com.example.ui.theme.AppThemeMode.LIGHT_MODE)
         }
     }
 
@@ -1003,6 +1166,9 @@ class AmanahLedgerViewModel : ViewModel() {
         _uiState.update { state ->
             state.copy(recurringTransactions = state.recurringTransactions + recurring)
         }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveRecurringTransaction(recurring)
+        }
         appStateNotifier.notify(
             title = "Jadwal Baru Ditambahkan",
             message = "Transaksi rutin '${recurring.title}' dijadwalkan otomatis.",
@@ -1017,12 +1183,18 @@ class AmanahLedgerViewModel : ViewModel() {
             }
             state.copy(recurringTransactions = updated)
         }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveRecurringTransaction(recurring)
+        }
     }
 
     fun deleteRecurringTransaction(id: String) {
         val target = _uiState.value.recurringTransactions.firstOrNull { it.id == id }
         _uiState.update { state ->
             state.copy(recurringTransactions = state.recurringTransactions.filterNot { it.id == id })
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.deleteRecurringTransaction(id)
         }
         if (target != null) {
             appStateNotifier.notify(
@@ -1034,11 +1206,21 @@ class AmanahLedgerViewModel : ViewModel() {
     }
 
     fun toggleRecurringTransaction(id: String) {
+        var updatedItem: RecurringTransaction? = null
         _uiState.update { state ->
             val updated = state.recurringTransactions.map {
-                if (it.id == id) it.copy(isActive = !it.isActive) else it
+                if (it.id == id) {
+                    val item = it.copy(isActive = !it.isActive)
+                    updatedItem = item
+                    item
+                } else it
             }
             state.copy(recurringTransactions = updated)
+        }
+        updatedItem?.let { item ->
+            viewModelScope.launch(Dispatchers.IO) {
+                repository?.saveRecurringTransaction(item)
+            }
         }
     }
 
@@ -1058,6 +1240,16 @@ class AmanahLedgerViewModel : ViewModel() {
                 date = date
             )
         } else {
+            val currentBal = _uiState.value.getAccountBalance(target.assetAccountId)
+            if (_uiState.value.isDeficitProtectionEnabled && target.amount > currentBal) {
+                AppDebugLogger.w("AmanahVM", "Transaksi rutin '${target.title}' tertunda karena saldo akun '${target.assetAccountId}' tidak mencukupi (Saldo: $currentBal, Dibutuhkan: ${target.amount})")
+                appStateNotifier.notify(
+                    title = "Transaksi Rutin Tertunda",
+                    message = "Saldo kas/bank tidak mencukupi untuk transaksi rutin '${target.title}' (Tersedia: Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(currentBal)}).",
+                    severity = NotificationSeverity.WARNING
+                )
+                return Pair(false, 0.0)
+            }
             val roundUp = if (target.enableRoundUp && target.roundUpStep > 0) {
                 val rem = target.amount % target.roundUpStep
                 if (rem > 0) target.roundUpStep - rem else 0.0
@@ -1081,20 +1273,24 @@ class AmanahLedgerViewModel : ViewModel() {
             dayValue = target.dayOfMonthOrWeek
         )
 
+        val updatedTarget = target.copy(
+            lastExecutedDate = date,
+            nextDueDate = nextDue
+        )
+
         _uiState.update { state ->
             val updated = state.recurringTransactions.map {
-                if (it.id == id) {
-                    it.copy(
-                        lastExecutedDate = date,
-                        nextDueDate = nextDue
-                    )
-                } else it
+                if (it.id == id) updatedTarget else it
             }
             state.copy(recurringTransactions = updated)
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveRecurringTransaction(updatedTarget)
         }
 
         return Pair(true, infaqAmount)
     }
+
 
     fun processAllDueRecurringTransactions(): Int {
         val dueList = _uiState.value.recurringTransactions.filter { it.isDue() && it.isActive && it.autoExecute }
@@ -1106,10 +1302,38 @@ class AmanahLedgerViewModel : ViewModel() {
     }
 
     fun updateGoldPrice(newPrice: Double) {
-        if (newPrice > 0) {
+        updateGoldPriceWithMetadata(newPrice, "Input Manual Pengguna", System.currentTimeMillis())
+    }
+
+    fun updateGoldPriceWithMetadata(
+        newPrice: Double,
+        source: String = "Antam / Standar BAZNAS",
+        timestampMillis: Long = System.currentTimeMillis()
+    ) {
+        val cleanPrice = kotlin.math.round(newPrice)
+        if (cleanPrice > 0) {
             _uiState.update { state ->
-                state.copy(goldPricePerGram = newPrice)
+                state.copy(
+                    goldPricePerGram = cleanPrice,
+                    goldPriceSource = source,
+                    goldPriceLastUpdatedMillis = timestampMillis,
+                    zakatPerniagaan = state.zakatPerniagaan.copy(goldPricePerGram = cleanPrice)
+                )
             }
+            viewModelScope.launch(Dispatchers.IO) {
+                repository?.saveGoldPriceWithMetadata(cleanPrice, source, timestampMillis)
+            }
+            appStateNotifier.notify(
+                title = "Harga Emas Diperbarui",
+                message = "Acuan hisab zakat: Rp ${cleanPrice.toLong()}/gram ($source)",
+                severity = NotificationSeverity.INFO
+            )
+        }
+    }
+
+    fun loadMoreTransactions(step: Int = 50) {
+        _uiState.update { state ->
+            state.copy(transactionDisplayLimit = state.transactionDisplayLimit + step)
         }
     }
 
@@ -1119,6 +1343,21 @@ class AmanahLedgerViewModel : ViewModel() {
 
     private var lastBackgroundTimestamp: Long = 0L
     private var isSessionAuthenticated: Boolean = false
+    private val APP_LOCK_GRACE_PERIOD_MILLIS = 8_000L // 8 detik toleransi jeda (grace period) saat berpindah aplikasi sejenak
+
+    // ==========================================
+    // TRANSACTION DRAFT PERSISTENCE (STATE PRESERVATION)
+    // ==========================================
+    private val _transactionDraft = MutableStateFlow(TransactionDraftState())
+    val transactionDraft: StateFlow<TransactionDraftState> = _transactionDraft.asStateFlow()
+
+    fun updateTransactionDraft(draft: TransactionDraftState) {
+        _transactionDraft.value = draft
+    }
+
+    fun clearTransactionDraft() {
+        _transactionDraft.value = TransactionDraftState()
+    }
 
     fun onAppBackgrounded() {
         val current = _uiState.value.securityConfig
@@ -1128,6 +1367,7 @@ class AmanahLedgerViewModel : ViewModel() {
             isSessionAuthenticated = false
             lockApp()
         }
+        AppDebugLogger.i("AmanahSecurity", "Aplikasi beralih ke latar belakang pada $lastBackgroundTimestamp.")
     }
 
     fun onAppForegrounded() {
@@ -1136,13 +1376,23 @@ class AmanahLedgerViewModel : ViewModel() {
         if (current.isAppLocked) return
 
         if (lastBackgroundTimestamp > 0L) {
-            val elapsedSeconds = (System.currentTimeMillis() - lastBackgroundTimestamp) / 1000
+            val elapsedMillis = System.currentTimeMillis() - lastBackgroundTimestamp
+            val elapsedSeconds = elapsedMillis / 1000
+            AppDebugLogger.i("AmanahSecurity", "Aplikasi kembali ke latar depan. Durasi di latar belakang: ${elapsedMillis}ms.")
+
             if (current.autoLockInterval == AutoLockInterval.IMMEDIATE) {
-                isSessionAuthenticated = false
-                lockApp()
+                // Terapkan grace period sebelum mengunci aplikasi secara instan
+                if (elapsedMillis >= APP_LOCK_GRACE_PERIOD_MILLIS) {
+                    isSessionAuthenticated = false
+                    lockApp()
+                    AppDebugLogger.w("AmanahSecurity", "Kunci aplikasi aktif setelah grace period terlampaui.")
+                } else {
+                    AppDebugLogger.i("AmanahSecurity", "Aplikasi dibuka kembali dalam grace period (${elapsedMillis}ms). Form transaksi tetap aman.")
+                }
             } else if (current.autoLockInterval != AutoLockInterval.NEVER && elapsedSeconds >= current.autoLockInterval.seconds) {
                 isSessionAuthenticated = false
                 lockApp()
+                AppDebugLogger.w("AmanahSecurity", "Kunci aplikasi aktif sesuai interval ${current.autoLockInterval.label}.")
             }
         }
     }
@@ -1547,8 +1797,22 @@ class AmanahLedgerViewModel : ViewModel() {
         _uiState.update { it.copy(sedekahSubuhTargetDays = days.coerceIn(7, 365)) }
     }
 
-    fun setGoldPrice(price: Double) {
-        _uiState.update { it.copy(goldPricePerGram = price.coerceAtLeast(100000.0)) }
+    fun setGoldPrice(
+        price: Double,
+        source: String = "Antam / Logam Mulia",
+        timestampMillis: Long = System.currentTimeMillis()
+    ) {
+        val sanitized = CurrencyPrecisionUtils.roundRupiah(price.coerceAtLeast(100000.0))
+        _uiState.update {
+            it.copy(
+                goldPricePerGram = sanitized,
+                goldPriceLastUpdatedMillis = timestampMillis,
+                goldPriceSource = source
+            )
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveGoldPriceWithMetadata(sanitized, source, timestampMillis)
+        }
     }
 
     fun setHijriOffset(offset: Int) {
@@ -1838,6 +2102,10 @@ class AmanahLedgerViewModel : ViewModel() {
                 infaqDistributions = listOf(dist) + state.infaqDistributions
             )
         }
+        persistEntryAsync(jEntry)
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveInfaqDistribution(dist)
+        }
 
         val nf = java.text.NumberFormat.getNumberInstance(Locale("id", "ID"))
         appStateNotifier.notify(
@@ -1862,6 +2130,7 @@ class AmanahLedgerViewModel : ViewModel() {
             rules = state.rules,
             recurring = state.recurringTransactions,
             sedekahSubuhState = state.sedekahSubuhState,
+            distributions = state.infaqDistributions,
             password = password
         )
     }
@@ -1875,8 +2144,21 @@ class AmanahLedgerViewModel : ViewModel() {
                     wallets = if (result.restoredWallets.isNotEmpty()) result.restoredWallets else state.wallets,
                     ibadahGoals = if (result.restoredGoals.isNotEmpty()) result.restoredGoals else state.ibadahGoals,
                     budgets = if (result.restoredBudgets.isNotEmpty()) result.restoredBudgets else state.budgets,
+                    rules = if (result.restoredRules.isNotEmpty()) result.restoredRules else state.rules,
+                    recurringTransactions = if (result.restoredRecurring.isNotEmpty()) result.restoredRecurring else state.recurringTransactions,
+                    infaqDistributions = if (result.restoredDistributions.isNotEmpty()) result.restoredDistributions else state.infaqDistributions,
                     sedekahSubuhState = result.restoredSedekahState
                 )
+            }
+            viewModelScope.launch(Dispatchers.IO) {
+                if (result.restoredEntries.isNotEmpty()) repository?.saveAllTransactions(result.restoredEntries)
+                if (result.restoredWallets.isNotEmpty()) repository?.saveAllWallets(result.restoredWallets)
+                if (result.restoredGoals.isNotEmpty()) repository?.saveAllGoals(result.restoredGoals)
+                if (result.restoredBudgets.isNotEmpty()) repository?.saveAllBudgets(result.restoredBudgets)
+                if (result.restoredRules.isNotEmpty()) repository?.saveAllInfaqRules(result.restoredRules)
+                if (result.restoredRecurring.isNotEmpty()) repository?.saveAllRecurringTransactions(result.restoredRecurring)
+                if (result.restoredDistributions.isNotEmpty()) repository?.saveAllInfaqDistributions(result.restoredDistributions)
+                repository?.saveSedekahSubuh(result.restoredSedekahState)
             }
             AppDebugLogger.i("AmanahBackup", "Pemulihan data sukses: ${result.restoredEntries.size} jurnal, ${result.restoredWallets.size} kantong")
             appStateNotifier.notify(
@@ -1911,6 +2193,8 @@ class AmanahLedgerViewModel : ViewModel() {
                     db.ibadahGoalDao().clearAll()
                     db.qardhDao().clearAll()
                     db.sedekahSubuhDao().clearAll()
+                    db.recurringTransactionDao().clearAll()
+                    db.infaqDistributionDao().clearAll()
                 }
                 repository?.clearAllTransactions()
                 repository?.clearAllBudgets()
@@ -1918,6 +2202,8 @@ class AmanahLedgerViewModel : ViewModel() {
                 repository?.clearAllGoals()
                 repository?.clearAllQardh()
                 repository?.clearSedekahSubuh()
+                repository?.clearAllRecurringTransactions()
+                repository?.clearAllInfaqDistributions()
                 repository?.saveCustomSetting("user_has_cleared_dummy_data", "true")
                 AppDebugLogger.w("AmanahDatabase", "Pengguna mengosongkan seluruh data dummy dari Room DB & memori.")
             } catch (e: Exception) {
@@ -2024,17 +2310,80 @@ class AmanahLedgerViewModel : ViewModel() {
         note: String,
         receipt: ReceiptAttachment?
     ) {
+        val targetQardh = _uiState.value.qardhRecords.firstOrNull { it.id == qardhId }
+        if (targetQardh == null) {
+            appStateNotifier.notify(
+                title = "Akad Tidak Ditemukan",
+                message = "Data akad Qardh tidak ditemukan.",
+                severity = NotificationSeverity.ALERT
+            )
+            return
+        }
+
+        val cleanAmount = kotlin.math.round(amount)
+        if (cleanAmount <= 0.0) {
+            appStateNotifier.notify(
+                title = "Nominal Tidak Valid",
+                message = "Nominal cicilan harus lebih besar dari Rp 0.",
+                severity = NotificationSeverity.WARNING
+            )
+            return
+        }
+
+        if (cleanAmount > targetQardh.remainingAmount) {
+            appStateNotifier.notify(
+                title = "Nominal Melebihi Sisa Kewajiban",
+                message = "Nominal pelunasan (Rp ${cleanAmount.toLong()}) melebihi sisa kewajiban akad (Rp ${targetQardh.remainingAmount.toLong()}).",
+                severity = NotificationSeverity.WARNING
+            )
+            return
+        }
+
+        val realWallet = _uiState.value.getWallet(walletId)
+        val resolvedAssetAccountId = realWallet?.linkedAccountId ?: if (walletId.startsWith("acc_")) walletId else "acc_cash"
+
+        val now = Date()
+        val hijri = HijriCalendarEngine.fromGregorian(now)
+        val journalId = UUID.randomUUID().toString()
+
+        val isPiutang = targetQardh.type == QardhType.PIUTANG_SAYA
+        // If PIUTANG_DIBERIKAN: Debitur bayar ke pengguna -> Uang masuk ke kas/bank (Debit Kas/Bank), Piutang berkurang (Kredit Piutang)
+        // If HUTANG_DITERIMA: Pengguna bayar utang ke kreditur -> Utang berkurang (Debit Hutang), Uang keluar dari kas/bank (Kredit Kas/Bank)
+        val lines = if (isPiutang) {
+            listOf(
+                JournalLine(accountId = resolvedAssetAccountId, debit = cleanAmount, credit = 0.0),
+                JournalLine(accountId = "acc_receivable", debit = 0.0, credit = cleanAmount)
+            )
+        } else {
+            listOf(
+                JournalLine(accountId = "acc_debt", debit = cleanAmount, credit = 0.0),
+                JournalLine(accountId = resolvedAssetAccountId, debit = 0.0, credit = cleanAmount)
+            )
+        }
+
+        val entry = JournalEntry(
+            id = journalId,
+            gregorianDate = now,
+            hijriYear = hijri.year,
+            hijriMonth = hijri.month,
+            hijriDay = hijri.day,
+            description = "${if (isPiutang) "Pelunasan Piutang" else "Cicilan Utang"}: ${targetQardh.counterpartyName} - $note",
+            transactionType = if (isPiutang) "INCOME" else "EXPENSE",
+            lines = lines
+        )
+
         _uiState.update { current ->
             val updatedList = current.qardhRecords.map { q ->
                 if (q.id == qardhId) {
                     val installment = QardhInstallment(
                         qardhId = qardhId,
-                        amount = amount,
+                        amount = cleanAmount,
                         fromWalletId = walletId,
                         note = note,
-                        receipt = receipt
+                        receipt = receipt,
+                        linkedJournalEntryId = journalId
                     )
-                    val newRemaining = (q.remainingAmount - amount).coerceAtLeast(0.0)
+                    val newRemaining = (q.remainingAmount - cleanAmount).coerceAtLeast(0.0)
                     val newStatus = if (newRemaining <= 0.0) QardhStatus.LUNAS else QardhStatus.SEBAGIAN_LUNAS
                     q.copy(
                         remainingAmount = newRemaining,
@@ -2045,14 +2394,18 @@ class AmanahLedgerViewModel : ViewModel() {
                     q
                 }
             }
-            current.copy(qardhRecords = updatedList)
+            current.copy(
+                qardhRecords = updatedList,
+                journalEntries = listOf(entry) + current.journalEntries
+            )
         }
         val updatedQ = _uiState.value.qardhRecords.firstOrNull { it.id == qardhId }
         if (updatedQ != null) persistQardhAsync(updatedQ)
+        persistEntryAsync(entry)
 
         appStateNotifier.notify(
             title = "Pembayaran Cicilan Qardh",
-            message = "Pembayaran cicilan sebesar Rp ${amount.toLong()} berhasil dicatat.",
+            message = "Pembayaran cicilan Rp ${cleanAmount.toLong()} (${targetQardh.counterpartyName}) berhasil dibukukan ke jurnal & dompet.",
             severity = NotificationSeverity.SUCCESS
         )
     }
@@ -2296,9 +2649,13 @@ class AmanahLedgerViewModel : ViewModel() {
                     _uiState.update { current ->
                         val shouldLock = prefs.securityConfig.isPinEnabled && !isSessionAuthenticated
                         current.copy(
+                            themeMode = prefs.themeMode,
                             isDarkMode = prefs.isDarkMode,
+                            completedGuides = prefs.completedGuides,
+                hasCompletedOnboarding = prefs.hasCompletedOnboarding,
                             isHighContrast = prefs.isHighContrast,
                             goldPricePerGram = prefs.goldPricePerGram,
+                            goldPriceLastUpdatedMillis = prefs.goldPriceLastUpdated,
                             selectedHijriOffset = prefs.selectedHijriOffset,
                             userNameKasMukmin = prefs.userNameKasMukmin,
                             startDayOfMonth = prefs.startDayOfMonth,
@@ -2313,6 +2670,7 @@ class AmanahLedgerViewModel : ViewModel() {
                             sedekahSubuhTargetDays = prefs.sedekahSubuhTargetDays,
                             israfWarningThresholdPercent = prefs.israfWarningThresholdPercent,
                             isStrictBudgetEnforced = prefs.isStrictBudgetEnforced,
+                            isDeficitProtectionEnabled = prefs.isDeficitProtectionEnabled,
                             autoExecuteRecurringEnabled = prefs.autoExecuteRecurringEnabled,
                             notifyOnRecurringDue = prefs.notifyOnRecurringDue,
                             showDailyHadith = prefs.showDailyHadith,
@@ -2357,6 +2715,13 @@ class AmanahLedgerViewModel : ViewModel() {
                         val localGoals = db.ibadahGoalDao().getAllGoals().map { EntityMappers.toDomain(it) }
                         val localQardh = db.qardhDao().getAllRecords().map { EntityMappers.toDomain(it) }
                         val localSedekah = repository?.getSedekahSubuh()
+                        val localRecurring = db.recurringTransactionDao().getAll().map { EntityMappers.toDomain(it) }
+                        val localDistributions = db.infaqDistributionDao().getAll().map { EntityMappers.toDomain(it) }
+                        var localRules = db.infaqRuleDao().getAll().map { EntityMappers.toDomain(it) }
+                        if (localRules.isEmpty()) {
+                            db.infaqRuleDao().insertAll(DEFAULT_INFAQ_RULES.map { EntityMappers.toEntity(it) })
+                            localRules = DEFAULT_INFAQ_RULES
+                        }
 
                         _uiState.update { current ->
                             current.copy(
@@ -2365,6 +2730,9 @@ class AmanahLedgerViewModel : ViewModel() {
                                 wallets = if (localWallets.isNotEmpty()) localWallets else current.wallets,
                                 ibadahGoals = if (localGoals.isNotEmpty()) localGoals else current.ibadahGoals,
                                 qardhRecords = if (localQardh.isNotEmpty()) localQardh else current.qardhRecords,
+                                recurringTransactions = if (localRecurring.isNotEmpty()) localRecurring else current.recurringTransactions,
+                                infaqDistributions = if (localDistributions.isNotEmpty()) localDistributions else current.infaqDistributions,
+                                rules = if (localRules.isNotEmpty()) localRules else current.rules,
                                 sedekahSubuhState = localSedekah ?: current.sedekahSubuhState
                             )
                         }
@@ -2375,6 +2743,13 @@ class AmanahLedgerViewModel : ViewModel() {
                         val localQardh = db.qardhDao().getAllRecords().map { EntityMappers.toDomain(it) }
                         val localBudgets = db.budgetDao().getAllBudgets().map { EntityMappers.toDomain(it) }
                         val localSedekah = repository?.getSedekahSubuh()
+                        val localRecurring = db.recurringTransactionDao().getAll().map { EntityMappers.toDomain(it) }
+                        val localDistributions = db.infaqDistributionDao().getAll().map { EntityMappers.toDomain(it) }
+                        var localRules = db.infaqRuleDao().getAll().map { EntityMappers.toDomain(it) }
+                        if (localRules.isEmpty() && !isCleared) {
+                            db.infaqRuleDao().insertAll(DEFAULT_INFAQ_RULES.map { EntityMappers.toEntity(it) })
+                            localRules = DEFAULT_INFAQ_RULES
+                        }
 
                         if (isCleared) {
                             // Pengguna telah memilih menghapus data dummy
@@ -2385,12 +2760,13 @@ class AmanahLedgerViewModel : ViewModel() {
                                     ibadahGoals = localGoals,
                                     qardhRecords = localQardh,
                                     budgets = localBudgets,
-                                    recurringTransactions = emptyList(),
-                                    infaqDistributions = emptyList(),
+                                    recurringTransactions = localRecurring,
+                                    infaqDistributions = localDistributions,
+                                    rules = if (localRules.isNotEmpty()) localRules else current.rules,
                                     sedekahSubuhState = localSedekah ?: SedekahSubuhStreakEngine.calculateStreak(emptyMap())
                                 )
                             }
-                        } else if (localEntries.isNotEmpty() || localWallets.isNotEmpty()) {
+                        } else if (localEntries.isNotEmpty() || localWallets.isNotEmpty() || localRecurring.isNotEmpty() || localDistributions.isNotEmpty()) {
                             // Data telah tersimpan di Room
                             _uiState.update { current ->
                                 current.copy(
@@ -2399,6 +2775,9 @@ class AmanahLedgerViewModel : ViewModel() {
                                     ibadahGoals = if (localGoals.isNotEmpty()) localGoals else current.ibadahGoals,
                                     qardhRecords = if (localQardh.isNotEmpty()) localQardh else current.qardhRecords,
                                     budgets = if (localBudgets.isNotEmpty()) localBudgets else current.budgets,
+                                    recurringTransactions = if (localRecurring.isNotEmpty()) localRecurring else current.recurringTransactions,
+                                    infaqDistributions = if (localDistributions.isNotEmpty()) localDistributions else current.infaqDistributions,
+                                    rules = if (localRules.isNotEmpty()) localRules else current.rules,
                                     sedekahSubuhState = localSedekah ?: current.sedekahSubuhState
                                 )
                             }
@@ -2426,6 +2805,17 @@ class AmanahLedgerViewModel : ViewModel() {
                         )
                     }
                     AppDebugLogger.i("RoomDatabase", "Inisialisasi data Room selesai. Mode audit syariah siap.")
+
+                    // Background cleanup cache gambar struk yatim / sementara
+                    try {
+                        val activePaths = _uiState.value.journalEntries
+                            .mapNotNull { it.receiptAttachment?.imagePath }
+                            .toSet()
+                        ReceiptImageStorage.cleanupTemporaryCameraCache(context.applicationContext)
+                        ReceiptImageStorage.cleanupOrphanReceiptImages(context.applicationContext, activePaths)
+                    } catch (e: Exception) {
+                        AppDebugLogger.w("AmanahVM", "Gagal pembersihan cache struk: ${e.message}")
+                    }
                 } catch (e: Exception) {
                     android.util.Log.e("AmanahVM", "Room init load: ${e.message}")
                     AppDebugLogger.logHandledError("RoomDatabase", "Gagal memuat data awal Room DB: ${e.message}", e)
@@ -2443,18 +2833,26 @@ class AmanahLedgerViewModel : ViewModel() {
                 val dummyGoals = AmanahDummyDataGenerator.getSampleIbadahGoals()
                 val dummyQardh = AmanahDummyDataGenerator.getSampleQardhRecords()
                 val dummySedekah = AmanahDummyDataGenerator.getSampleSedekahSubuhState()
+                val dummyRecurring = AmanahDummyDataGenerator.getSampleRecurringTransactions()
+                val dummyDistributions = AmanahDummyDataGenerator.getSampleInfaqDistributions()
 
                 db.journalDao().insertAll(dummyEntries.map { EntityMappers.toEntity(it) })
                 db.walletDao().insertAll(dummyWallets.map { EntityMappers.toEntity(it) })
                 db.budgetDao().insertAll(dummyBudgets.map { EntityMappers.toEntity(it) })
                 db.ibadahGoalDao().insertAll(dummyGoals.map { EntityMappers.toEntity(it) })
                 db.qardhDao().insertAll(dummyQardh.map { EntityMappers.toEntity(it) })
+                db.recurringTransactionDao().insertAll(dummyRecurring.map { EntityMappers.toEntity(it) })
+                db.infaqDistributionDao().insertAll(dummyDistributions.map { EntityMappers.toEntity(it) })
+                if (db.infaqRuleDao().getAll().isEmpty()) {
+                    db.infaqRuleDao().insertAll(DEFAULT_INFAQ_RULES.map { EntityMappers.toEntity(it) })
+                }
                 repository?.saveSedekahSubuh(dummySedekah)
             } catch (e: Exception) {
                 android.util.Log.e("AmanahVM", "Error seeding dummy data to Room: ${e.message}")
             }
         }
     }
+
 
     // ==========================================
     // PERSISTENT CONFIGURATION MUTATIONS (DATASTORE & ROOM)
@@ -2549,6 +2947,13 @@ class AmanahLedgerViewModel : ViewModel() {
         _uiState.update { it.copy(isStrictBudgetEnforced = enforced) }
         viewModelScope.launch { repository?.saveStrictBudgetEnforced(enforced) }
     }
+
+    fun setDeficitProtectionEnabled(enabled: Boolean) {
+        _uiState.update { it.copy(isDeficitProtectionEnabled = enabled) }
+        viewModelScope.launch { repository?.saveDeficitProtectionEnabled(enabled) }
+    }
+
+    fun updateDeficitProtectionEnabled(enabled: Boolean) = setDeficitProtectionEnabled(enabled)
 
     fun updateAutoExecuteRecurring(enabled: Boolean) {
         _uiState.update { it.copy(autoExecuteRecurringEnabled = enabled) }
@@ -2651,6 +3056,7 @@ class AmanahLedgerViewModel : ViewModel() {
                     sedekahSubuhTargetDays = 40,
                     israfWarningThresholdPercent = 80,
                     isStrictBudgetEnforced = false,
+                    isDeficitProtectionEnabled = true,
                     autoExecuteRecurringEnabled = true,
                     notifyOnRecurringDue = true,
                     showDailyHadith = true,
@@ -2955,4 +3361,45 @@ class AmanahLedgerViewModel : ViewModel() {
             )
         }
     }
+
+    companion object {
+        val DEFAULT_INFAQ_RULES = listOf(
+            InfaqRule(
+                id = "r_kasab_std",
+                title = "Infaq Kasab Gaji Bulanan (5%)",
+                targetCategory = AccountCategory.INCOME_KASAB,
+                calculationType = InfaqCalculationType.PERCENTAGE,
+                rate = 0.05
+            ),
+            InfaqRule(
+                id = "r_non_kasab_std",
+                title = "Infaq Non-Kasab Hadiah (10%)",
+                targetCategory = AccountCategory.INCOME_NON_KASAB,
+                calculationType = InfaqCalculationType.PERCENTAGE,
+                rate = 0.10
+            ),
+            InfaqRule(
+                id = "r_roundup_living",
+                title = "Round-Up Belanja Konsumsi (Rp 5.000)",
+                targetCategory = AccountCategory.EXPENSE,
+                calculationType = InfaqCalculationType.ROUND_UP,
+                roundUpStep = 5000.0
+            ),
+            InfaqRule(
+                id = "r_rikaz_auto",
+                title = "Rikaz Temuan (20% Wajib)",
+                targetCategory = AccountCategory.INCOME_NON_KASAB,
+                calculationType = InfaqCalculationType.RIKAZ,
+                rate = 0.20
+            ),
+            InfaqRule(
+                id = "r_syubhat_purge",
+                title = "Pembersihan Syubhat / Bunga (100%)",
+                targetCategory = AccountCategory.INCOME_NON_KASAB,
+                calculationType = InfaqCalculationType.SYUBHAT,
+                rate = 1.00
+            )
+        )
+    }
 }
+

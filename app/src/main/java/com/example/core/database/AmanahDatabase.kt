@@ -18,6 +18,14 @@ import com.example.core.receipt.ReceiptAttachment
 import com.example.core.receipt.ReceiptType
 import com.example.core.wallet.WalletAccount
 import com.example.core.wallet.WalletType
+import com.example.core.accounting.AccountCategory
+import com.example.core.infaq.AsnafCategory
+import com.example.core.infaq.InfaqCalculationType
+import com.example.core.infaq.InfaqDistributionRecord
+import com.example.core.infaq.InfaqRule
+import com.example.core.scheduler.RecurringFrequency
+import com.example.core.scheduler.RecurringTransaction
+import com.example.core.scheduler.RecurringType
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Date
@@ -31,9 +39,12 @@ import java.util.Date
         BudgetAllocationEntity::class,
         SedekahSubuhEntity::class,
         SettingsEntity::class,
-        CustomRulingEntity::class
+        CustomRulingEntity::class,
+        RecurringTransactionEntity::class,
+        InfaqRuleEntity::class,
+        InfaqDistributionEntity::class
     ],
-    version = 4,
+    version = 6,
     exportSchema = false
 )
 abstract class AmanahDatabase : RoomDatabase() {
@@ -46,6 +57,10 @@ abstract class AmanahDatabase : RoomDatabase() {
     abstract fun sedekahSubuhDao(): SedekahSubuhDao
     abstract fun settingsDao(): SettingsDao
     abstract fun rulingDao(): RulingDao
+    abstract fun recurringTransactionDao(): RecurringTransactionDao
+    abstract fun infaqRuleDao(): InfaqRuleDao
+    abstract fun infaqDistributionDao(): InfaqDistributionDao
+
 
     companion object {
         @Volatile
@@ -89,6 +104,9 @@ object EntityMappers {
             obj.put("notes", r.notes)
             obj.put("amount", r.amount)
             obj.put("createdAtMillis", r.createdAtMillis)
+            if (!r.imagePath.isNullOrBlank()) {
+                obj.put("imagePath", r.imagePath)
+            }
             obj.toString()
         }
 
@@ -137,7 +155,8 @@ object EntityMappers {
                     digitalVerificationHash = obj.optString("digitalVerificationHash", ""),
                     notes = obj.optString("notes", ""),
                     amount = obj.optDouble("amount", 0.0),
-                    createdAtMillis = obj.optLong("createdAtMillis", System.currentTimeMillis())
+                    createdAtMillis = obj.optLong("createdAtMillis", System.currentTimeMillis()),
+                    imagePath = if (obj.has("imagePath") && obj.getString("imagePath").isNotBlank()) obj.getString("imagePath") else null
                 )
             } catch (_: Exception) {}
         }
@@ -333,4 +352,114 @@ object EntityMappers {
             updatedAtMillis = e.updatedAtMillis
         )
     }
+
+    fun toEntity(r: RecurringTransaction): RecurringTransactionEntity {
+        return RecurringTransactionEntity(
+            id = r.id,
+            title = r.title,
+            type = r.type.name,
+            amount = r.amount,
+            categoryAccountId = r.categoryAccountId,
+            assetAccountId = r.assetAccountId,
+            frequency = r.frequency.name,
+            dayOfMonthOrWeek = r.dayOfMonthOrWeek,
+            customInfaqRate = r.customInfaqRate,
+            enableRoundUp = r.enableRoundUp,
+            roundUpStep = r.roundUpStep,
+            isActive = r.isActive,
+            autoExecute = r.autoExecute,
+            lastExecutedDateMillis = r.lastExecutedDate?.time,
+            lastExecutedPeriodKey = r.lastExecutedPeriodKey,
+            lastExecutionTimestamp = r.lastExecutionTimestamp,
+            nextDueDateMillis = r.nextDueDate.time,
+            note = r.note,
+            updatedAtMillis = System.currentTimeMillis()
+        )
+    }
+
+    fun toDomain(e: RecurringTransactionEntity): RecurringTransaction {
+        return RecurringTransaction(
+            id = e.id,
+            title = e.title,
+            type = try { RecurringType.valueOf(e.type) } catch (_: Exception) { RecurringType.EXPENSE },
+            amount = e.amount,
+            categoryAccountId = e.categoryAccountId,
+            assetAccountId = e.assetAccountId,
+            frequency = try { RecurringFrequency.valueOf(e.frequency) } catch (_: Exception) { RecurringFrequency.MONTHLY },
+            dayOfMonthOrWeek = e.dayOfMonthOrWeek,
+            customInfaqRate = e.customInfaqRate,
+            enableRoundUp = e.enableRoundUp,
+            roundUpStep = e.roundUpStep,
+            isActive = e.isActive,
+            autoExecute = e.autoExecute,
+            lastExecutedDate = e.lastExecutedDateMillis?.let { Date(it) },
+            lastExecutedPeriodKey = e.lastExecutedPeriodKey,
+            lastExecutionTimestamp = e.lastExecutionTimestamp,
+            nextDueDate = Date(e.nextDueDateMillis),
+            note = e.note
+        )
+    }
+
+    fun toEntity(r: InfaqRule): InfaqRuleEntity {
+        return InfaqRuleEntity(
+            id = r.id,
+            title = r.title,
+            targetCategory = r.targetCategory.name,
+            calculationType = r.calculationType.name,
+            rate = r.rate,
+            fixedAmount = r.fixedAmount,
+            roundUpStep = r.roundUpStep,
+            enableFridayMultiplier = r.enableFridayMultiplier,
+            enableRamadanMultiplier = r.enableRamadanMultiplier,
+            updatedAtMillis = System.currentTimeMillis()
+        )
+    }
+
+    fun toDomain(e: InfaqRuleEntity): InfaqRule {
+        return InfaqRule(
+            id = e.id,
+            title = e.title,
+            targetCategory = try { AccountCategory.valueOf(e.targetCategory) } catch (_: Exception) { AccountCategory.EXPENSE },
+            calculationType = try { InfaqCalculationType.valueOf(e.calculationType) } catch (_: Exception) { InfaqCalculationType.PERCENTAGE },
+            rate = e.rate,
+            fixedAmount = e.fixedAmount,
+            roundUpStep = e.roundUpStep,
+            enableFridayMultiplier = e.enableFridayMultiplier,
+            enableRamadanMultiplier = e.enableRamadanMultiplier
+        )
+    }
+
+    fun toEntity(d: InfaqDistributionRecord): InfaqDistributionEntity {
+        return InfaqDistributionEntity(
+            id = d.id,
+            amount = d.amount,
+            recipientName = d.recipientName,
+            asnafCategory = d.asnafCategory.name,
+            distributionDateMillis = d.distributionDate.time,
+            hijriDateString = d.hijriDateString,
+            sourceAccountId = d.sourceAccountId,
+            programName = d.programName,
+            receiptNumber = d.receiptNumber,
+            notes = d.notes,
+            isVerified = d.isVerified,
+            updatedAtMillis = System.currentTimeMillis()
+        )
+    }
+
+    fun toDomain(e: InfaqDistributionEntity): InfaqDistributionRecord {
+        return InfaqDistributionRecord(
+            id = e.id,
+            amount = e.amount,
+            recipientName = e.recipientName,
+            asnafCategory = try { AsnafCategory.valueOf(e.asnafCategory) } catch (_: Exception) { AsnafCategory.UMUM },
+            distributionDate = Date(e.distributionDateMillis),
+            hijriDateString = e.hijriDateString,
+            sourceAccountId = e.sourceAccountId,
+            programName = e.programName,
+            receiptNumber = e.receiptNumber,
+            notes = e.notes,
+            isVerified = e.isVerified
+        )
+    }
 }
+

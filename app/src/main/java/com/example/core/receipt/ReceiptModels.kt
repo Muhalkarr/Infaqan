@@ -24,6 +24,7 @@ data class ReceiptAttachment(
     val notes: String = "",
     val amount: Double = 0.0,
     val createdAtMillis: Long = System.currentTimeMillis(),
-    val isDigitalVerified: Boolean = false
+    val isDigitalVerified: Boolean = false,
+    val imagePath: String? = null
 )
 

@@ -48,13 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.accounting.JournalEntry
 import com.example.core.budget.BudgetAllocation
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
 import com.example.ui.theme.White70
@@ -108,11 +102,16 @@ fun SpendingTrendLineChart(
                 val eCal = Calendar.getInstance().apply { time = entry.gregorianDate }
                 if (eCal.get(Calendar.MONTH) == mIdx && eCal.get(Calendar.YEAR) == yIdx) {
                     if (entry.transactionType == "INFLOW") {
-                        income += entry.lines.filter { it.accountId.startsWith("rev_") || it.accountId.startsWith("inc_") }.sumOf { it.credit }
+                        income += entry.lines.filter { it.accountId.startsWith("rev_") || it.accountId.startsWith("inc_") || it.accountId.startsWith("acc_sal") || it.accountId.startsWith("acc_trade") || it.accountId.startsWith("acc_gift") }.sumOf { it.credit }
                             .let { if (it > 0) it else entry.totalDebit }
-                    } else if (entry.transactionType == "EXPENSE" || entry.transactionType == "OUTFLOW") {
-                        expense += entry.lines.filter { it.accountId.startsWith("exp_") || it.accountId.startsWith("cons_") }.sumOf { it.debit }
-                            .let { if (it > 0) it else entry.totalDebit }
+                    } else if (entry.transactionType == "EXPENSE") {
+                        // Strict check: Only count expense accounts, never include TRANSFER or balance movements
+                        val expDebit = entry.lines.filter { 
+                            it.accountId.startsWith("exp_") || it.accountId.startsWith("cons_") || it.accountId.startsWith("acc_living") ||
+                            it.accountId.startsWith("acc_trans") || it.accountId.startsWith("acc_util") || it.accountId.startsWith("acc_edu") ||
+                            it.accountId.startsWith("acc_health") || it.accountId.startsWith("acc_other_exp")
+                        }.sumOf { it.debit }
+                        expense += if (expDebit > 0) expDebit else entry.totalDebit
                     }
                 }
             }
@@ -136,6 +135,7 @@ fun SpendingTrendLineChart(
     }
 
     val animationProgress = remember { Animatable(0f) }
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     LaunchedEffect(journalEntries.size) {
         animationProgress.snapTo(0f)
         animationProgress.animateTo(
@@ -147,6 +147,9 @@ fun SpendingTrendLineChart(
     var selectedPointIndex by remember { mutableStateOf<Int?>(null) }
     val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     val chartPointInnerColor = MaterialTheme.colorScheme.surface
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val errorColor = MaterialTheme.colorScheme.error
 
     Card(
         modifier = modifier
@@ -183,13 +186,13 @@ fun SpendingTrendLineChart(
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = EmeraldDark.copy(alpha = 0.3f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.4f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, primaryColor.copy(alpha = 0.4f))
                 ) {
                     Text(
                         text = "Realtime D3/Graph",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = EmeraldLight,
+                        color = primaryColor,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
@@ -202,17 +205,17 @@ fun SpendingTrendLineChart(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(EmeraldPrimary))
+                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(primaryColor))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Pendapatan", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(ExpenseCoral))
+                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(errorColor))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Pengeluaran", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(GoldAccent))
+                    Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondary))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Batas Anggaran", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -224,7 +227,7 @@ fun SpendingTrendLineChart(
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.5f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -236,19 +239,19 @@ fun SpendingTrendLineChart(
                             text = "Bulan ${point.monthLabel}:",
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = GoldAccent
+                            color = MaterialTheme.colorScheme.secondary
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(
                                 text = "Masuk: Rp ${numberFormat.format(point.incomeAmount)}",
                                 fontSize = 11.sp,
-                                color = EmeraldLight,
+                                color = primaryColor,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 text = "Keluar: Rp ${numberFormat.format(point.expenseAmount)}",
                                 fontSize = 11.sp,
-                                color = ExpenseCoral,
+                                color = errorColor,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -311,7 +314,7 @@ fun SpendingTrendLineChart(
                     if (monthlyData.isNotEmpty() && monthlyData[0].budgetLimit > 0.0) {
                         val budgetY = paddingTop + chartHeight * (1f - (monthlyData[0].budgetLimit / maxAmount).toFloat().coerceIn(0f, 1f))
                         drawLine(
-                            color = GoldAccent.copy(alpha = 0.7f),
+                            color = secondaryColor.copy(alpha = 0.7f),
                             start = Offset(0f, budgetY),
                             end = Offset(width, budgetY),
                             strokeWidth = 2.dp.toPx(),
@@ -386,9 +389,7 @@ fun SpendingTrendLineChart(
                         // Data points
                         for ((idx, p) in points.withIndex()) {
                             val isSelected = selectedPointIndex == idx
-                            drawCircle(
-                                color = chartPointInnerColor,
-                                radius = if (isSelected) 6.dp.toPx() else 4.dp.toPx(),
+                            drawCircle(color = onSurfaceColor, radius = if (isSelected) 6.dp.toPx() else 4.dp.toPx(),
                                 center = p
                             )
                             drawCircle(
@@ -397,8 +398,8 @@ fun SpendingTrendLineChart(
                                 center = p
                             )
                             if (isSelected) {
-                                drawCircle(
-                                    color = Color.White,
+                                drawCircle(color = onSurfaceColor,
+                                    
                                     radius = 2.dp.toPx(),
                                     center = p
                                 )
@@ -407,10 +408,10 @@ fun SpendingTrendLineChart(
                     }
 
                     // Draw Income Curve (Emerald)
-                    drawSmoothCurve(incomePoints, EmeraldPrimary, EmeraldLight)
+                    drawSmoothCurve(incomePoints, primaryColor, primaryColor)
 
                     // Draw Expense Curve (Coral Red)
-                    drawSmoothCurve(expensePoints, ExpenseCoral, ExpenseCoral)
+                    drawSmoothCurve(expensePoints, errorColor, errorColor)
                 }
             }
         }

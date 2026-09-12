@@ -65,13 +65,7 @@ import com.example.core.infaq.AsnafCategory
 import com.example.core.infaq.InfaqDistributionRecord
 import com.example.core.state.AmanahLedgerUiState
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.GoldLight
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
@@ -133,7 +127,7 @@ fun VaultDistributionHistoryScreen(
                         Text(
                             text = "Transparansi & Akuntabilitas Tabarru'",
                             fontSize = 11.sp,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -145,7 +139,7 @@ fun VaultDistributionHistoryScreen(
                         Icon(
                             imageVector = Icons.Default.VolunteerActivism,
                             contentDescription = "Salurkan Infaq",
-                            tint = GoldAccent
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                     }
                     IconButton(
@@ -194,7 +188,7 @@ fun VaultDistributionHistoryScreen(
                         if (searchQuery.isNotEmpty()) {
                             Text(
                                 text = "Reset",
-                                color = GoldAccent,
+                                color = MaterialTheme.colorScheme.secondary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier
@@ -207,7 +201,7 @@ fun VaultDistributionHistoryScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -235,7 +229,7 @@ fun VaultDistributionHistoryScreen(
                             Text(
                                 text = "Hapus Filter",
                                 fontSize = 11.sp,
-                                color = GoldAccent,
+                                color = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.clickable { selectedAsnafFilter = null }
                             )
                         }
@@ -248,8 +242,8 @@ fun VaultDistributionHistoryScreen(
                             val isAll = selectedAsnafFilter == null
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = if (isAll) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, if (isAll) GoldAccent else MaterialTheme.colorScheme.outlineVariant),
+                                color = if (isAll) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isAll) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.clickable { selectedAsnafFilter = null }
                             ) {
                                 Text(
@@ -267,8 +261,8 @@ fun VaultDistributionHistoryScreen(
                             val count = state.infaqDistributions.count { it.asnafCategory == asnaf }
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                                border = BorderStroke(1.dp, if (isSelected) GoldAccent else MaterialTheme.colorScheme.outlineVariant),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.clickable { selectedAsnafFilter = asnaf }
                             ) {
                                 Text(
@@ -300,7 +294,7 @@ fun VaultDistributionHistoryScreen(
                     Text(
                         text = "Terverifikasi Sesuai Syariat",
                         fontSize = 10.sp,
-                        color = EmeraldLight
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -357,7 +351,7 @@ fun VaultDistributionHistoryScreen(
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = EmeraldLight,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -365,7 +359,7 @@ fun VaultDistributionHistoryScreen(
                                 text = "Amanah Penyaluran Hak Mustahiq",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
@@ -386,6 +380,8 @@ fun VaultDistributionHistoryScreen(
     if (showDisburseDialog) {
         DisburseInfaqDialog(
             vaultBalance = state.virtualInfaqVaultBalance,
+            wallets = state.wallets,
+            getWalletBalance = { state.getWalletBalance(it) },
             onDismiss = { showDisburseDialog = false },
             onConfirmWithDetails = { amount, recipient, asnaf, sourceAcc, program, notes ->
                 viewModel.disburseInfaqWithDetails(
@@ -415,10 +411,10 @@ fun VaultDistributionSummaryCard(
             .clip(RoundedCornerShape(18.dp))
             .background(
                 brush = Brush.linearGradient(
-                    colors = listOf(Color(0xFF06332C), Color(0xFF041B18))
+                    colors = listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surfaceVariant)
                 )
             )
-            .border(1.dp, EmeraldPrimary.copy(alpha = 0.5f), RoundedCornerShape(18.dp))
+            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), RoundedCornerShape(18.dp))
             .padding(18.dp)
     ) {
         Column {
@@ -431,7 +427,7 @@ fun VaultDistributionSummaryCard(
                     Icon(
                         imageVector = Icons.Default.VolunteerActivism,
                         contentDescription = null,
-                        tint = GoldAccent,
+                        tint = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -439,21 +435,21 @@ fun VaultDistributionSummaryCard(
                         text = "VIRTUAL INFAQ VAULT",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GoldAccent,
+                        color = MaterialTheme.colorScheme.secondary,
                         letterSpacing = 0.8.sp
                     )
                 }
 
                 Surface(
-                    color = EmeraldPrimary.copy(alpha = 0.2f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, EmeraldLight.copy(alpha = 0.4f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                 ) {
                     Text(
                         text = "$mustahiqCount Mustahiq Terbantu",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = EmeraldLight,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
@@ -470,13 +466,13 @@ fun VaultDistributionSummaryCard(
                     Text(
                         text = "Saldo Vault Tersedia",
                         fontSize = 11.sp,
-                        color = Color.White.copy(alpha = 0.7f)
+                        
                     )
                     Text(
                         text = "Rp ${formatRupiah(vaultBalance)}",
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -484,13 +480,13 @@ fun VaultDistributionSummaryCard(
                     Text(
                         text = "Total Telah Disalurkan",
                         fontSize = 11.sp,
-                        color = Color.White.copy(alpha = 0.7f)
+                        
                     )
                     Text(
                         text = "Rp ${formatRupiah(totalDisbursed)}",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = GoldAccent
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
@@ -499,7 +495,7 @@ fun VaultDistributionSummaryCard(
 
             Button(
                 onClick = onDisburseClick,
-                colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.fillMaxWidth().testTag("vault_summary_disburse_button")
             ) {
@@ -575,7 +571,7 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
                         text = "Rp ${formatRupiah(record.amount)}",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GoldAccent
+                        color = MaterialTheme.colorScheme.secondary
                     )
                     Surface(
                         color = Color(record.asnafCategory.badgeColorHex).copy(alpha = 0.15f),
@@ -608,7 +604,7 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
                     Icon(
                         imageVector = Icons.Default.CalendarToday,
                         contentDescription = null,
-                        tint = EmeraldLight,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -622,7 +618,7 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
                         Text(
                             text = record.hijriDateString,
                             fontSize = 9.sp,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }

@@ -94,10 +94,6 @@ import com.example.core.security.AutoLockInterval
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.core.sync.SyncStateStatus
 import com.example.presentation.components.ShimmerListSkeleton
-import com.example.ui.theme.DarkSurface
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,7 +133,7 @@ fun SettingsScreen(
                         Text(
                             text = "Tersimpan Permanen di Perangkat (DataStore)",
                             fontSize = 11.sp,
-                            color = EmeraldLight
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 },
@@ -192,7 +188,7 @@ fun SettingsScreen(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant
                     ),
                     shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.4f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -208,13 +204,13 @@ fun SettingsScreen(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(CircleShape)
-                                    .background(EmeraldPrimary.copy(alpha = 0.2f)),
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Storage,
                                     contentDescription = "Room Database Status",
-                                    tint = EmeraldLight,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -231,14 +227,14 @@ fun SettingsScreen(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Surface(
-                                        color = EmeraldPrimary.copy(alpha = 0.2f),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                                         shape = RoundedCornerShape(4.dp)
                                     ) {
                                         Text(
                                             text = "Tersimpan Permanen",
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = EmeraldLight,
+                                            color = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
@@ -267,7 +263,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.Default.CheckCircle,
                                     contentDescription = null,
-                                    tint = EmeraldLight,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Text(
@@ -280,7 +276,7 @@ fun SettingsScreen(
                                 text = "${state.journalEntries.size} Jurnal • ${state.wallets.size} Kantong",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = EmeraldLight
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
 
@@ -302,8 +298,8 @@ fun SettingsScreen(
                                     },
                                     contentDescription = null,
                                     tint = when (syncState.status) {
-                                        SyncStateStatus.SYNCING -> GoldAccent
-                                        SyncStateStatus.SUCCESS -> EmeraldLight
+                                        SyncStateStatus.SYNCING -> MaterialTheme.colorScheme.secondary
+                                        SyncStateStatus.SUCCESS -> MaterialTheme.colorScheme.primary
                                         SyncStateStatus.ERROR -> Color(0xFFEF4444)
                                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                                     },
@@ -325,10 +321,10 @@ fun SettingsScreen(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = when (syncState.status) {
-                                    SyncStateStatus.SYNCING -> GoldAccent
-                                    SyncStateStatus.SUCCESS -> EmeraldLight
+                                    SyncStateStatus.SYNCING -> MaterialTheme.colorScheme.secondary
+                                    SyncStateStatus.SUCCESS -> MaterialTheme.colorScheme.primary
                                     SyncStateStatus.ERROR -> Color(0xFFEF4444)
-                                    else -> GoldAccent
+                                    else -> MaterialTheme.colorScheme.secondary
                                 }
                             )
                         }
@@ -355,7 +351,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Edit Profil",
-                                    tint = GoldAccent,
+                                    tint = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -391,7 +387,7 @@ fun SettingsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Ubah Harga Emas",
-                                    tint = GoldAccent,
+                                    tint = MaterialTheme.colorScheme.secondary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -413,13 +409,13 @@ fun SettingsScreen(
                                     onClick = { viewModel.updateHijriOffset(state.selectedHijriOffset - 1) },
                                     enabled = state.selectedHijriOffset > -2
                                 ) {
-                                    Text("-1", fontWeight = FontWeight.Bold, color = EmeraldLight)
+                                    Text("-1", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                 }
                                 TextButton(
                                     onClick = { viewModel.updateHijriOffset(state.selectedHijriOffset + 1) },
                                     enabled = state.selectedHijriOffset < 2
                                 ) {
-                                    Text("+1", fontWeight = FontWeight.Bold, color = EmeraldLight)
+                                    Text("+1", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
@@ -456,7 +452,7 @@ fun SettingsScreen(
                                 text = "${(state.defaultInfaqRate * 100).toInt()}%",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent
+                                color = MaterialTheme.colorScheme.secondary
                             )
                         }
                         Slider(
@@ -465,8 +461,8 @@ fun SettingsScreen(
                             valueRange = 1f..25f,
                             steps = 23,
                             colors = SliderDefaults.colors(
-                                thumbColor = GoldAccent,
-                                activeTrackColor = GoldAccent,
+                                thumbColor = MaterialTheme.colorScheme.secondary,
+                                activeTrackColor = MaterialTheme.colorScheme.secondary,
                                 inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
                             ),
                             modifier = Modifier.fillMaxWidth()
@@ -487,6 +483,16 @@ fun SettingsScreen(
                         subtitle = "Tampilkan peringatan tegas saat mencatat transaksi di atas pagu kategori",
                         isChecked = state.isStrictBudgetEnforced,
                         onCheckedChange = { viewModel.updateStrictBudgetEnforced(it) }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    SettingsRowToggle(
+                        title = "Proteksi Saldo Defisit (Cegah Saldo Minus)",
+                        subtitle = if (state.isDeficitProtectionEnabled)
+                            "Mode Disiplin: Tolak transaksi jika saldo kas/bank tidak mencukupi"
+                        else
+                            "Mode Fleksibel: Izinkan saldo menjadi minus dengan konfirmasi",
+                        isChecked = state.isDeficitProtectionEnabled,
+                        onCheckedChange = { viewModel.updateDeficitProtectionEnabled(it) }
                     )
                 }
             }
@@ -513,7 +519,7 @@ fun SettingsScreen(
                                 text = "${state.sedekahSubuhTargetDays} Hari",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = EmeraldLight
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Slider(
@@ -522,8 +528,8 @@ fun SettingsScreen(
                             valueRange = 7f..100f,
                             steps = 92,
                             colors = SliderDefaults.colors(
-                                thumbColor = EmeraldLight,
-                                activeTrackColor = EmeraldLight,
+                                thumbColor = MaterialTheme.colorScheme.primary,
+                                activeTrackColor = MaterialTheme.colorScheme.primary,
                                 inactiveTrackColor = MaterialTheme.colorScheme.outlineVariant
                             ),
                             modifier = Modifier.fillMaxWidth()
@@ -545,6 +551,18 @@ fun SettingsScreen(
                     title = "Tampilan & Aksesibilitas",
                     icon = Icons.Default.Brightness4
                 ) {
+                    SettingsRowToggle(
+                        title = "Ikuti Sistem Ponsel (Otomatis)",
+                        subtitle = if (state.themeMode == com.example.ui.theme.AppThemeMode.FOLLOW_SYSTEM)
+                            "Otomatis berganti mode terang/gelap mengikuti pengaturan HP"
+                        else
+                            "Tema saat ini dikunci manual oleh pengguna",
+                        isChecked = state.themeMode == com.example.ui.theme.AppThemeMode.FOLLOW_SYSTEM,
+                        onCheckedChange = { isAuto ->
+                            viewModel.setFollowSystemTheme(isAuto)
+                        }
+                    )
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     SettingsRowToggle(
                         title = "Mode Gelap (Dark Mode)",
                         subtitle = if (state.isDarkMode) "Tema gelap Islami aktif (Emerald-Dark)" else "Tema terang aktif",
@@ -609,7 +627,7 @@ fun SettingsScreen(
                         .clickable { showClearDummyConfirmDialog = true },
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(14.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color.Red.copy(alpha = 0.3f))
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier
@@ -621,13 +639,13 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(Color.Red.copy(alpha = 0.15f)),
+                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.RestartAlt,
                                 contentDescription = null,
-                                tint = Color.Red,
+                                tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -637,7 +655,7 @@ fun SettingsScreen(
                                 text = "Hapus Semua Data Dummy (Buku Kas Bersih)",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.Red
+                                color = MaterialTheme.colorScheme.error
                             )
                             Text(
                                 text = "Hapus data contoh transaksi, anggaran, kantong, & hutang piutang",
@@ -766,8 +784,8 @@ fun SettingsScreen(
                         label = { Text("Nama Kas / Keluarga") },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = EmeraldLight,
-                            cursorColor = EmeraldLight
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -777,8 +795,8 @@ fun SettingsScreen(
                         label = { Text("Simbol Mata Uang") },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = EmeraldLight,
-                            cursorColor = EmeraldLight
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -795,9 +813,9 @@ fun SettingsScreen(
                         }
                         showEditProfileDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Simpan", color = Color.White)
+                    Text("Simpan")
                 }
             },
             dismissButton = {
@@ -833,8 +851,8 @@ fun SettingsScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = GoldAccent,
-                            cursorColor = GoldAccent
+                            focusedBorderColor = MaterialTheme.colorScheme.secondary,
+                            cursorColor = MaterialTheme.colorScheme.secondary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -849,9 +867,9 @@ fun SettingsScreen(
                         }
                         showEditGoldPriceDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Simpan", color = Color.White)
+                    Text("Simpan")
                 }
             },
             dismissButton = {
@@ -883,8 +901,8 @@ fun SettingsScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = EmeraldLight,
-                            cursorColor = EmeraldLight
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -892,7 +910,7 @@ fun SettingsScreen(
                         Text(
                             text = pinError ?: "",
                             fontSize = 11.sp,
-                            color = Color.Red
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -907,9 +925,9 @@ fun SettingsScreen(
                             pinError = "PIN harus tepat 6 digit angka."
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Aktifkan PIN", color = Color.White)
+                    Text("Aktifkan PIN")
                 }
             },
             dismissButton = {
@@ -936,9 +954,9 @@ fun SettingsScreen(
                         viewModel.clearAllDummyData()
                         showClearDummyConfirmDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Ya, Hapus Data Dummy", color = Color.White)
+                    Text("Ya, Hapus Data Dummy")
                 }
             },
             dismissButton = {
@@ -965,9 +983,9 @@ fun SettingsScreen(
                         viewModel.resetAllSettingsToDefault()
                         showResetConfirmDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Reset", color = Color.White)
+                    Text("Reset")
                 }
             },
             dismissButton = {
@@ -1001,7 +1019,7 @@ private fun SettingsSectionCard(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = EmeraldLight,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -1087,7 +1105,7 @@ private fun SettingsRowToggle(
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = EmeraldLight,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
                 uncheckedThumbColor = Color.Gray,
                 uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
             )

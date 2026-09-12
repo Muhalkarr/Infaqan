@@ -1,5 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Infaqan</string>
+    <string name="welcome">Ahlan wa Sahlan</string>
+    <string name="dashboard">Beranda</string>
+    <string name="ledger">Buku Kas</string>
+    <string name="infaq_vault">Brankas Infaq</string>
+    <string name="wallets">Kantong</string>
+    <string name="settings">Pengaturan</string>
+    <string name="total_balance">Total Saldo Bersih</string>
     <string name="widget_sedekah_subuh_desc">Tombol cepat pencatatan sedekah subuh harian</string>
     <string name="widget_ibadah_goal_desc">Ringkasan kemajuan tabungan ibadah dan qurban</string>
 </resources>

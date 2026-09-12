@@ -23,7 +23,8 @@ data class QardhInstallment(
     val dateMillis: Long = System.currentTimeMillis(),
     val fromWalletId: String = "acc_cash",
     val note: String = "",
-    val receipt: ReceiptAttachment? = null
+    val receipt: ReceiptAttachment? = null,
+    val linkedJournalEntryId: String? = null
 )
 
 data class QardhRecord(
@@ -42,5 +43,6 @@ data class QardhRecord(
     val installments: List<QardhInstallment> = emptyList(),
     val status: QardhStatus = QardhStatus.AKTIF,
     val createdAtMillis: Long = System.currentTimeMillis(),
-    val walletId: String = "acc_cash"
+    val walletId: String = "acc_cash",
+    val linkedJournalEntryId: String? = null
 )

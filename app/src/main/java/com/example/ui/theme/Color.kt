@@ -24,8 +24,8 @@ val DarkSurfaceVariant = Color(0xFF1A2E32)
 val DarkBorder = Color(0xFF284348) // Increased border contrast for crisp separation
 
 // Standard Light Mode Palette (Enhanced Readability & High Contrast)
-val LightBackground = Color(0xFFF4F7F6)
-val LightSurface = Color(0xFFFFFFFF)
+val LightBackground = Color(0xFFEBEFEB)
+val LightSurface = Color(0xFFF3F6F5)
 val LightSurfaceVariant = Color(0xFFE2EBE8)
 val LightBorder = Color(0xFF8FA8A3) // Enhanced border contrast for cards and dividers
 val LightTextPrimary = Color(0xFF0A1E20) // Deep obsidian teal (14.2:1 contrast on white)

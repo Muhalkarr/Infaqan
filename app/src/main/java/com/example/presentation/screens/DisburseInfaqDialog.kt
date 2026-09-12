@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -51,11 +52,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.infaq.AsnafCategory
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
+import com.example.core.wallet.WalletAccount
+import com.example.core.util.MonetaryPrecisionHelper
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
 import com.example.ui.theme.White70
@@ -66,6 +64,8 @@ import java.util.Locale
 @Composable
 fun DisburseInfaqDialog(
     vaultBalance: Double,
+    wallets: List<WalletAccount> = emptyList(),
+    getWalletBalance: ((String) -> Double)? = null,
     onDismiss: () -> Unit,
     onConfirmWithDetails: (
         amount: Double,
@@ -79,7 +79,9 @@ fun DisburseInfaqDialog(
     var amountText by remember { mutableStateOf(if (vaultBalance > 0) vaultBalance.toLong().toString() else "") }
     var recipientName by remember { mutableStateOf("") }
     var selectedAsnaf by remember { mutableStateOf(AsnafCategory.YATIM_DHUAFA) }
-    var selectedSourceAccount by remember { mutableStateOf("acc_bank") }
+    var selectedSourceAccount by remember { 
+        mutableStateOf(wallets.firstOrNull()?.id ?: "acc_bank") 
+    }
     var programName by remember { mutableStateOf("") }
     var notesText by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -92,7 +94,7 @@ fun DisburseInfaqDialog(
             Icon(
                 imageVector = Icons.Default.VolunteerActivism,
                 contentDescription = "Penyaluran Infaq",
-                tint = GoldAccent,
+                tint = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.size(28.dp)
             )
         },
@@ -113,9 +115,9 @@ fun DisburseInfaqDialog(
             ) {
                 // Header Vault Balance Info
                 Surface(
-                    color = EmeraldPrimary.copy(alpha = 0.12f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, EmeraldPrimary.copy(alpha = 0.3f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -130,7 +132,7 @@ fun DisburseInfaqDialog(
                         )
                         Text(
                             text = "Rp ${formatRupiah(vaultBalance)}",
-                            color = GoldAccent,
+                            color = MaterialTheme.colorScheme.secondary,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -149,11 +151,13 @@ fun DisburseInfaqDialog(
                                 amountText = calc.toString()
                                 errorMessage = null
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = 48.dp),
                             shape = RoundedCornerShape(8.dp),
-                            border = BorderStroke(1.dp, DarkBorder),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                             colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = EmeraldLight
+                                contentColor = MaterialTheme.colorScheme.primary
                             )
                         ) {
                             Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -169,13 +173,13 @@ fun DisburseInfaqDialog(
                         errorMessage = null
                     },
                     label = { Text("Nominal Penyaluran (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    prefix = { Text("Rp ", color = GoldAccent, fontWeight = FontWeight.Bold) },
+                    prefix = { Text("Rp ", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -196,7 +200,7 @@ fun DisburseInfaqDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -219,63 +223,133 @@ fun DisburseInfaqDialog(
                         val isSelected = selectedAsnaf == asnaf
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) EmeraldPrimary else MaterialTheme.colorScheme.surfaceVariant,
-                            border = BorderStroke(1.dp, if (isSelected) GoldAccent else MaterialTheme.colorScheme.outlineVariant),
-                            modifier = Modifier.clickable { selectedAsnaf = asnaf }
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier
+                                .defaultMinSize(minHeight = 48.dp)
+                                .clickable { selectedAsnaf = asnaf }
                         ) {
-                            Text(
-                                text = asnaf.displayName,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = asnaf.displayName,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
 
-                // 4. Source Wallet Account
+                // 4. Source Wallet Account (Dompet Riil yang Uangnya Diserahkan)
                 Text(
-                    text = "Keluarkan Dana Dari Rekening/Kas",
+                    text = "Keluarkan Uang Dari Dompet/Kas Riil",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val sources = listOf(
-                        "acc_bank" to ("Bank Syariah" to Icons.Default.AccountBalance),
-                        "acc_cash" to ("Kas Tunai" to Icons.Default.AccountBalanceWallet)
-                    )
-                    sources.forEach { (accId, pair) ->
-                        val isSelected = selectedSourceAccount == accId
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { selectedSourceAccount = accId },
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) EmeraldPrimary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
-                            border = BorderStroke(1.dp, if (isSelected) EmeraldLight else MaterialTheme.colorScheme.outlineVariant)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                if (wallets.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        wallets.forEach { wallet ->
+                            val isSelected = selectedSourceAccount == wallet.id || selectedSourceAccount == wallet.linkedAccountId
+                            val bal = getWalletBalance?.invoke(wallet.id) ?: 0.0
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .clickable { selectedSourceAccount = wallet.id },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
                             ) {
-                                Icon(
-                                    imageVector = pair.second,
-                                    contentDescription = null,
-                                    tint = if (isSelected) EmeraldLight else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = pair.first,
-                                    fontSize = 11.sp,
-                                    color = if (isSelected) EmeraldLight else MaterialTheme.colorScheme.onSurface,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .defaultMinSize(minHeight = 48.dp)
+                                        .padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = if (wallet.type.name.contains("BANK")) Icons.Default.AccountBalance else Icons.Default.AccountBalanceWallet,
+                                            contentDescription = null,
+                                            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column {
+                                            Text(
+                                                text = wallet.name,
+                                                fontSize = 12.sp,
+                                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = wallet.type.displayName,
+                                                fontSize = 10.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = "Rp ${formatRupiah(bal)}",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val sources = listOf(
+                            "acc_bank" to ("Bank Syariah" to Icons.Default.AccountBalance),
+                            "acc_cash" to ("Kas Tunai" to Icons.Default.AccountBalanceWallet)
+                        )
+                        sources.forEach { (accId, pair) ->
+                            val isSelected = selectedSourceAccount == accId
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .defaultMinSize(minHeight = 48.dp)
+                                    .clickable { selectedSourceAccount = accId },
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .defaultMinSize(minHeight = 48.dp)
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = pair.second,
+                                        contentDescription = null,
+                                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = pair.first,
+                                        fontSize = 11.sp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
                             }
                         }
                     }
@@ -291,7 +365,7 @@ fun DisburseInfaqDialog(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedBorderColor = EmeraldPrimary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -302,7 +376,7 @@ fun DisburseInfaqDialog(
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage ?: "",
-                        color = Color(0xFFEF5350),
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp
                     )
                 }
@@ -312,15 +386,23 @@ fun DisburseInfaqDialog(
             Button(
                 onClick = {
                     val amt = amountText.toDoubleOrNull() ?: 0.0
-                    if (amt <= 0.0) {
+                    val roundedAmt = MonetaryPrecisionHelper.roundRupiah(amt)
+                    val selectedWallet = wallets.firstOrNull { it.id == selectedSourceAccount || it.linkedAccountId == selectedSourceAccount }
+                    val walletBal = if (selectedWallet != null && getWalletBalance != null) {
+                        getWalletBalance(selectedWallet.id)
+                    } else null
+
+                    if (roundedAmt <= 0.0) {
                         errorMessage = "Masukkan nominal penyaluran yang valid"
-                    } else if (amt > vaultBalance) {
-                        errorMessage = "Nominal melebihi saldo vault amanah"
+                    } else if (roundedAmt > vaultBalance) {
+                        errorMessage = "Nominal melebihi saldo vault amanah (${formatRupiah(vaultBalance)})"
+                    } else if (walletBal != null && roundedAmt > walletBal) {
+                        errorMessage = "Saldo dompet '${selectedWallet?.name}' tidak mencukupi (Tersedia: Rp ${formatRupiah(walletBal)})"
                     } else if (recipientName.isBlank()) {
                         errorMessage = "Masukkan nama penerima / mustahiq"
                     } else {
                         onConfirmWithDetails(
-                            amt,
+                            roundedAmt,
                             recipientName.trim(),
                             selectedAsnaf,
                             selectedSourceAccount,
@@ -330,11 +412,13 @@ fun DisburseInfaqDialog(
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = EmeraldPrimary,
-                    contentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.testTag("confirm_disburse_button")
+                modifier = Modifier
+                    .defaultMinSize(minHeight = 48.dp)
+                    .testTag("confirm_disburse_button")
             ) {
                 Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
@@ -344,6 +428,7 @@ fun DisburseInfaqDialog(
         dismissButton = {
             TextButton(
                 onClick = onDismiss,
+                modifier = Modifier.defaultMinSize(minHeight = 48.dp),
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
             ) {
                 Text("Batal")

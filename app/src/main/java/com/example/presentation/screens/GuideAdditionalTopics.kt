@@ -267,7 +267,7 @@ fun IslamicQACard(
                     text = "📚 Rujukan: $reference",
                     fontSize = 10.sp,
                     fontStyle = FontStyle.Italic,
-                    color = GoldAccent
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
         }
@@ -293,7 +293,7 @@ fun IslamicAdabCard(
                 Icon(
                     imageVector = Icons.Default.Verified,
                     contentDescription = null,
-                    tint = GoldAccent,
+                    tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -301,12 +301,12 @@ fun IslamicAdabCard(
                     text = title,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = GoldAccent
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
             adabList.forEach { adab ->
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("•", color = EmeraldLight, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Text("•", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     Text(
                         text = adab,
                         fontSize = 11.sp,
@@ -397,7 +397,7 @@ fun TopicFaraidhContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -444,11 +444,11 @@ fun TopicQardhContent(onTryAction: () -> Unit) {
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(10.dp),
-                    border = BorderStroke(1.dp, ExpenseCoral.copy(alpha = 0.5f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("⚠️ Kaidah Fiqih Pengharam Bunga Pinjaman:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = ExpenseCoral)
+                        Text("⚠️ Kaidah Fiqih Pengharam Bunga Pinjaman:", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
                         Text("« كُلُّ قَرْضٍ جَرَّ مَنْفَعَةً فَهُوَ رِبًا »", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         Text("'Setiap pinjaman yang menarik manfaat/keuntungan tambahan (bagi pemberi pinjaman) adalah riba.'", fontSize = 11.sp, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("Pinjam Rp 1.000.000 wajib kembali persis Rp 1.000.000 tanpa bunga, tanpa potongan biaya terselubung, dan tanpa denda keterlambatan berbunga.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -486,13 +486,13 @@ fun TopicQardhContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Icons.Default.Description, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Buka Pencatatan Qardh Hasan", fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("Buka Pencatatan Qardh Hasan", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
         }
     }
 }
@@ -539,21 +539,21 @@ fun TopicZakatHubContent(onTryAction: () -> Unit) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-                                Text("1", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("1", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Kalkulator Zakat Profesi: Dihitung 2.5% dari rezeki kasab bersih.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-                                Text("2", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("2", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Kalkulator Zakat Maal: Berdasarkan aset haul & nisab 85g emas.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(modifier = Modifier.size(20.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
-                                Text("3", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Text("3", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Disburse Dana Infaq Vault: Penyaluran langsung ke amil dengan kwitansi syariah.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
@@ -591,7 +591,7 @@ fun TopicZakatHubContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -691,13 +691,13 @@ fun TopicMultiWalletContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.AccountBalanceWallet, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Kelola Multi-Wallet & Kas", fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("Kelola Multi-Wallet & Kas", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
         }
     }
 }
@@ -780,7 +780,7 @@ fun TopicRecurringContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -880,13 +880,13 @@ fun TopicIbadahGoalsContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Buka Tabungan Ibadah Goals", fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("Buka Tabungan Ibadah Goals", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
         }
     }
 }
@@ -968,7 +968,7 @@ fun TopicIslamicGroundingContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -1067,13 +1067,13 @@ fun TopicExportReportContent(onTryAction: () -> Unit) {
 
         Button(
             onClick = onTryAction,
-            colors = ButtonDefaults.buttonColors(containerColor = GoldAccent),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
-            Text("Buka Ekspor Laporan PDF/CSV", fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("Buka Ekspor Laporan PDF/CSV", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
         }
     }
 }

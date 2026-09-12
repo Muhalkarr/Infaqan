@@ -13,6 +13,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -35,6 +37,8 @@ fun SankeyFlowDiagram(
     targets: List<FlowNode>,
     modifier: Modifier = Modifier
 ) {
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
     Box(modifier = modifier.fillMaxWidth().height(240.dp)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val totalSource = sources.sumOf { it.value }.coerceAtLeast(1.0)
@@ -51,13 +55,13 @@ fun SankeyFlowDiagram(
             val androidPaint = android.graphics.Paint().apply {
                 isAntiAlias = true
                 textSize = 28f
-                color = android.graphics.Color.WHITE
+                color = onSurfaceColor.toArgb()
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
             }
             val subTextPaint = android.graphics.Paint().apply {
                 isAntiAlias = true
                 textSize = 22f
-                color = android.graphics.Color.argb(180, 200, 220, 220)
+                color = onSurfaceVariantColor.toArgb()
             }
 
             // Calculate Source Nodes (Left)

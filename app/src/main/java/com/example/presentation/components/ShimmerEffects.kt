@@ -36,9 +36,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.GoldAccent
 
 fun Modifier.shimmerEffect(
     highlightColor: Color = Color.White.copy(alpha = 0.25f),
@@ -182,7 +179,7 @@ fun PersistentStorageSavingIndicator(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
-            color = EmeraldPrimary.copy(alpha = 0.15f),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
             shape = RoundedCornerShape(8.dp)
         ) {
             Row(
@@ -195,13 +192,13 @@ fun PersistentStorageSavingIndicator(
                 CircularProgressIndicator(
                     modifier = Modifier.size(14.dp),
                     strokeWidth = 2.dp,
-                    color = EmeraldLight
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = text,
                     fontSize = 11.sp,
-                    color = EmeraldLight
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }

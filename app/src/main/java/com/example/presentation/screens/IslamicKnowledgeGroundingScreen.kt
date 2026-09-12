@@ -85,15 +85,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.state.AmanahLedgerViewModel
-import com.example.ui.theme.DarkBackground
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkSurface
-import com.example.ui.theme.DarkSurfaceVariant
 import com.example.ui.theme.EmeraldDark
-import com.example.ui.theme.EmeraldLight
-import com.example.ui.theme.EmeraldPrimary
-import com.example.ui.theme.ExpenseCoral
-import com.example.ui.theme.GoldAccent
 import com.example.ui.theme.GoldLight
 import java.text.NumberFormat
 import java.util.Locale
@@ -643,7 +635,7 @@ fun IslamicKnowledgeGroundingScreen(
                                         onValueChange = { inputDebtText = it },
                                         label = { Text(if (zakatTypeIndex == 2) "Hutang Jatuh Tempo Usaha" else "Kebutuhan Pokok / Hutang Bulanan", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) },
                                         placeholder = { Text("0", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)) },
-                                        prefix = { Text("${state.primaryCurrencySymbol} ", fontWeight = FontWeight.Bold, color = ExpenseCoral) },
+                                        prefix = { Text("${state.primaryCurrencySymbol} ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error) },
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         colors = OutlinedTextFieldDefaults.colors(
                                             focusedBorderColor = MaterialTheme.colorScheme.primary,

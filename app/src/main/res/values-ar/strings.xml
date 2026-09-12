@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">أمانة ليدجر</string>
+    <string name="welcome">أهلاً بك</string>
+    <string name="dashboard">لوحة القيادة</string>
+    <string name="ledger">دفتر الأستاذ</string>
+    <string name="infaq_vault">خزنة الإنفاق</string>
+    <string name="wallets">محافظ</string>
+    <string name="settings">الإعدادات</string>
+    <string name="total_balance">إجمالي الرصيد</string>
+</resources>
