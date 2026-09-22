@@ -10,4 +10,13 @@
     <string name="total_balance">Total Saldo Bersih</string>
     <string name="widget_sedekah_subuh_desc">Tombol cepat pencatatan sedekah subuh harian</string>
     <string name="widget_ibadah_goal_desc">Ringkasan kemajuan tabungan ibadah dan qurban</string>
+    <string name="widget_cash_summary_desc">Ringkasan total saldo kas dan aset likuid syariah</string>
+    <string name="shortcut_record_expense_short">Catat Beban</string>
+    <string name="shortcut_record_expense_long">Catat Beban / Pengeluaran</string>
+    <string name="shortcut_record_income_short">Catat Kasab</string>
+    <string name="shortcut_record_income_long">Catat Kasab / Pemasukan Halal</string>
+    <string name="shortcut_sedekah_subuh_short">Sedekah Subuh</string>
+    <string name="shortcut_sedekah_subuh_long">Sedekah Subuh Berkah Fajar</string>
+    <string name="shortcut_zakat_short">Zakat Maal</string>
+    <string name="shortcut_zakat_long">Kalkulator Hisab Zakat Maal</string>
 </resources>

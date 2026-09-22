@@ -3,6 +3,8 @@ package com.example.presentation.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +35,8 @@ import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Login
@@ -58,6 +62,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import com.example.core.receipt.ReceiptImageStorage
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
@@ -122,6 +127,7 @@ fun BackupRestoreScreen(
     var generatedBackupJson by remember { mutableStateOf("") }
     var generatedChecksum by remember { mutableStateOf("") }
     var exportCopied by remember { mutableStateOf(false) }
+    var receiptStorageBytes by remember { mutableStateOf(ReceiptImageStorage.getTotalReceiptsStorageBytes(context)) }
 
     // Import / Restore State
     var importJsonText by remember { mutableStateOf("") }
@@ -129,6 +135,45 @@ fun BackupRestoreScreen(
     var restoreStatusMessage by remember { mutableStateOf<String?>(null) }
     var isRestoreSuccess by remember { mutableStateOf(false) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+
+    val exportFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null && generatedBackupJson.isNotBlank()) {
+            try {
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    out.write(generatedBackupJson.toByteArray(Charsets.UTF_8))
+                }
+                viewModel.appStateNotifier.notify(
+                    title = "Berkas Cadangan Tersimpan",
+                    message = "Cadangan terenkripsi berhasil disimpan ke penyimpanan perangkat.",
+                    severity = com.example.core.state.NotificationSeverity.SUCCESS
+                )
+            } catch (e: Exception) {
+                restoreStatusMessage = "Gagal menyimpan berkas: ${e.message}"
+            }
+        }
+    }
+
+    val importFileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    val text = stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                    importJsonText = text
+                    viewModel.appStateNotifier.notify(
+                        title = "Berkas Cadangan Dimuat",
+                        message = "Berkas cadangan berhasil dimuat (${text.length} karakter).",
+                        severity = com.example.core.state.NotificationSeverity.INFO
+                    )
+                }
+            } catch (e: Exception) {
+                restoreStatusMessage = "Gagal membaca berkas: ${e.message}"
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -669,6 +714,21 @@ fun BackupRestoreScreen(
                                             Text(if (exportCopied) "Tersalin!" else "Salin JSON", fontSize = 12.sp)
                                         }
 
+                                        Button(
+                                            onClick = {
+                                                exportFileLauncher.launch("amanah_backup_${System.currentTimeMillis()}.json")
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                                            shape = RoundedCornerShape(10.dp),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .testTag("save_backup_file_button")
+                                        ) {
+                                            Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("Simpan File", fontSize = 12.sp)
+                                        }
+
                                         OutlinedButton(
                                             onClick = {
                                                 val sendIntent = android.content.Intent().apply {
@@ -688,6 +748,45 @@ fun BackupRestoreScreen(
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text("Bagikan", fontSize = 12.sp)
                                         }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Storage Optimization Card
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Penyimpanan & Kompresi Foto Kuitansi", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                }
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    "Kuitansi otomatis dikompresi (max 1280px, 80% JPEG) guna menghemat memori internal tanpa mengurangi keterbacaan teks kuitansi.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Ukuran Foto Tersimpan: ${(receiptStorageBytes / 1024)} KB", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    OutlinedButton(
+                                        onClick = {
+                                            receiptStorageBytes = ReceiptImageStorage.getTotalReceiptsStorageBytes(context)
+                                        },
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("Hitung Ulang", fontSize = 11.sp)
                                     }
                                 }
                             }
@@ -713,17 +812,32 @@ fun BackupRestoreScreen(
                                     Icon(Icons.Default.Restore, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        "Tempel Berkas Cadangan JSON",
+                                        "Pulihkan dari Berkas Cadangan",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 14.sp
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Tempel teks cadangan JSON yang telah diekspor sebelumnya untuk memulihkan seluruh data.",
+                                    "Pilih berkas .json atau tempel teks cadangan terenkripsi yang telah dibuat sebelumnya.",
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                OutlinedButton(
+                                    onClick = {
+                                        importFileLauncher.launch(arrayOf("application/json", "text/*", "*/*"))
+                                    },
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Buka / Pilih Berkas Cadangan (.json)", fontWeight = FontWeight.SemiBold)
+                                }
 
                                 Spacer(modifier = Modifier.height(10.dp))
 

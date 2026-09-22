@@ -111,6 +111,8 @@ import java.util.Locale
 import java.io.File
 import coil.compose.AsyncImage
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.example.core.ui.AmanahHapticEngine
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,6 +124,7 @@ fun AddTransactionScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
 
     val existingEntry = remember(editEntryId, state.journalEntries) {
         if (editEntryId != null) viewModel.getJournalEntry(editEntryId) else null
@@ -503,6 +506,7 @@ fun AddTransactionScreen(
                         .clip(RoundedCornerShape(10.dp))
                         .background(if (isIncome) MaterialTheme.colorScheme.primary else Color.Transparent)
                         .clickable {
+                            AmanahHapticEngine.performKeyClick(haptic, context)
                             isIncome = true
                             selectedCategoryAccountId = "acc_salary"
                         }
@@ -523,6 +527,7 @@ fun AddTransactionScreen(
                         .clip(RoundedCornerShape(10.dp))
                         .background(if (!isIncome) MaterialTheme.colorScheme.error else Color.Transparent)
                         .clickable {
+                            AmanahHapticEngine.performKeyClick(haptic, context)
                             isIncome = false
                             selectedCategoryAccountId = "acc_living"
                         }
@@ -606,12 +611,32 @@ fun AddTransactionScreen(
                 readOnly = true,
                 label = { Text("Nominal Transaksi (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 prefix = { Text("Rp ", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold) },
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            AmanahHapticEngine.performKeyClick(haptic, context)
+                            showNumpadBottomSheet = true
+                        },
+                        modifier = Modifier.testTag("open_calculator_keyboard_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Buka Keyboard Kalkulator",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("add_transaction_amount_input")
+                    .clickable {
+                        AmanahHapticEngine.performKeyClick(haptic, context)
+                        showNumpadBottomSheet = true
+                    }
                     .onFocusChanged { focusState ->
                         if (focusState.isFocused) {
+                            AmanahHapticEngine.performKeyClick(haptic, context)
                             showNumpadBottomSheet = true
                             focusManager.clearFocus() // Prevent soft keyboard from showing
                         }
@@ -673,6 +698,7 @@ fun AddTransactionScreen(
                                 }
                             },
                             onClick = {
+                                AmanahHapticEngine.performKeyClick(haptic, context)
                                 selectedCategoryAccountId = acc.id
                                 categoryDropdownExpanded = false
                             }
@@ -731,6 +757,7 @@ fun AddTransactionScreen(
                                 }
                             },
                             onClick = {
+                                AmanahHapticEngine.performKeyClick(haptic, context)
                                 selectedAssetAccountId = acc.id
                                 assetDropdownExpanded = false
                             }
@@ -1345,6 +1372,7 @@ fun AddTransactionScreen(
             // 8. Submit Button
             Button(
                 onClick = {
+                    AmanahHapticEngine.performButtonClick(haptic, context)
                     if (amountValue <= 0.0) {
                         errorMessage = "Masukkan nominal transaksi yang lebih besar dari 0"
                         return@Button
@@ -1734,7 +1762,53 @@ fun AddTransactionScreen(
     }
 
 
-    if (showNumpadBottomSheet) {
+if (showNumpadBottomSheet) {
+        // Local state for the calculator
+        var expression by remember { mutableStateOf(amountText.ifEmpty { "0" }) }
+        
+        fun evaluateMath(expr: String): String {
+            try {
+                // Remove spaces and evaluate basic left-to-right math
+                var cleanExpr = expr.replace(" ", "").replace("Rp", "")
+                if (cleanExpr.isEmpty()) return "0"
+                
+                // Very basic sequential evaluator
+                val tokens = mutableListOf<String>()
+                var currentNum = ""
+                for (char in cleanExpr) {
+                    if (char == '+' || char == '-' || char == '×' || char == '÷') {
+                        if (currentNum.isNotEmpty()) tokens.add(currentNum)
+                        tokens.add(char.toString())
+                        currentNum = ""
+                    } else {
+                        currentNum += char
+                    }
+                }
+                if (currentNum.isNotEmpty()) tokens.add(currentNum)
+                
+                if (tokens.isEmpty()) return "0"
+                
+                var result = tokens[0].toDoubleOrNull() ?: 0.0
+                var i = 1
+                while (i < tokens.size - 1) {
+                    val op = tokens[i]
+                    val nextNum = tokens[i+1].toDoubleOrNull() ?: 0.0
+                    when (op) {
+                        "+" -> result += nextNum
+                        "-" -> result -= nextNum
+                        "×" -> result *= nextNum
+                        "÷" -> if (nextNum != 0.0) result /= nextNum
+                    }
+                    i += 2
+                }
+                // Return as long string to avoid scientific notation
+                val longRes = result.toLong()
+                return if (longRes < 0) "0" else longRes.toString()
+            } catch (e: Exception) {
+                return "0"
+            }
+        }
+
         ModalBottomSheet(
             onDismissRequest = { showNumpadBottomSheet = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -1744,7 +1818,7 @@ fun AddTransactionScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Rp $amountText",
+                    text = expression,
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -1753,26 +1827,35 @@ fun AddTransactionScreen(
                 
                 AmanahNumpad(
                     onNumberClick = { num ->
-                        if (amountText == "0" || amountText.isEmpty()) {
-                            amountText = num.toString()
+                        if (expression == "0") {
+                            expression = num.toString()
                         } else {
-                            // Max 15 digits
-                            if (amountText.length < 15) {
-                                amountText += num.toString()
+                            if (expression.length < 25) {
+                                expression += num.toString()
                             }
                         }
-                        errorMessage = null
                     },
                     onBackspaceClick = {
-                        if (amountText.isNotEmpty()) {
-                            amountText = amountText.dropLast(1)
-                            if (amountText.isEmpty()) amountText = "0"
+                        if (expression.isNotEmpty()) {
+                            expression = expression.dropLast(1)
+                            if (expression.isEmpty()) expression = "0"
                         }
                     },
                     onOperatorClick = { op ->
-                        // Operation functionality can be implemented if needed
+                        val lastChar = expression.lastOrNull()
+                        if (lastChar != null && lastChar.isDigit()) {
+                            expression += op
+                        } else if (lastChar != null && lastChar in listOf('+', '-', '×', '÷')) {
+                            // Replace last operator
+                            expression = expression.dropLast(1) + op
+                        }
                     },
-                    onDoneClick = { showNumpadBottomSheet = false }
+                    onDoneClick = { 
+                        val finalResult = evaluateMath(expression)
+                        amountText = finalResult
+                        errorMessage = null
+                        showNumpadBottomSheet = false 
+                    }
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }

@@ -14,7 +14,12 @@ import java.util.Date
 
 @Entity(
     tableName = "journal_entries",
-    indices = [Index(value = ["dateMillis"])]
+    indices = [
+        Index(value = ["dateMillis"]),
+        Index(value = ["transactionType"]),
+        Index(value = ["dateMillis", "transactionType"]),
+        Index(value = ["isSynced"])
+    ]
 )
 data class JournalEntryEntity(
     @PrimaryKey val id: String,
@@ -30,7 +35,13 @@ data class JournalEntryEntity(
     val isSynced: Boolean = false
 )
 
-@Entity(tableName = "wallets")
+@Entity(
+    tableName = "wallets",
+    indices = [
+        Index(value = ["isDefault"]),
+        Index(value = ["linkedAccountId"])
+    ]
+)
 data class WalletAccountEntity(
     @PrimaryKey val id: String,
     val name: String,
@@ -45,7 +56,13 @@ data class WalletAccountEntity(
     val isSynced: Boolean = false
 )
 
-@Entity(tableName = "ibadah_goals")
+@Entity(
+    tableName = "ibadah_goals",
+    indices = [
+        Index(value = ["isCompleted"]),
+        Index(value = ["type"])
+    ]
+)
 data class IbadahGoalEntity(
     @PrimaryKey val id: String,
     val type: String,
@@ -63,7 +80,12 @@ data class IbadahGoalEntity(
 
 @Entity(
     tableName = "qardh_records",
-    indices = [Index(value = ["agreementDateMillis"])]
+    indices = [
+        Index(value = ["agreementDateMillis"]),
+        Index(value = ["status"]),
+        Index(value = ["dueDateMillis"]),
+        Index(value = ["status", "dueDateMillis"])
+    ]
 )
 data class QardhRecordEntity(
     @PrimaryKey val id: String,
@@ -81,7 +103,13 @@ data class QardhRecordEntity(
     val isSynced: Boolean = false
 )
 
-@Entity(tableName = "budget_allocations")
+@Entity(
+    tableName = "budget_allocations",
+    indices = [
+        Index(value = ["accountId"]),
+        Index(value = ["categoryName"])
+    ]
+)
 data class BudgetAllocationEntity(
     @PrimaryKey val id: String,
     val accountId: String,
@@ -131,7 +159,11 @@ data class CustomRulingEntity(
 
 @Entity(
     tableName = "recurring_transactions",
-    indices = [Index(value = ["nextDueDateMillis"])]
+    indices = [
+        Index(value = ["nextDueDateMillis"]),
+        Index(value = ["isActive"]),
+        Index(value = ["isActive", "nextDueDateMillis"])
+    ]
 )
 data class RecurringTransactionEntity(
     @PrimaryKey val id: String,
@@ -171,7 +203,10 @@ data class InfaqRuleEntity(
 
 @Entity(
     tableName = "infaq_distributions",
-    indices = [Index(value = ["distributionDateMillis"])]
+    indices = [
+        Index(value = ["distributionDateMillis"]),
+        Index(value = ["asnafCategory"])
+    ]
 )
 data class InfaqDistributionEntity(
     @PrimaryKey val id: String,

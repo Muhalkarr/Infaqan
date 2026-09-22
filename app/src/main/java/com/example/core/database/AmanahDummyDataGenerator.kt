@@ -22,6 +22,7 @@ import com.example.core.scheduler.RecurringType
 import com.example.core.wallet.WalletAccount
 import com.example.core.wallet.WalletType
 import com.example.core.zakat.ZakatFitrahFamilyCalculation
+import com.example.core.zakat.ZakatMaalCalculation
 import com.example.core.zakat.ZakatPerniagaanCalculation
 import com.example.core.zakat.ZakatProfesiCalculation
 import java.text.SimpleDateFormat
@@ -677,5 +678,17 @@ object AmanahDummyDataGenerator {
     fun getSampleZakatFitrah(): ZakatFitrahFamilyCalculation = ZakatFitrahFamilyCalculation(
         familyMembersCount = 4,
         ricePricePerKg = 16000.0
+    )
+
+    fun getSampleZakatMaal(): ZakatMaalCalculation = ZakatMaalCalculation(
+        totalWalletSavings = 75000000.0,
+        totalIbadahSavings = 45000000.0,
+        goldWeightGrams = 15.0,
+        tradeableReceivables = 5000000.0,
+        shortTermLiabilities = 3000000.0,
+        goldPricePerGram = 1350000.0,
+        isLunarCalendar = true,
+        isHaulFulfilled = true,
+        lastSyncedFromDatabaseMillis = System.currentTimeMillis()
     )
 }

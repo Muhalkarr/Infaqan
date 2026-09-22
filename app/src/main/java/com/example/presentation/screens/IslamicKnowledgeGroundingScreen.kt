@@ -479,7 +479,7 @@ fun IslamicKnowledgeGroundingScreen(
                                 "SYUBHAT" to "Penyucian Harta"
                             )
 
-                            items(categories) { (key, label) ->
+                            items(categories, key = { it.second }) { (key, label) ->
                                 val isSelected = selectedCategoryFilter == key
                                 FilterChip(
                                     selected = isSelected,

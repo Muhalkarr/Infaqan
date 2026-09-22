@@ -256,7 +256,7 @@ fun VaultDistributionHistoryScreen(
                             }
                         }
 
-                        items(AsnafCategory.values()) { asnaf ->
+                        items(AsnafCategory.values(), key = { it.name }) { asnaf ->
                             val isSelected = selectedAsnafFilter == asnaf
                             val count = state.infaqDistributions.count { it.asnafCategory == asnaf }
                             Surface(
@@ -333,7 +333,11 @@ fun VaultDistributionHistoryScreen(
                     }
                 }
             } else {
-                items(filteredDistributions, key = { it.id }) { record ->
+                items(
+                    items = filteredDistributions,
+                    key = { it.id },
+                    contentType = { "infaq_distribution" }
+                ) { record ->
                     InfaqDistributionCard(record = record)
                 }
             }

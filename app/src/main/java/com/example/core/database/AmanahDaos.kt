@@ -93,6 +93,9 @@ interface QardhDao {
     @Query("SELECT * FROM qardh_records ORDER BY agreementDateMillis DESC")
     suspend fun getAllRecords(): List<QardhRecordEntity>
 
+    @Query("SELECT * FROM qardh_records WHERE status != 'COMPLETED' AND dueDateMillis IS NOT NULL AND dueDateMillis <= :thresholdMillis ORDER BY dueDateMillis ASC")
+    suspend fun getPendingDueRecords(thresholdMillis: Long): List<QardhRecordEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(record: QardhRecordEntity)
 
@@ -197,6 +200,9 @@ interface RecurringTransactionDao {
 
     @Query("SELECT * FROM recurring_transactions ORDER BY nextDueDateMillis ASC")
     suspend fun getAll(): List<RecurringTransactionEntity>
+
+    @Query("SELECT * FROM recurring_transactions WHERE isActive = 1 AND nextDueDateMillis <= :dueThresholdMillis ORDER BY nextDueDateMillis ASC")
+    suspend fun getActiveDueTransactions(dueThresholdMillis: Long): List<RecurringTransactionEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(transaction: RecurringTransactionEntity)

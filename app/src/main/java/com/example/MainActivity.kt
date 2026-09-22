@@ -77,13 +77,18 @@ class MainActivity : FragmentActivity() {
                 else -> state.isHighContrast
             }
 
+            val initialDestination = intent?.getStringExtra("NAVIGATE_TO")
+
             AmanahLedgerTheme(
                 darkTheme = effectiveDarkMode,
                 highContrast = effectiveHighContrast,
                 uiScaleFactor = state.uiScaleFactor
             ) {
                 androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
-                    AmanahMainApp(viewModel = viewModel)
+                    AmanahMainApp(
+                        viewModel = viewModel,
+                        initialDestination = initialDestination
+                    )
 
                     if (!state.hasCompletedOnboarding) {
                         OnboardingScreen(
@@ -121,12 +126,35 @@ data class BottomNavItem(
 )
 
 @Composable
-fun AmanahMainApp(viewModel: AmanahLedgerViewModel) {
+fun AmanahMainApp(
+    viewModel: AmanahLedgerViewModel,
+    initialDestination: String? = null
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val currentScreen = remember(currentRoute) { Screen.fromRoute(currentRoute) }
     val state by viewModel.uiState.collectAsState()
+
+    // Navigasi instan dari Shortcut atau App Widget
+    LaunchedEffect(initialDestination) {
+        if (!initialDestination.isNullOrBlank()) {
+            val route = when (initialDestination) {
+                "ADD_TRANSACTION_EXPENSE", "ADD_TRANSACTION_INCOME", "ADD_TRANSACTION" -> AmanahRoutes.ADD_TRANSACTION
+                "SEDEKAH_SUBUH" -> AmanahRoutes.SEDEKAH_SUBUH
+                "IBADAH_GOALS" -> AmanahRoutes.IBADAH_GOALS
+                "ZAKAT_HUB" -> AmanahRoutes.ZAKAT_HUB
+                "FARAIDH" -> AmanahRoutes.FARAIDH
+                else -> null
+            }
+            if (route != null) {
+                AppDebugLogger.i("MainActivity", "Navigasi shortcut/widget ke: $route")
+                navController.navigate(route) {
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
 
     // Otomatis catat pergantian layar ke log diagnostik
     LaunchedEffect(currentRoute) {

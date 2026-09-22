@@ -11,6 +11,9 @@ import com.example.core.ibadah.IbadahGoalType
 import com.example.core.infaq.InfaqDistributionRecord
 import com.example.core.infaq.InfaqRule
 import com.example.core.infaq.SedekahSubuhState
+import com.example.core.qardh.QardhRecord
+import com.example.core.qardh.QardhStatus
+import com.example.core.qardh.QardhType
 import com.example.core.receipt.ReceiptAttachment
 import com.example.core.receipt.ReceiptType
 import com.example.core.scheduler.RecurringTransaction
@@ -18,11 +21,18 @@ import com.example.core.wallet.WalletAccount
 import com.example.core.wallet.WalletType
 import org.json.JSONArray
 import org.json.JSONObject
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import javax.crypto.Cipher
+import javax.crypto.SecretKeyFactory
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.PBEKeySpec
+import javax.crypto.spec.SecretKeySpec
 
 data class BackupManifest(
     val schemaVersion: Int = 3,
@@ -50,7 +60,8 @@ sealed class RestoreResult {
         val restoredRules: List<InfaqRule>,
         val restoredRecurring: List<RecurringTransaction>,
         val restoredSedekahState: SedekahSubuhState,
-        val restoredDistributions: List<InfaqDistributionRecord> = emptyList()
+        val restoredDistributions: List<InfaqDistributionRecord> = emptyList(),
+        val restoredQardh: List<QardhRecord> = emptyList()
     ) : RestoreResult()
 
     data class Failure(val errorMessage: String) : RestoreResult()
@@ -89,6 +100,48 @@ object BackupEngine {
         return hashBytes.joinToString("") { "%02x".format(it) }
     }
 
+    private fun encryptAesGcm(plainBytes: ByteArray, password: String): ByteArray {
+        val salt = ByteArray(16).apply { SecureRandom().nextBytes(this) }
+        val iv = ByteArray(12).apply { SecureRandom().nextBytes(this) }
+
+        val spec = PBEKeySpec(password.toCharArray(), salt, 10000, 256)
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+        val secretKey = SecretKeySpec(factory.generateSecret(spec).encoded, "AES")
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val gcmSpec = GCMParameterSpec(128, iv)
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmSpec)
+        val cipherBytes = cipher.doFinal(plainBytes)
+
+        val output = ByteBuffer.allocate(4 + salt.size + iv.size + cipherBytes.size)
+        output.put("A256".toByteArray(StandardCharsets.UTF_8))
+        output.put(salt)
+        output.put(iv)
+        output.put(cipherBytes)
+        return output.array()
+    }
+
+    private fun decryptAesGcm(encryptedBytes: ByteArray, password: String): ByteArray {
+        val buffer = ByteBuffer.wrap(encryptedBytes)
+        val tagBytes = ByteArray(4)
+        buffer.get(tagBytes)
+        val salt = ByteArray(16)
+        buffer.get(salt)
+        val iv = ByteArray(12)
+        buffer.get(iv)
+        val cipherBytes = ByteArray(buffer.remaining())
+        buffer.get(cipherBytes)
+
+        val spec = PBEKeySpec(password.toCharArray(), salt, 10000, 256)
+        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")
+        val secretKey = SecretKeySpec(factory.generateSecret(spec).encoded, "AES")
+
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        val gcmSpec = GCMParameterSpec(128, iv)
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
+        return cipher.doFinal(cipherBytes)
+    }
+
     private fun encryptDecryptXor(input: ByteArray, passKey: String): ByteArray {
         if (passKey.isEmpty()) return input
         val keyBytes = passKey.toByteArray(StandardCharsets.UTF_8)
@@ -111,6 +164,7 @@ object BackupEngine {
         recurring: List<RecurringTransaction>,
         sedekahSubuhState: SedekahSubuhState,
         distributions: List<InfaqDistributionRecord> = emptyList(),
+        qardhRecords: List<QardhRecord> = emptyList(),
         password: String = ""
     ): String {
         val rootJson = JSONObject()
@@ -280,13 +334,33 @@ object BackupEngine {
         }
         dataJson.put("distributions", distArray)
 
+        // 9. Qardh Records (Hutang-Piutang Kebajikan)
+        val qardhArray = JSONArray()
+        for (q in qardhRecords) {
+            val qObj = JSONObject()
+            qObj.put("id", q.id)
+            qObj.put("counterpartyName", q.counterpartyName)
+            qObj.put("type", q.type.name)
+            qObj.put("totalAmount", q.totalAmount)
+            qObj.put("remainingAmount", q.remainingAmount)
+            qObj.put("startDateMillis", q.startDateMillis)
+            qObj.put("dueDateMillis", q.dueDateMillis ?: 0L)
+            qObj.put("notes", q.notes)
+            qObj.put("status", q.status.name)
+            qObj.put("agreementTerms", q.agreementTerms)
+            qObj.put("witnessName", q.witnessName)
+            qObj.put("witnessContact", q.witnessContact)
+            qObj.put("walletId", q.walletId)
+            qardhArray.put(qObj)
+        }
+        dataJson.put("qardh", qardhArray)
 
         val rawJsonString = dataJson.toString()
         val dataChecksum = calculateSha256(rawJsonString)
 
         val rawBytes = rawJsonString.toByteArray(StandardCharsets.UTF_8)
         val encryptedBytes = if (password.isNotEmpty()) {
-            encryptDecryptXor(rawBytes, password)
+            encryptAesGcm(rawBytes, password)
         } else {
             rawBytes
         }
@@ -301,6 +375,7 @@ object BackupEngine {
         rootJson.put("goalsCount", goals.size)
         rootJson.put("checksum", dataChecksum)
         rootJson.put("isEncrypted", password.isNotEmpty())
+        rootJson.put("encryptionAlgorithm", if (password.isNotEmpty()) "AES-256-GCM" else "NONE")
         rootJson.put("payload", encodedPayload)
 
         return rootJson.toString(2)
@@ -364,7 +439,22 @@ object BackupEngine {
                 if (password.isEmpty()) {
                     return RestoreResult.Failure("Berkas cadangan ini diproteksi sandi. Harap masukkan kata sandi enkripsi.")
                 }
-                encryptDecryptXor(encryptedBytes, password)
+                // Periksa apakah format terenkripsi dengan AES-256-GCM (magic prefix "A256")
+                if (encryptedBytes.size > 4 &&
+                    encryptedBytes[0] == 'A'.code.toByte() &&
+                    encryptedBytes[1] == '2'.code.toByte() &&
+                    encryptedBytes[2] == '5'.code.toByte() &&
+                    encryptedBytes[3] == '6'.code.toByte()
+                ) {
+                    try {
+                        decryptAesGcm(encryptedBytes, password)
+                    } catch (e: Exception) {
+                        return RestoreResult.Failure("Kata sandi salah atau berkas enkripsi AES rusak (${e.localizedMessage}).")
+                    }
+                } else {
+                    // Fallback backward-compatible XOR
+                    encryptDecryptXor(encryptedBytes, password)
+                }
             } else {
                 encryptedBytes
             }
@@ -586,6 +676,31 @@ object BackupEngine {
                 )
             }
 
+            // Parse Qardh Records
+            val restoredQardh = mutableListOf<QardhRecord>()
+            val qardhArray = dataJson.optJSONArray("qardh") ?: JSONArray()
+            for (i in 0 until qardhArray.length()) {
+                val qObj = qardhArray.getJSONObject(i)
+                val dueMillis = qObj.optLong("dueDateMillis", 0L)
+                restoredQardh.add(
+                    QardhRecord(
+                        id = qObj.getString("id"),
+                        counterpartyName = qObj.getString("counterpartyName"),
+                        type = try { QardhType.valueOf(qObj.getString("type")) } catch (_: Exception) { QardhType.HUTANG_SAYA },
+                        totalAmount = qObj.getDouble("totalAmount"),
+                        remainingAmount = qObj.optDouble("remainingAmount", qObj.getDouble("totalAmount")),
+                        startDateMillis = qObj.optLong("startDateMillis", System.currentTimeMillis()),
+                        dueDateMillis = if (dueMillis > 0L) dueMillis else null,
+                        notes = qObj.optString("notes", ""),
+                        status = try { QardhStatus.valueOf(qObj.getString("status")) } catch (_: Exception) { QardhStatus.AKTIF },
+                        agreementTerms = qObj.optString("agreementTerms", ""),
+                        witnessName = qObj.optString("witnessName", ""),
+                        witnessContact = qObj.optString("witnessContact", ""),
+                        walletId = qObj.optString("walletId", "acc_cash")
+                    )
+                )
+            }
+
             val manifest = BackupManifest(
                 schemaVersion = schemaVersion,
                 exportedAt = exportedAt,
@@ -608,7 +723,8 @@ object BackupEngine {
                 restoredRules = restoredRules,
                 restoredRecurring = restoredRecurring,
                 restoredSedekahState = restoredSedekah,
-                restoredDistributions = restoredDistributions
+                restoredDistributions = restoredDistributions,
+                restoredQardh = restoredQardh
             )
 
         } catch (e: Exception) {

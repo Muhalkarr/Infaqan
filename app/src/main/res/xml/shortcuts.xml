@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="shortcut_record_expense"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_add"
+        android:shortcutShortLabel="@string/shortcut_record_expense_short"
+        android:shortcutLongLabel="@string/shortcut_record_expense_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.islamicfintech.mrvn"
+            android:targetClass="com.example.MainActivity">
+            <extra
+                android:name="NAVIGATE_TO"
+                android:value="ADD_TRANSACTION_EXPENSE" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_record_income"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_input_add"
+        android:shortcutShortLabel="@string/shortcut_record_income_short"
+        android:shortcutLongLabel="@string/shortcut_record_income_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.islamicfintech.mrvn"
+            android:targetClass="com.example.MainActivity">
+            <extra
+                android:name="NAVIGATE_TO"
+                android:value="ADD_TRANSACTION_INCOME" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_sedekah_subuh"
+        android:enabled="true"
+        android:icon="@android:drawable/btn_star"
+        android:shortcutShortLabel="@string/shortcut_sedekah_subuh_short"
+        android:shortcutLongLabel="@string/shortcut_sedekah_subuh_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.islamicfintech.mrvn"
+            android:targetClass="com.example.MainActivity">
+            <extra
+                android:name="NAVIGATE_TO"
+                android:value="SEDEKAH_SUBUH" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_zakat"
+        android:enabled="true"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:shortcutShortLabel="@string/shortcut_zakat_short"
+        android:shortcutLongLabel="@string/shortcut_zakat_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aistudio.islamicfintech.mrvn"
+            android:targetClass="com.example.MainActivity">
+            <extra
+                android:name="NAVIGATE_TO"
+                android:value="ZAKAT_HUB" />
+        </intent>
+    </shortcut>
+</shortcuts>

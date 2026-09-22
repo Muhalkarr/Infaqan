@@ -71,7 +71,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
+import com.example.core.ui.AmanahHapticEngine
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -97,12 +100,15 @@ fun IbadahGoalsScreen(
     onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
 
     var selectedTabIndex by remember { mutableStateOf(0) }
     var showAddGoalDialog by remember { mutableStateOf(false) }
     var depositingGoal by remember { mutableStateOf<IbadahGoal?>(null) }
     var editingGoal by remember { mutableStateOf<IbadahGoal?>(null) }
+    var completedGoalCelebration by remember { mutableStateOf<IbadahGoal?>(null) }
 
     val totalTarget = state.ibadahGoals.sumOf { it.targetAmount }
     val totalAccumulated = state.ibadahGoals.sumOf { it.currentAccumulated }
@@ -427,6 +433,14 @@ fun IbadahGoalsScreen(
             wallets = state.wallets,
             onDismiss = { depositingGoal = null },
             onDeposit = { amount, walletId, note, receipt ->
+                val isCompleting = (goal.currentAccumulated + amount) >= goal.targetAmount
+                if (isCompleting) {
+                    AmanahHapticEngine.performGoalCompletionCelebration(haptic, context)
+                    completedGoalCelebration = goal.copy(currentAccumulated = (goal.currentAccumulated + amount).coerceAtMost(goal.targetAmount))
+                } else {
+                    AmanahHapticEngine.performButtonClick(haptic, context)
+                }
+
                 viewModel.depositToIbadahGoal(
                     goalId = goal.id,
                     amount = amount,
@@ -435,6 +449,59 @@ fun IbadahGoalsScreen(
                     receipt = receipt
                 )
                 depositingGoal = null
+            }
+        )
+    }
+
+    // Celebratory Dialog on Goal Completion
+    completedGoalCelebration?.let { goal ->
+        AlertDialog(
+            onDismissRequest = { completedGoalCelebration = null },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Stars,
+                    contentDescription = null,
+                    tint = EmeraldDark,
+                    modifier = Modifier.size(48.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Alhamdulillah! Target Tercapai!",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = EmeraldDark
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Selamat! Tabungan untuk \"${goal.title}\" telah genap mencapai target 100% sebesar Rp ${nf.format(goal.targetAmount)}.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Semoga Allah SWT memberkahi harta Anda dan mempermudah niat suci ibadah ini.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        AmanahHapticEngine.performKeyClick(haptic, context)
+                        completedGoalCelebration = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = EmeraldDark)
+                ) {
+                    Text("Masya Allah, Alhamdulillah")
+                }
             }
         )
     }

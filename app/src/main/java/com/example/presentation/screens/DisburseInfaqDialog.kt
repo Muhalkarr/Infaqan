@@ -219,7 +219,7 @@ fun DisburseInfaqDialog(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(AsnafCategory.values()) { asnaf ->
+                    items(AsnafCategory.values(), key = { it.name }) { asnaf ->
                         val isSelected = selectedAsnaf == asnaf
                         Surface(
                             shape = RoundedCornerShape(8.dp),

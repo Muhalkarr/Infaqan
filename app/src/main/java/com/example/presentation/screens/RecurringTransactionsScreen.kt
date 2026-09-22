@@ -300,7 +300,11 @@ fun RecurringTransactionsScreen(
                     }
                 }
             } else {
-                items(state.recurringTransactions) { item ->
+                items(
+                    items = state.recurringTransactions,
+                    key = { it.id },
+                    contentType = { "recurring_item" }
+                ) { item ->
                     val isDue = item.isDue()
                     val categoryAcc = state.getAccount(item.categoryAccountId)
                     val assetAcc = state.getAccount(item.assetAccountId)

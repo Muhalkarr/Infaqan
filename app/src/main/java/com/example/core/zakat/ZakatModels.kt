@@ -71,3 +71,47 @@ data class ZakatFitrahFamilyCalculation(
     val totalFitrahRupiah: Double get() = totalCashAmount
 }
 
+/**
+ * Kalkulasi Zakat Maal (Simpanan, Tabungan, Emas, dan Aset Lancar)
+ * Mengintegrasikan data saldo dompet/kas dan tabungan target ibadah langsung dari database.
+ */
+data class ZakatMaalCalculation(
+    val totalWalletSavings: Double = 0.0,         // Saldo seluruh kantong/rekening/kas dari Room Database
+    val totalIbadahSavings: Double = 0.0,         // Total akumulasi tabungan ibadah dari Room Database
+    val goldWeightGrams: Double = 0.0,            // Emas batangan / perhiasan simpanan dalam gram
+    val tradeableReceivables: Double = 0.0,       // Piutang lancar yang berpotensi cair (Qardh diberikan)
+    val shortTermLiabilities: Double = 0.0,       // Hutang jatuh tempo yang harus dibayar (Qardh diterima)
+    val goldPricePerGram: Double = 1350000.0,     // Standar harga emas per gram (acuan BAZNAS/Antam)
+    val isLunarCalendar: Boolean = true,          // 2.5% Hijriyah (354 hari) vs 2.577% Masehi (365 hari)
+    val isHaulFulfilled: Boolean = true,          // Masa kepemilikan telah genap 1 tahun (haul)
+    val lastSyncedFromDatabaseMillis: Long = 0L    // Timestamp terakhir sinkronisasi dari database
+) {
+    // Nilai emas simpanan dalam rupiah
+    val preciousMetalsValue: Double get() = goldWeightGrams * goldPricePerGram
+
+    // Total harta simpanan dan aset lancar bruto
+    val totalGrossAssets: Double get() = totalWalletSavings + totalIbadahSavings + preciousMetalsValue + tradeableReceivables
+
+    // Harta bersih kena zakat (dikurangi hutang jangka pendek jatuh tempo)
+    val netTaxableAssets: Double get() = (totalGrossAssets - shortTermLiabilities).coerceAtLeast(0.0)
+
+    // Ambang batas Nisab (setara 85 gram emas murni)
+    val nisabGold85g: Double get() = 85.0 * goldPricePerGram
+
+    // Status pencapaian nisab
+    val isNisabReached: Boolean get() = netTaxableAssets >= nisabGold85g
+
+    // Status kewajiban zakat (harus mencapai nisab DAN haul 1 tahun terpenuhi)
+    val isObligatory: Boolean get() = isNisabReached && isHaulFulfilled
+
+    // Selisih kekurangan menuju nisab
+    val shortageToNisab: Double get() = (nisabGold85g - netTaxableAssets).coerceAtLeast(0.0)
+
+    // Tarif zakat (2.5% Hijriyah atau 2.577% Masehi)
+    val zakatRate: Double get() = if (isLunarCalendar) 0.025 else 0.02577
+
+    // Nominal zakat maal yang wajib dikeluarkan
+    val zakatAmount: Double get() = if (isObligatory) kotlin.math.round(netTaxableAssets * zakatRate) else 0.0
+}
+
+

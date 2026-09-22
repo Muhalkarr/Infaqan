@@ -50,6 +50,7 @@ import com.example.core.wallet.WalletMutationRecord
 import com.example.core.wallet.WalletType
 import com.example.core.zakat.ZakatCategoryType
 import com.example.core.zakat.ZakatFitrahFamilyCalculation
+import com.example.core.zakat.ZakatMaalCalculation
 import com.example.core.zakat.ZakatPerniagaanCalculation
 import com.example.core.zakat.ZakatProfesiCalculation
 import com.example.core.directory.AmilInstitution
@@ -135,6 +136,7 @@ data class AmanahLedgerUiState(
     val zakatProfesi: ZakatProfesiCalculation = ZakatProfesiCalculation(),
     val zakatPerniagaan: ZakatPerniagaanCalculation = ZakatPerniagaanCalculation(),
     val zakatFitrah: ZakatFitrahFamilyCalculation = ZakatFitrahFamilyCalculation(),
+    val zakatMaal: ZakatMaalCalculation = ZakatMaalCalculation(),
     val selectedGoalMode: FinancialGoalMode = FinancialGoalMode.BALANCED_50_30_20,
     val themeMode: com.example.ui.theme.AppThemeMode = com.example.ui.theme.AppThemeMode.FOLLOW_SYSTEM,
     val isDarkMode: Boolean = true,
@@ -306,6 +308,13 @@ data class AmanahLedgerUiState(
     val virtualInfaqVaultBalance: Double
         get() = getAccountBalance("acc_vault")
 
+    val quarantineSyubhatBalance: Double
+        get() = journalEntries
+            .flatMap { it.lines }
+            .filter { it.accountId == "acc_syubhat" }
+            .sumOf { it.credit - it.debit }
+            .coerceAtLeast(0.0)
+
     val totalIncomeKasab: Double
         get() = journalEntries
             .filter { it.transactionType == "INFLOW" }
@@ -452,6 +461,7 @@ class AmanahLedgerViewModel : ViewModel() {
                 zakatProfesi = AmanahDummyDataGenerator.getSampleZakatProfesi(),
                 zakatPerniagaan = AmanahDummyDataGenerator.getSampleZakatPerniagaan(),
                 zakatFitrah = AmanahDummyDataGenerator.getSampleZakatFitrah(),
+                zakatMaal = AmanahDummyDataGenerator.getSampleZakatMaal(),
                 amilInstitutions = AmilDirectoryRepository.verifiedInstitutions
             )
         }
@@ -904,6 +914,84 @@ class AmanahLedgerViewModel : ViewModel() {
         appStateNotifier.notify(
             title = "Penyaluran Infaq Berhasil",
             message = "Dana Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(cleanAmount)} disalurkan ke $recipientName (${asnafCategory.displayName})",
+            severity = NotificationSeverity.SUCCESS
+        )
+    }
+
+    /**
+     * Pembersihan Dana Non-Halal / Bunga Bank (Tathhir Fund Cleansing)
+     * Berdasarkan Fatwa DSN-MUI No. 123/DSN-MUI/XI/2018 tentang Pemanfaatan Dana Sosial / Non-Halal.
+     * Dana disalurkan 100% untuk kemaslahatan umum/fasilitas sosial tanpa niat sedekah pahala.
+     */
+    fun disburseTathhirFund(
+        amount: Double,
+        publicPurpose: String,
+        fromWalletId: String,
+        notes: String = ""
+    ) {
+        val cleanAmount = amount.coerceAtLeast(0.0)
+        if (cleanAmount <= 0.0) {
+            appStateNotifier.notify(
+                title = "Nominal Tidak Valid",
+                message = "Masukkan nominal dana pembersihan yang sah.",
+                severity = NotificationSeverity.WARNING
+            )
+            return
+        }
+
+        val date = Date()
+        val hijri = HijriCalendarEngine.fromGregorian(date)
+        val journalId = UUID.randomUUID().toString()
+        val distId = "tathhir_${UUID.randomUUID().toString().take(8)}"
+        val receiptNo = "TATHHIR-${SimpleDateFormat("yyyyMMdd", Locale.US).format(date)}-${(1000..9999).random()}"
+
+        val realWallet = _uiState.value.getWallet(fromWalletId)
+        val resolvedAssetAccountId = realWallet?.linkedAccountId ?: fromWalletId
+
+        val lines = listOf(
+            JournalLine(accountId = "acc_vault", debit = cleanAmount, credit = 0.0),
+            JournalLine(accountId = resolvedAssetAccountId, debit = 0.0, credit = cleanAmount)
+        )
+
+        val entry = JournalEntry(
+            id = journalId,
+            gregorianDate = date,
+            hijriYear = hijri.year,
+            hijriMonth = hijri.month,
+            hijriDay = hijri.day,
+            description = "Tathhir Dana Non-Halal: $publicPurpose",
+            transactionType = "INFAQ_PAYOUT",
+            lines = lines
+        )
+
+        val distRecord = InfaqDistributionRecord(
+            id = distId,
+            amount = cleanAmount,
+            recipientName = publicPurpose,
+            asnafCategory = AsnafCategory.FISABILILLAH,
+            distributionDate = date,
+            hijriDateString = "${hijri.day} ${hijri.monthName} ${hijri.year} H",
+            sourceAccountId = resolvedAssetAccountId,
+            programName = "Tathhir (Pembersihan Dana Non-Halal / Bunga Bank)",
+            receiptNumber = receiptNo,
+            notes = "$notes [Penyaluran dana non-halal/syubhat untuk kemaslahatan umum sesuai Fatwa DSN-MUI No. 123/2018]",
+            isVerified = true
+        )
+
+        _uiState.update { state ->
+            state.copy(
+                journalEntries = listOf(entry) + state.journalEntries,
+                infaqDistributions = listOf(distRecord) + state.infaqDistributions
+            )
+        }
+        persistEntryAsync(entry)
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveInfaqDistribution(distRecord)
+        }
+
+        appStateNotifier.notify(
+            title = "Tathhir Berhasil Dilaksanakan",
+            message = "Dana non-halal Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(cleanAmount)} berhasil disalurkan untuk kemaslahatan umum ($publicPurpose). Harta Anda terjaga bersih dari syubhat.",
             severity = NotificationSeverity.SUCCESS
         )
     }
@@ -2054,6 +2142,43 @@ class AmanahLedgerViewModel : ViewModel() {
         _uiState.update { it.copy(zakatFitrah = calc) }
     }
 
+    fun updateZakatMaal(calc: ZakatMaalCalculation) {
+        _uiState.update { it.copy(zakatMaal = calc) }
+    }
+
+    /**
+     * Menghitung dan menyinkronkan Zakat Maal secara otomatis berdasarkan total aset kas & rekening
+     * serta total tabungan target ibadah yang tersimpan secara riil di Room Database.
+     */
+    fun syncZakatMaalFromDatabase() {
+        val currentState = _uiState.value
+        // Total saldo kas & rekening dari DB
+        val totalWalletSavings = currentState.totalWalletBalance.coerceAtLeast(0.0)
+        // Total akumulasi tabungan target ibadah dari DB
+        val totalIbadahSavings = currentState.ibadahGoals.sumOf { it.currentAccumulated }.coerceAtLeast(0.0)
+
+        // Piutang lancar dari Qardh (uang kita yang dipinjamkan ke pihak lain dan belum lunas)
+        val receivables = currentState.qardhRecords
+            .filter { it.type == QardhType.PIUTANG_SAYA && it.status != QardhStatus.LUNAS && it.status != QardhStatus.DIIKHLASKAN_SEDEKAH }
+            .sumOf { it.remainingAmount }
+
+        // Hutang jangka pendek dari Qardh (kewajiban hutang kita yang belum lunas)
+        val shortTermDebt = currentState.qardhRecords
+            .filter { it.type == QardhType.HUTANG_SAYA && it.status != QardhStatus.LUNAS && it.status != QardhStatus.DIIKHLASKAN_SEDEKAH }
+            .sumOf { it.remainingAmount }
+
+        val previousMaal = currentState.zakatMaal
+        val updatedMaal = previousMaal.copy(
+            totalWalletSavings = totalWalletSavings,
+            totalIbadahSavings = totalIbadahSavings,
+            tradeableReceivables = receivables,
+            shortTermLiabilities = shortTermDebt,
+            goldPricePerGram = currentState.goldPricePerGram,
+            lastSyncedFromDatabaseMillis = System.currentTimeMillis()
+        )
+        _uiState.update { it.copy(zakatMaal = updatedMaal) }
+    }
+
     fun disburseZakat(
         title: String,
         amount: Double,
@@ -2131,6 +2256,7 @@ class AmanahLedgerViewModel : ViewModel() {
             recurring = state.recurringTransactions,
             sedekahSubuhState = state.sedekahSubuhState,
             distributions = state.infaqDistributions,
+            qardhRecords = state.qardhRecords,
             password = password
         )
     }
@@ -2147,6 +2273,7 @@ class AmanahLedgerViewModel : ViewModel() {
                     rules = if (result.restoredRules.isNotEmpty()) result.restoredRules else state.rules,
                     recurringTransactions = if (result.restoredRecurring.isNotEmpty()) result.restoredRecurring else state.recurringTransactions,
                     infaqDistributions = if (result.restoredDistributions.isNotEmpty()) result.restoredDistributions else state.infaqDistributions,
+                    qardhRecords = if (result.restoredQardh.isNotEmpty()) result.restoredQardh else state.qardhRecords,
                     sedekahSubuhState = result.restoredSedekahState
                 )
             }
@@ -2248,6 +2375,7 @@ class AmanahLedgerViewModel : ViewModel() {
         val dummyZakatProfesi = AmanahDummyDataGenerator.getSampleZakatProfesi()
         val dummyZakatPerniagaan = AmanahDummyDataGenerator.getSampleZakatPerniagaan()
         val dummyZakatFitrah = AmanahDummyDataGenerator.getSampleZakatFitrah()
+        val dummyZakatMaal = AmanahDummyDataGenerator.getSampleZakatMaal()
 
         _uiState.update { current ->
             current.copy(
@@ -2261,7 +2389,8 @@ class AmanahLedgerViewModel : ViewModel() {
                 infaqDistributions = dummyDistributions,
                 zakatProfesi = dummyZakatProfesi,
                 zakatPerniagaan = dummyZakatPerniagaan,
-                zakatFitrah = dummyZakatFitrah
+                zakatFitrah = dummyZakatFitrah,
+                zakatMaal = dummyZakatMaal
             )
         }
 

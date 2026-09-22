@@ -94,42 +94,84 @@ object DocumentExporter {
     ): File {
         val pdfDoc = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 standard
-        val page = pdfDoc.startPage(pageInfo)
-        val canvas: Canvas = page.canvas
+        var currentPage = pdfDoc.startPage(pageInfo)
+        var canvas: Canvas = currentPage.canvas
+        var pageNum = 1
+        val maxY = 770f
 
         val paintTitle = Paint().apply {
+            isAntiAlias = true
             color = Color.rgb(20, 90, 50) // Syariah deep green
             textSize = 15f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         val paintSubtitle = Paint().apply {
+            isAntiAlias = true
             color = Color.DKGRAY
             textSize = 10f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         }
         val paintHeader = Paint().apply {
+            isAntiAlias = true
             color = Color.rgb(30, 41, 59)
             textSize = 11f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         val paintBody = Paint().apply {
+            isAntiAlias = true
             color = Color.BLACK
-            textSize = 9.5f
+            textSize = 8.5f
         }
         val paintGreen = Paint().apply {
+            isAntiAlias = true
             color = Color.rgb(16, 149, 106)
-            textSize = 10f
+            textSize = 9.5f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         val paintLine = Paint().apply {
+            isAntiAlias = true
             color = Color.LTGRAY
             strokeWidth = 1f
+        }
+        val paintFooter = Paint().apply {
+            isAntiAlias = true
+            color = Color.GRAY
+            textSize = 8f
+            textAlign = Paint.Align.CENTER
         }
 
         var y = 40f
 
+        fun drawFooterOnPage(c: Canvas, pageNumber: Int) {
+            c.drawLine(40f, 792f, 555f, 792f, paintLine)
+            val footerText = "\"Wahai orang-orang yang beriman, bertakwalah kepada Allah dan hendaklah setiap orang memperhatikan apa yang telah diperbuatnya untuk hari esok.\" (QS. Al-Hasyr: 18) • Hal. $pageNumber"
+            c.drawText(footerText, 595f / 2f, 808f, paintFooter)
+        }
+
+        fun ensureSpace(neededHeight: Float, onNewPageHeader: ((Canvas, Float) -> Float)? = null) {
+            if (y + neededHeight > maxY) {
+                drawFooterOnPage(canvas, pageNum)
+                pdfDoc.finishPage(currentPage)
+                pageNum++
+                currentPage = pdfDoc.startPage(pageInfo)
+                canvas = currentPage.canvas
+                y = 40f
+
+                // Running continuation header
+                canvas.drawText("AMANAH LEDGER SYARIAH (Lanjutan - Halaman $pageNum)", 40f, y, paintTitle)
+                y += 16f
+                canvas.drawLine(40f, y, 555f, y, paintLine)
+                y += 18f
+
+                if (onNewPageHeader != null) {
+                    y = onNewPageHeader(canvas, y)
+                }
+            }
+        }
+
         // Bismillah & Header
         val paintBismillah = Paint().apply {
+            isAntiAlias = true
             color = Color.rgb(20, 90, 50)
             textSize = 12f
             textAlign = Paint.Align.CENTER
@@ -166,60 +208,71 @@ object DocumentExporter {
         canvas.drawText(rupiahFormat.format(totalInfaqDisbursed), 360f, y, paintGreen)
         y += 22f
 
-        // Saldo Per Kantong
+        // Saldo Per Kantong (Seluruh kantong)
+        ensureSpace(40f)
         canvas.drawText("DISTRIBUSI SALDO PER KANTONG", 40f, y, paintHeader)
         y += 16f
-        for (w in wallets.take(5)) {
+        for (w in wallets) {
             val bal = getWalletBalance(w.id)
-            canvas.drawText("- ${w.name} (${w.type.displayName}):", 45f, y, paintBody)
+            val walletLine = "- ${w.name} (${w.type.displayName}):"
+            val wrappedName = FinancialPdfGenerator.wrapText(walletLine, paintBody, 300f)
+            val itemHeight = 15f + (wrappedName.size - 1) * 11f
+            ensureSpace(itemHeight)
+            for (i in wrappedName.indices) {
+                canvas.drawText(wrappedName[i], 45f, y + (i * 11f), paintBody)
+            }
             canvas.drawText(rupiahFormat.format(bal), 360f, y, paintBody)
-            y += 14f
+            y += itemHeight
         }
         y += 10f
         canvas.drawLine(40f, y, 555f, y, paintLine)
         y += 20f
 
-        // Transaksi Terakhir
-        canvas.drawText("MUTASI & JURNAL TERBARU (${entries.size.coerceAtMost(10)} Transaksi)", 40f, y, paintHeader)
+        // Transaksi Mutasi & Jurnal
+        fun drawTransactionsHeader(c: Canvas, topY: Float): Float {
+            paintBody.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            c.drawText("Tanggal", 45f, topY, paintBody)
+            c.drawText("Keterangan & Rincian Transaksi", 125f, topY, paintBody)
+            c.drawText("Tipe", 370f, topY, paintBody)
+            c.drawText("Nominal", 460f, topY, paintBody)
+            paintBody.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+            val nextY = topY + 8f
+            c.drawLine(40f, nextY, 555f, nextY, paintLine)
+            return nextY + 12f
+        }
+
+        ensureSpace(40f)
+        canvas.drawText("MUTASI & JURNAL TRANSAKSI BUKU BESAR (${entries.size} Transaksi)", 40f, y, paintHeader)
         y += 18f
+        y = drawTransactionsHeader(canvas, y)
 
-        // Table Header
-        paintBody.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        canvas.drawText("Tanggal", 45f, y, paintBody)
-        canvas.drawText("Keterangan", 130f, y, paintBody)
-        canvas.drawText("Tipe", 340f, y, paintBody)
-        canvas.drawText("Nominal", 460f, y, paintBody)
-        paintBody.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-        y += 8f
-        canvas.drawLine(40f, y, 555f, y, paintLine)
-        y += 14f
-
-        for (e in entries.take(12)) {
-            val dt = SimpleDateFormat("dd/MM/yy", Locale("id", "ID")).format(e.gregorianDate)
-            val desc = if (e.description.length > 25) e.description.take(22) + "..." else e.description
-            val type = e.transactionType
+        val sdf = SimpleDateFormat("dd/MM/yy", Locale("id", "ID"))
+        for (e in entries) {
+            val dt = sdf.format(e.gregorianDate)
+            val descLines = FinancialPdfGenerator.wrapText(e.description, paintBody, 235f)
+            val type = when (e.transactionType) {
+                "INFLOW" -> "Pemasukan"
+                "EXPENSE" -> "Beban"
+                "INFAQ_PAYOUT" -> "Infaq"
+                "TRANSFER" -> "Transfer"
+                else -> e.transactionType
+            }
             val amt = rupiahFormat.format(e.totalDebit)
+            val rowHeight = 15f + (descLines.size - 1) * 11f
+
+            ensureSpace(rowHeight) { c, topY -> drawTransactionsHeader(c, topY) }
 
             canvas.drawText(dt, 45f, y, paintBody)
-            canvas.drawText(desc, 130f, y, paintBody)
-            canvas.drawText(type, 340f, y, paintBody)
+            for (i in descLines.indices) {
+                canvas.drawText(descLines[i], 125f, y + (i * 11f), paintBody)
+            }
+            canvas.drawText(type, 370f, y, paintBody)
             canvas.drawText(amt, 460f, y, paintBody)
-            y += 14f
-            if (y > 780f) break
+            y += rowHeight
         }
 
-        // Footer Dalil
-        y = 800f
-        canvas.drawLine(40f, y, 555f, y, paintLine)
-        y += 16f
-        val paintFooter = Paint().apply {
-            color = Color.GRAY
-            textSize = 8f
-            textAlign = Paint.Align.CENTER
-        }
-        canvas.drawText("\"Wahai orang-orang yang beriman, bertakwalah kepada Allah dan hendaklah setiap orang memperhatikan apa yang telah diperbuatnya untuk hari esok.\" (QS. Al-Hasyr: 18)", 595f / 2f, y, paintFooter)
-
-        pdfDoc.finishPage(page)
+        drawFooterOnPage(canvas, pageNum)
+        pdfDoc.finishPage(currentPage)
 
         val outputDir = File(context.cacheDir, "reports").apply { mkdirs() }
         val pdfFile = File(outputDir, "Laporan_AmanahLedger_${System.currentTimeMillis()}.pdf")

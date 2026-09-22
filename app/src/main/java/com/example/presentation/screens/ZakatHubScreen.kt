@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
@@ -32,6 +33,8 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.AlertDialog
@@ -48,6 +51,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -56,6 +60,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +70,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -74,10 +81,15 @@ import com.example.core.infaq.AsnafCategory
 import com.example.core.receipt.ReceiptAttachment
 import com.example.core.receipt.ReceiptType
 import com.example.core.state.AmanahLedgerViewModel
+import com.example.core.ui.AmanahHapticEngine
+import com.example.core.wallet.WalletAccount
 import com.example.core.zakat.ZakatFitrahFamilyCalculation
+import com.example.core.zakat.ZakatMaalCalculation
 import com.example.core.zakat.ZakatPerniagaanCalculation
 import com.example.core.zakat.ZakatProfesiCalculation
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,13 +100,19 @@ fun ZakatHubScreen(
     onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
     val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
 
     var selectedTab by remember { mutableStateOf(0) }
     var showDisburseModal by remember { mutableStateOf(false) }
     var showGoldEditDialog by remember { mutableStateOf(false) }
     var disburseAmountPreset by remember { mutableStateOf(0.0) }
-    var disburseTitlePreset by remember { mutableStateOf("Zakat Maal") }
+    var disburseTitlePreset by remember { mutableStateOf("Zakat Maal (Simpanan)") }
+
+    LaunchedEffect(Unit) {
+        viewModel.syncZakatMaalFromDatabase()
+    }
 
     Scaffold(
         topBar = {
@@ -107,7 +125,7 @@ fun ZakatHubScreen(
                             fontSize = 18.sp
                         )
                         Text(
-                            text = "Zakat Profesi, Perniagaan (Tijarah), & Fitrah",
+                            text = "Zakat Maal (Aset/Tabungan), Profesi, Perniagaan, & Fitrah",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -200,30 +218,74 @@ fun ZakatHubScreen(
                 }
             }
 
-            TabRow(
+            ScrollableTabRow(
                 selectedTabIndex = selectedTab,
+                edgePadding = 12.dp,
                 containerColor = MaterialTheme.colorScheme.surface
             ) {
                 Tab(
                     selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = { Text("Zakat Profesi", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                    onClick = {
+                        AmanahHapticEngine.performKeyClick(haptic, context)
+                        selectedTab = 0
+                    },
+                    text = { Text("Zakat Maal", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) },
+                    modifier = Modifier.testTag("tab_zakat_maal")
                 )
                 Tab(
                     selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = { Text("Perniagaan", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                    onClick = {
+                        AmanahHapticEngine.performKeyClick(haptic, context)
+                        selectedTab = 1
+                    },
+                    text = { Text("Zakat Profesi", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) },
+                    modifier = Modifier.testTag("tab_zakat_profesi")
                 )
                 Tab(
                     selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    text = { Text("Zakat Fitrah", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                    onClick = {
+                        AmanahHapticEngine.performKeyClick(haptic, context)
+                        selectedTab = 2
+                    },
+                    text = { Text("Perniagaan", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) },
+                    modifier = Modifier.testTag("tab_zakat_perniagaan")
+                )
+                Tab(
+                    selected = selectedTab == 3,
+                    onClick = {
+                        AmanahHapticEngine.performKeyClick(haptic, context)
+                        selectedTab = 3
+                    },
+                    text = { Text("Zakat Fitrah", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) },
+                    modifier = Modifier.testTag("tab_zakat_fitrah")
+                )
+                Tab(
+                    selected = selectedTab == 4,
+                    onClick = {
+                        AmanahHapticEngine.performKeyClick(haptic, context)
+                        selectedTab = 4
+                    },
+                    text = { Text("Tathhir (Non-Halal)", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) },
+                    modifier = Modifier.testTag("tab_tathhir")
                 )
             }
 
             Box(modifier = Modifier.fillMaxSize()) {
                 when (selectedTab) {
-                    0 -> ZakatProfesiTab(
+                    0 -> ZakatMaalTab(
+                        calc = state.zakatMaal,
+                        totalWalletBalance = state.totalWalletBalance,
+                        walletsCount = state.wallets.size,
+                        ibadahGoals = state.ibadahGoals,
+                        onUpdate = { viewModel.updateZakatMaal(it) },
+                        onSyncFromDatabase = { viewModel.syncZakatMaalFromDatabase() },
+                        onTunaikan = { amt ->
+                            disburseAmountPreset = amt
+                            disburseTitlePreset = "Zakat Maal (Simpanan & Tabungan)"
+                            showDisburseModal = true
+                        }
+                    )
+                    1 -> ZakatProfesiTab(
                         calc = state.zakatProfesi,
                         onUpdate = { viewModel.updateZakatProfesi(it) },
                         onTunaikan = { amt ->
@@ -232,7 +294,7 @@ fun ZakatHubScreen(
                             showDisburseModal = true
                         }
                     )
-                    1 -> ZakatPerniagaanTab(
+                    2 -> ZakatPerniagaanTab(
                         calc = state.zakatPerniagaan,
                         onUpdate = { viewModel.updateZakatPerniagaan(it) },
                         onTunaikan = { amt ->
@@ -241,7 +303,7 @@ fun ZakatHubScreen(
                             showDisburseModal = true
                         }
                     )
-                    2 -> ZakatFitrahTab(
+                    3 -> ZakatFitrahTab(
                         calc = state.zakatFitrah,
                         onUpdate = { viewModel.updateZakatFitrah(it) },
                         onTunaikan = { amt ->
@@ -249,6 +311,11 @@ fun ZakatHubScreen(
                             disburseTitlePreset = "Zakat Fitrah Keluarga (${state.zakatFitrah.familyMemberCount} Jiwa)"
                             showDisburseModal = true
                         }
+                    )
+                    4 -> TathhirCleansingTab(
+                        viewModel = viewModel,
+                        quarantineBalance = state.quarantineSyubhatBalance,
+                        wallets = state.wallets
                     )
                 }
             }
@@ -991,4 +1058,716 @@ private fun DisburseZakatDialog(
             }
         }
     )
+}
+
+@Composable
+private fun ZakatMaalTab(
+    calc: ZakatMaalCalculation,
+    totalWalletBalance: Double,
+    walletsCount: Int,
+    ibadahGoals: List<com.example.core.ibadah.IbadahGoal>,
+    onUpdate: (ZakatMaalCalculation) -> Unit,
+    onSyncFromDatabase: () -> Unit,
+    onTunaikan: (Double) -> Unit
+) {
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+    val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
+    val sdf = remember { SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("id", "ID")) }
+
+    var walletSavingsText by remember(calc.totalWalletSavings) { mutableStateOf(calc.totalWalletSavings.toLong().toString()) }
+    var ibadahSavingsText by remember(calc.totalIbadahSavings) { mutableStateOf(calc.totalIbadahSavings.toLong().toString()) }
+    var goldGramsText by remember(calc.goldWeightGrams) { mutableStateOf(if (calc.goldWeightGrams == 0.0) "" else calc.goldWeightGrams.toString()) }
+    var receivablesText by remember(calc.tradeableReceivables) { mutableStateOf(calc.tradeableReceivables.toLong().toString()) }
+    var liabilitiesText by remember(calc.shortTermLiabilities) { mutableStateOf(calc.shortTermLiabilities.toLong().toString()) }
+
+    val activeWalletsTotal = totalWalletBalance.coerceAtLeast(0.0)
+    val totalIbadahAccumulated = ibadahGoals.sumOf { it.currentAccumulated }.coerceAtLeast(0.0)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // 1. Result Status Card
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = if (calc.isObligatory) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                else MaterialTheme.colorScheme.surfaceVariant
+            ),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = when {
+                                calc.isObligatory -> "WAJIB ZAKAT MAAL (${if (calc.isLunarCalendar) "2.5% Hijriyah" else "2.577% Masehi"})"
+                                !calc.isNisabReached -> "BELUM MENCAPAI NISAB"
+                                else -> "BELUM GENAP 1 TAHUN (HAUL)"
+                            },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (calc.isObligatory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Rp ${nf.format(calc.zakatAmount)}",
+                            fontSize = 26.sp,
+                            fontWeight = FontWeight.Black,
+                            color = if (calc.isObligatory) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    if (calc.isObligatory) {
+                        Button(
+                            onClick = {
+                                AmanahHapticEngine.performButtonClick(haptic, context)
+                                onTunaikan(calc.zakatAmount)
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.testTag("tunaikan_zakat_maal_btn")
+                        ) {
+                            Text("Tunaikan", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Total Harta Bersih:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Rp ${nf.format(calc.netTaxableAssets)}", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Ambang Nisab (85g Emas):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Rp ${nf.format(calc.nisabGold85g)}", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (!calc.isNisabReached) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Kurang Rp ${nf.format(calc.shortageToNisab)} lagi untuk mencapai syarat hisab nisab 85g emas.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Medium
+                    )
+                } else if (!calc.isHaulFulfilled) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Nisab telah tercapai. Kewajiban zakat aktif setelah harta disimpan selama 1 tahun haul penuh.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.tertiary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+
+        // 2. Database Auto-Sync Card
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(14.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AccountBalance,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Integrasi Aset & Tabungan Database",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Menghitung zakat dari saldo riil dompet kas & tabungan Room DB",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("• Kas/Rekening di Database ($walletsCount akun):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Rp ${nf.format(activeWalletsTotal)}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("• Tabungan Target Ibadah (${ibadahGoals.size} program):", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Rp ${nf.format(totalIbadahAccumulated)}", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                        if (calc.lastSyncedFromDatabaseMillis > 0L) {
+                            Text(
+                                text = "Terakhir disinkronkan: ${sdf.format(Date(calc.lastSyncedFromDatabaseMillis))}",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Button(
+                    onClick = {
+                        AmanahHapticEngine.performButtonClick(haptic, context)
+                        onSyncFromDatabase()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("sync_zakat_maal_db_btn"),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = "Sinkronkan", modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Sinkronkan dari Kas & Tabungan Database", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        // 3. Asset Breakdown Fields (Rincian Aset Harta Simpanan)
+        Text("Rincian Harta Simpanan & Aset:", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+
+        // Saldo Tabungan / Kas Bank
+        OutlinedTextField(
+            value = walletSavingsText,
+            onValueChange = { input ->
+                walletSavingsText = input.filter { it.isDigit() }
+                val v = walletSavingsText.toDoubleOrNull() ?: 0.0
+                onUpdate(calc.copy(totalWalletSavings = v))
+            },
+            label = { Text("1. Saldo Kas & Tabungan Bank (Rp)") },
+            supportingText = { Text("Uang tunai fisik, saldo rekening tabungan/giro/e-wallet") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth().testTag("zakat_maal_wallet_savings_input")
+        )
+
+        // Tabungan Khusus / Target Ibadah
+        OutlinedTextField(
+            value = ibadahSavingsText,
+            onValueChange = { input ->
+                ibadahSavingsText = input.filter { it.isDigit() }
+                val v = ibadahSavingsText.toDoubleOrNull() ?: 0.0
+                onUpdate(calc.copy(totalIbadahSavings = v))
+            },
+            label = { Text("2. Dana Tabungan Terencana & Ibadah (Rp)") },
+            supportingText = { Text("Tabungan qurban, haji, umroh, dan tabungan khusus yang tersimpan") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth().testTag("zakat_maal_ibadah_savings_input")
+        )
+
+        // Logam Mulia / Emas Simpanan
+        OutlinedTextField(
+            value = goldGramsText,
+            onValueChange = { input ->
+                goldGramsText = input.filter { it.isDigit() || it == '.' }
+                val v = goldGramsText.toDoubleOrNull() ?: 0.0
+                onUpdate(calc.copy(goldWeightGrams = v))
+            },
+            label = { Text("3. Simpanan Emas / Logam Mulia (Gram)") },
+            supportingText = {
+                val goldVal = (goldGramsText.toDoubleOrNull() ?: 0.0) * calc.goldPricePerGram
+                Text("Setara Rp ${nf.format(goldVal)} (Acuan: Rp ${nf.format(calc.goldPricePerGram)}/g)")
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.fillMaxWidth().testTag("zakat_maal_gold_input")
+        )
+
+        // Piutang Lancar
+        OutlinedTextField(
+            value = receivablesText,
+            onValueChange = { input ->
+                receivablesText = input.filter { it.isDigit() }
+                val v = receivablesText.toDoubleOrNull() ?: 0.0
+                onUpdate(calc.copy(tradeableReceivables = v))
+            },
+            label = { Text("4. Piutang Lancar yang Berpotensi Kembali (Rp)") },
+            supportingText = { Text("Pinjaman kebajikan (Qardh Diberikan) yang diharapkan segera lunas") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth().testTag("zakat_maal_receivables_input")
+        )
+
+        // Pengurang: Hutang Jatuh Tempo
+        OutlinedTextField(
+            value = liabilitiesText,
+            onValueChange = { input ->
+                liabilitiesText = input.filter { it.isDigit() }
+                val v = liabilitiesText.toDoubleOrNull() ?: 0.0
+                onUpdate(calc.copy(shortTermLiabilities = v))
+            },
+            label = { Text("5. Pengurang: Hutang Jatuh Tempo (Rp)") },
+            supportingText = { Text("Kewajiban hutang jangka pendek yang harus dibayar dalam tahun berjalan") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth().testTag("zakat_maal_liabilities_input")
+        )
+
+        // 4. Shariah Settings (Haul & Kalender)
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Ketentuan & Parameter Syariah:", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                        Text("Telah Mencapai Haul (1 Tahun)", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Harta simpanan telah genap tersimpan selama 1 tahun penuh tanpa berkurang di bawah nisab.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    androidx.compose.material3.Switch(
+                        checked = calc.isHaulFulfilled,
+                        onCheckedChange = {
+                            AmanahHapticEngine.performKeyClick(haptic, context)
+                            onUpdate(calc.copy(isHaulFulfilled = it))
+                        }
+                    )
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                        Text(
+                            text = if (calc.isLunarCalendar) "Metode Hisab: Kalender Hijriyah (2.5%)" else "Metode Hisab: Kalender Masehi (2.577%)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = if (calc.isLunarCalendar) "Tahun Qamariyah (354 hari) dengan tarif standar 2.5%."
+                            else "Tahun Syamsiyah (365 hari) disesuaikan 2.577% sesuai fatwa hisab BAZNAS RI.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    androidx.compose.material3.Switch(
+                        checked = calc.isLunarCalendar,
+                        onCheckedChange = {
+                            AmanahHapticEngine.performKeyClick(haptic, context)
+                            onUpdate(calc.copy(isLunarCalendar = it))
+                        }
+                    )
+                }
+            }
+        }
+
+        // 5. Landasan Syariah Card
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = "Kaidah Fiqih Zakat Maal:",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "1. Nisab Zakat Maal (simpanan kas, tabungan, perhiasan emas/perak) adalah setara 85 gram emas murni.\n" +
+                            "2. Harta dikenakan zakat sebesar 2.5% (Hijriyah) atau 2.577% (Masehi) apabila telah genap mencapai haul (1 tahun kepemilikan).\n" +
+                            "3. Tabungan yang dialokasikan untuk kebutuhan ibadah (qurban/haji) jika masih mengendap dan genap haul tetap dihitung sebagai aset maal hingga saat direalisasikan.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun TathhirCleansingTab(
+    viewModel: AmanahLedgerViewModel,
+    quarantineBalance: Double,
+    wallets: List<WalletAccount>
+) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
+    val state by viewModel.uiState.collectAsState()
+
+    var amountInput by remember { mutableStateOf(if (quarantineBalance > 0) quarantineBalance.toLong().toString() else "") }
+    var selectedPurpose by remember { mutableStateOf("Fasilitas MCK & Sanitasi Umum") }
+    var customPurpose by remember { mutableStateOf("") }
+    var selectedWalletId by remember { mutableStateOf(wallets.firstOrNull()?.id ?: "acc_cash") }
+    var notesInput by remember { mutableStateOf("") }
+    var showConfirmDialog by remember { mutableStateOf(false) }
+
+    val purposeOptions = listOf(
+        "Fasilitas MCK & Sanitasi Umum",
+        "Perbaikan Jalan / Jembatan Rusak Umum",
+        "Pengadaan Sarana Air Bersih Dhuafa",
+        "Penerangan Jalan Lingkungan Pedesaan",
+        "Pengelolaan Tempat Pembuangan Sampah",
+        "Kebutuhan Sosial Maslahat Lainnya"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Status Saldo Syubhat
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = if (quarantineBalance > 0) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+                else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+            ),
+            shape = RoundedCornerShape(14.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (quarantineBalance > 0) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+                else MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Saldo Terindikasi Syubhat / Bunga",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (quarantineBalance > 0) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.primary
+                    ) {
+                        Text(
+                            text = if (quarantineBalance > 0) "Perlu Pembersihan" else "Bersih",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Rp ${nf.format(quarantineBalance)}",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (quarantineBalance > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Akun Karantina Syubhat (acc_syubhat). Dana non-halal wajib dikeluarkan untuk fasilitas umum.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Edukasi Fatwa Syariah
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Text(
+                    text = "Pedoman Syariah Tathhir (Pembersihan Dana Non-Halal):",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "• Berdasarkan Fatwa DSN-MUI No. 123/DSN-MUI/XI/2018: Bunga bank atau penghasilan non-halal tidak boleh dimanfaatkan untuk kepentingan pribadi atau keluarga.\n" +
+                            "• Dana ini wajib dibersihkan dengan cara disalurkan 100% untuk kemaslahatan sarana publik atau fasilitas sosial.\n" +
+                            "• Penyaluran ini berstatus pembersihan (bara'ah adz-dzimmah), bukan sedekah berpahala kebajikan.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+
+        // Formulir Penyaluran Tathhir
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(14.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Formulir Pembersihan (Tathhir)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Input Nominal
+                Text(
+                    text = "Nominal Dana Non-Halal (Rp)",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = amountInput,
+                    onValueChange = { amountInput = it.filter { ch -> ch.isDigit() } },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("tathhir_amount_input"),
+                    placeholder = { Text("Contoh: 150000") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+
+                if (quarantineBalance > 0) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    TextButton(
+                        onClick = {
+                            amountInput = quarantineBalance.toLong().toString()
+                            AmanahHapticEngine.performKeyClick(haptic, context)
+                        },
+                        modifier = Modifier.testTag("tathhir_clean_all_btn")
+                    ) {
+                        Text(
+                            "Bersihkan Semua Saldo Syubhat (Rp ${nf.format(quarantineBalance)})",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Pilih Tujuan Kemaslahatan
+                Text(
+                    text = "Tujuan Kemaslahatan Sarana Publik",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                purposeOptions.forEach { opt ->
+                    val isSelected = selectedPurpose == opt
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                selectedPurpose = opt
+                                AmanahHapticEngine.performKeyClick(haptic, context)
+                            }
+                            .padding(vertical = 6.dp, horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.material3.RadioButton(
+                            selected = isSelected,
+                            onClick = {
+                                selectedPurpose = opt
+                                AmanahHapticEngine.performKeyClick(haptic, context)
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = opt,
+                            fontSize = 12.sp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                if (selectedPurpose.contains("Lainnya")) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = customPurpose,
+                        onValueChange = { customPurpose = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("tathhir_custom_purpose_input"),
+                        placeholder = { Text("Tuliskan fasilitas publik tujuan...") },
+                        singleLine = true
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Dompet Sumber Dana
+                Text(
+                    text = "Dompet / Rekening Sumber Dana",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    wallets.take(3).forEach { wallet ->
+                        val isSelected = selectedWalletId == wallet.id
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    selectedWalletId = wallet.id
+                                    AmanahHapticEngine.performKeyClick(haptic, context)
+                                },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = wallet.name,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = "Rp ${nf.format(state.getWalletBalance(wallet.id))}",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Catatan
+                OutlinedTextField(
+                    value = notesInput,
+                    onValueChange = { notesInput = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Catatan tambahan (mis. Bunga Bank Konvensional...") },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Tombol Eksekusi
+                val amountDouble = amountInput.toDoubleOrNull() ?: 0.0
+                Button(
+                    onClick = {
+                        AmanahHapticEngine.performKeyClick(haptic, context)
+                        showConfirmDialog = true
+                    },
+                    enabled = amountDouble > 0,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .testTag("tathhir_submit_btn"),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        "Eksekusi Penyaluran Tathhir (Rp ${nf.format(amountDouble)})",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        }
+    }
+
+    if (showConfirmDialog) {
+        val amountDouble = amountInput.toDoubleOrNull() ?: 0.0
+        val finalPurpose = if (selectedPurpose.contains("Lainnya") && customPurpose.isNotBlank()) customPurpose else selectedPurpose
+
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Konfirmasi Tathhir Dana Non-Halal") },
+            text = {
+                Text(
+                    "Anda akan menyalurkan dana sebesar Rp ${nf.format(amountDouble)} untuk: $finalPurpose.\n\n" +
+                            "Penyaluran ini dicatat sebagai pelepasan dana non-halal/syubhat untuk kemaslahatan umum sesuai Fatwa DSN-MUI No. 123/2018."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.disburseTathhirFund(
+                            amount = amountDouble,
+                            publicPurpose = finalPurpose,
+                            fromWalletId = selectedWalletId,
+                            notes = notesInput
+                        )
+                        showConfirmDialog = false
+                        amountInput = ""
+                        customPurpose = ""
+                        notesInput = ""
+                        AmanahHapticEngine.performButtonClick(haptic, context)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Salurkan Sekarang")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
 }

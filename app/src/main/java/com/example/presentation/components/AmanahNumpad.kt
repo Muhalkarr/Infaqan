@@ -12,9 +12,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.core.ui.AmanahHapticEngine
 
 @Composable
 fun AmanahNumpad(
@@ -24,6 +27,9 @@ fun AmanahNumpad(
     onDoneClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
+    val context = LocalContext.current
+
     val buttonModifier = Modifier
         .aspectRatio(1f)
         .padding(4.dp)
@@ -58,6 +64,7 @@ fun AmanahNumpad(
                                 else MaterialTheme.colorScheme.surface
                             )
                             .clickable {
+                                AmanahHapticEngine.performKeyClick(haptic, context)
                                 when (key) {
                                     in "0".."9" -> onNumberClick(key.toInt())
                                     "000" -> {
@@ -95,7 +102,10 @@ fun AmanahNumpad(
                     .height(56.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surface)
-                    .clickable { onBackspaceClick() },
+                    .clickable {
+                        AmanahHapticEngine.performKeyClick(haptic, context)
+                        onBackspaceClick()
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -106,7 +116,10 @@ fun AmanahNumpad(
             }
             
             Button(
-                onClick = onDoneClick,
+                onClick = {
+                    AmanahHapticEngine.performButtonClick(haptic, context)
+                    onDoneClick()
+                },
                 modifier = Modifier
                     .weight(3f)
                     .height(56.dp),

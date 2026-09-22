@@ -18,25 +18,33 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.VolunteerActivism
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -57,6 +65,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.core.calendar.HijriCalendarEngine
 import com.example.core.report.FinancialPdfGenerator
 import com.example.core.state.AmanahLedgerViewModel
@@ -65,6 +74,7 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,6 +91,13 @@ fun MonthlyReportScreen(
     var selectedYear by remember { mutableIntStateOf(currentCal.get(Calendar.YEAR)) }
     var generatedPdfFile by remember { mutableStateOf<File?>(null) }
     var isGenerating by remember { mutableStateOf(false) }
+
+    // Transaction Pagination & Filter State
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedTypeFilter by remember { mutableStateOf("SEMUA") }
+    var currentPage by remember { mutableIntStateOf(1) }
+    var previewReceiptPath by remember { mutableStateOf<String?>(null) }
+    val pageSize = 8
 
     val reportCal = remember(selectedMonth, selectedYear) {
         Calendar.getInstance().apply {
@@ -509,7 +526,246 @@ fun MonthlyReportScreen(
                 }
             }
 
+            // 6. Riwayat Transaksi Terpaginasi & Filtered
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Riwayat Transaksi", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Text(
+                                "${state.journalEntries.size} Total",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Search Bar
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = {
+                                searchQuery = it
+                                currentPage = 1
+                            },
+                            placeholder = { Text("Cari deskripsi, catatan, atau toko...", fontSize = 12.sp) },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = ""; currentPage = 1 }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Hapus pencarian", modifier = Modifier.size(16.dp))
+                                    }
+                                }
+                            },
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Filter Chips
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val filters = listOf("SEMUA" to "Semua", "EXPENSE" to "Beban", "INCOME" to "Kasab", "TRANSFER" to "Transfer", "INFAQ" to "Infaq")
+                            filters.forEach { (typeKey, label) ->
+                                FilterChip(
+                                    selected = selectedTypeFilter == typeKey,
+                                    onClick = {
+                                        selectedTypeFilter = typeKey
+                                        currentPage = 1
+                                    },
+                                    label = { Text(label, fontSize = 11.sp) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Filter items
+                        val filteredList = state.journalEntries.filter { entry ->
+                            val matchesType = when (selectedTypeFilter) {
+                                "SEMUA" -> true
+                                "EXPENSE" -> entry.transactionType.equals("EXPENSE", ignoreCase = true)
+                                "INCOME" -> entry.transactionType.equals("INFLOW", ignoreCase = true) || entry.transactionType.equals("INCOME", ignoreCase = true)
+                                "TRANSFER" -> entry.transactionType.equals("TRANSFER", ignoreCase = true)
+                                "INFAQ" -> entry.transactionType.contains("INFAQ", ignoreCase = true)
+                                else -> entry.transactionType.contains(selectedTypeFilter, ignoreCase = true)
+                            }
+                            val matchesSearch = searchQuery.isBlank() ||
+                                entry.description.contains(searchQuery, ignoreCase = true)
+                            matchesType && matchesSearch
+                        }
+
+                        val totalCount = filteredList.size
+                        val totalPages = maxOf(1, ceil(totalCount.toDouble() / pageSize).toInt())
+                        val safePage = currentPage.coerceIn(1, totalPages)
+                        val pageItems = filteredList.drop((safePage - 1) * pageSize).take(pageSize)
+
+                        if (pageItems.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    if (searchQuery.isNotBlank() || selectedTypeFilter != "SEMUA")
+                                        "Tidak ada transaksi yang cocok dengan filter."
+                                    else
+                                        "Belum ada catatan transaksi.",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                pageItems.forEach { entry ->
+                                    val isIncome = entry.transactionType.equals("INFLOW", ignoreCase = true) || entry.transactionType.equals("INCOME", ignoreCase = true)
+                                    val isExpense = entry.transactionType.equals("EXPENSE", ignoreCase = true)
+                                    val dateStr = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(entry.gregorianDate)
+                                    val primaryAccountId = entry.lines.firstOrNull { it.accountId.startsWith("acc_") }?.accountId
+                                    val walletName = state.wallets.find { it.id == primaryAccountId }?.name ?: "Dompet Kas"
+                                    val displayAmount = entry.totalDebit
+
+                                    Card(
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(10.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(entry.description, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text(dateStr, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    Text(" • ", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    Text(walletName, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary)
+                                                }
+                                            }
+
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                val imagePath = entry.receiptAttachment?.imagePath
+                                                if (imagePath != null) {
+                                                    IconButton(
+                                                        onClick = { previewReceiptPath = imagePath },
+                                                        modifier = Modifier.size(32.dp)
+                                                    ) {
+                                                        Icon(
+                                                            Icons.Default.Receipt,
+                                                            contentDescription = "Lihat Kuitansi",
+                                                            tint = MaterialTheme.colorScheme.secondary,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                }
+
+                                                Text(
+                                                    text = "${if (isIncome) "+" else if (isExpense) "-" else ""}Rp ${formatRupiah(displayAmount)}",
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 13.sp,
+                                                    color = when {
+                                                        isIncome -> MaterialTheme.colorScheme.primary
+                                                        isExpense -> MaterialTheme.colorScheme.error
+                                                        else -> MaterialTheme.colorScheme.secondary
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Pagination Controls
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedButton(
+                                    onClick = { if (currentPage > 1) currentPage-- },
+                                    enabled = currentPage > 1,
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Sebelumnya", fontSize = 11.sp)
+                                }
+
+                                Text(
+                                    "Hal $safePage dari $totalPages ($totalCount data)",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                OutlinedButton(
+                                    onClick = { if (currentPage < totalPages) currentPage++ },
+                                    enabled = currentPage < totalPages,
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text("Berikutnya", fontSize = 11.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             item { Spacer(modifier = Modifier.height(30.dp)) }
+        }
+
+        // Receipt Preview Dialog
+        previewReceiptPath?.let { path ->
+            AlertDialog(
+                onDismissRequest = { previewReceiptPath = null },
+                title = { Text("Foto Kuitansi Transaksi", fontWeight = FontWeight.Bold) },
+                text = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(280.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = File(path),
+                            contentDescription = "Bukti Kuitansi",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = { previewReceiptPath = null }) {
+                        Text("Tutup")
+                    }
+                }
+            )
         }
     }
 }

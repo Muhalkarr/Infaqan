@@ -531,7 +531,11 @@ fun FaraidhScreen(
             }
 
             // Ahli Waris Portions
-            items(calculationResult.shares) { share ->
+            items(
+                items = calculationResult.shares,
+                key = { it.heirGroup },
+                contentType = { "faraidh_share" }
+            ) { share ->
                 FaraidhShareCard(share = share, rupiahFormat = rupiahFormat)
             }
         }
