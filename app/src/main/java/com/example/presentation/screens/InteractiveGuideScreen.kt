@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.Calculate
@@ -281,6 +282,30 @@ fun InteractiveGuideScreen(
                 icon = Icons.Default.PictureAsPdf,
                 badge = "Transparansi & Hisab",
                 actionButtonText = "Buka Ekspor Laporan"
+            ),
+            GuideTopic(
+                id = "topic_fiqh_rikaz",
+                title = "19. Fiqih Rikaz 20% & Harta Temuan",
+                shortSubtitle = "Simulasi alokasi 20% seketika & hadits Bukhari",
+                icon = Icons.Default.MonetizationOn,
+                badge = "Khumus 20%",
+                actionButtonText = "Buka Kalkulator Rikaz"
+            ),
+            GuideTopic(
+                id = "topic_auto_zakat",
+                title = "20. Kalkulator Zakat Otomatis Saldo Riil",
+                shortSubtitle = "Hisab saldo riil kantong kas & nisab emas BAZNAS",
+                icon = Icons.Default.Calculate,
+                badge = "Al-Milkut Taam",
+                actionButtonText = "Buka Kalkulator Zakat"
+            ),
+            GuideTopic(
+                id = "topic_gemini_fatwa",
+                title = "21. Konsultasi Fatwa Syariah AI (RAG)",
+                shortSubtitle = "Tanya fatwa muamalah dengan rujukan terverifikasi",
+                icon = Icons.Default.AutoAwesome,
+                badge = "RAG Grounding",
+                actionButtonText = "Buka Konsultasi Fatwa"
             )
         )
     }
@@ -480,6 +505,9 @@ fun InteractiveGuideScreen(
                             15 -> TopicIbadahGoalsContent(onTryAction = { openModule(15, onNavigateToIbadahGoals) })
                             16 -> TopicIslamicGroundingContent(onTryAction = { openModule(16, onNavigateToIslamicGrounding) })
                             17 -> TopicExportReportContent(onTryAction = { openModule(17, onNavigateToExportReport) })
+                            18 -> TopicRikazFiqihContent(onTryAction = { openModule(18, onNavigateToIslamicGrounding) })
+                            19 -> TopicAutomaticZakatContent(onTryAction = { openModule(19, onNavigateToIslamicGrounding) })
+                            20 -> TopicGeminiAiFatwaContent(onTryAction = { openModule(20, onNavigateToIslamicGrounding) })
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -920,12 +948,18 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Pilih Kelipatan Pembulatan:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Pilih / Kustomisasi Kelipatan Pembulatan:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    listOf(1000.0 to "Rp 1.000", 2000.0 to "Rp 2.000", 5000.0 to "Rp 5.000", 10000.0 to "Rp 10.000").forEach { (step, lbl) ->
+                    listOf(
+                        100.0 to "100",
+                        500.0 to "500",
+                        1000.0 to "1.000",
+                        5000.0 to "5.000",
+                        10000.0 to "10.000"
+                    ).forEach { (step, lbl) ->
                         val isSel = roundStep == step
                         Surface(
                             shape = RoundedCornerShape(8.dp),
@@ -941,6 +975,20 @@ fun TopicRoundUpInteractiveContent(onTryAction: () -> Unit) {
                         }
                     }
                 }
+
+                var customGuideRoundText by remember { mutableStateOf("") }
+                OutlinedTextField(
+                    value = customGuideRoundText,
+                    onValueChange = { input ->
+                        val digits = input.filter { it.isDigit() }
+                        customGuideRoundText = digits
+                        digits.toDoubleOrNull()?.let { if (it > 0) roundStep = it }
+                    },
+                    placeholder = { Text("Kustom nominal pembulatan (cth: 2500)", fontSize = 11.sp) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceVariant,

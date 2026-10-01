@@ -24,14 +24,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VolunteerActivism
+import com.example.core.qardh.QardhType
+import com.example.core.qardh.QardhStatus
+import com.example.core.report.DocumentExporter
+import com.example.core.report.FinancialPdfGenerator
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -62,8 +69,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.core.report.DocumentExporter
-import com.example.core.report.FinancialPdfGenerator
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.ui.theme.EmeraldDark
 import java.io.File
@@ -87,6 +92,8 @@ fun ExportReportScreen(
     var isGeneratingLedgerPdf by remember { mutableStateOf(false) }
     var isGeneratingZakatPdf by remember { mutableStateOf(false) }
     var isGeneratingMonthlyPdf by remember { mutableStateOf(false) }
+    var isGeneratingComprehensivePdf by remember { mutableStateOf(false) }
+    var isGeneratingComprehensiveCsv by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -179,7 +186,174 @@ fun ExportReportScreen(
                 }
             }
 
-            // 2. Comprehensive Ledger PDF Export Card
+            // 2. Comprehensive Financial Condition Export Card (Saldo Dompet, Hutang Piutang & Zakat)
+            item {
+                val totalWalletBalance = uiState.totalWalletBalance
+                val receivables = uiState.qardhRecords.filter { it.type == QardhType.PIUTANG_SAYA }
+                val payables = uiState.qardhRecords.filter { it.type == QardhType.HUTANG_SAYA }
+                val totalPiutang = receivables.filter { it.status == QardhStatus.AKTIF || it.status == QardhStatus.SEBAGIAN_LUNAS }.sumOf { it.remainingAmount }
+                val totalHutang = payables.filter { it.status == QardhStatus.AKTIF || it.status == QardhStatus.SEBAGIAN_LUNAS }.sumOf { it.remainingAmount }
+                val netWorth = totalWalletBalance + totalPiutang - totalHutang
+
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Assessment,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        "Laporan Finansial Komprehensif",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        "Neraca Lengkap, Saldo Dompet & Hutang Piutang",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            androidx.compose.material3.Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.padding(start = 4.dp)
+                            ) {
+                                Text(
+                                    "Utama",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            "Dokumen neraca lengkap yang menyajikan seluruh kondisi finansial pengguna: rincian saldo semua kantong kas/bank, daftar kewajiban hutang & hak piutang Qardhul Hasan, total kekayaan bersih (Net Worth), serta status kewajiban zakat.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Preview Ringkasan Angka
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                                .padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("Saldo Kas", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${rupiahFormat.format(totalWalletBalance).replace("Rp", "").trim()}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Column {
+                                Text("Piutang Aktif", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${rupiahFormat.format(totalPiutang).replace("Rp", "").trim()}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                            }
+                            Column {
+                                Text("Hutang", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${rupiahFormat.format(totalHutang).replace("Rp", "").trim()}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            }
+                            Column {
+                                Text("Kekayaan Bersih", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Rp ${rupiahFormat.format(netWorth).replace("Rp", "").trim()}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Tombol Aksi PDF & CSV
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Button(
+                                onClick = {
+                                    isGeneratingComprehensivePdf = true
+                                    try {
+                                        val pdfFile = FinancialPdfGenerator.generateComprehensiveFinancialPdf(context, uiState)
+                                        Toast.makeText(context, "Laporan Finansial Komprehensif siap!", Toast.LENGTH_SHORT).show()
+                                        FinancialPdfGenerator.sharePdfReport(context, pdfFile)
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Gagal ekspor PDF: ${e.message}", Toast.LENGTH_LONG).show()
+                                    } finally {
+                                        isGeneratingComprehensivePdf = false
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("export_comprehensive_pdf_btn"),
+                                shape = RoundedCornerShape(10.dp),
+                                enabled = !isGeneratingComprehensivePdf
+                            ) {
+                                if (isGeneratingComprehensivePdf) {
+                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
+                                } else {
+                                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Unduh PDF", fontSize = 12.sp)
+                                }
+                            }
+
+                            androidx.compose.material3.FilledTonalButton(
+                                onClick = {
+                                    isGeneratingComprehensiveCsv = true
+                                    try {
+                                        val csvFile = DocumentExporter.exportComprehensiveFinancialCsvFile(context, uiState)
+                                        Toast.makeText(context, "Spreadsheet CSV Komprehensif siap!", Toast.LENGTH_SHORT).show()
+                                        DocumentExporter.shareFile(context, csvFile, "text/csv", "Laporan Finansial Komprehensif")
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Gagal ekspor CSV: ${e.message}", Toast.LENGTH_LONG).show()
+                                    } finally {
+                                        isGeneratingComprehensiveCsv = false
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("export_comprehensive_csv_btn"),
+                                shape = RoundedCornerShape(10.dp),
+                                enabled = !isGeneratingComprehensiveCsv
+                            ) {
+                                if (isGeneratingComprehensiveCsv) {
+                                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                } else {
+                                    Icon(Icons.Default.TableChart, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Ekspor CSV", fontSize = 12.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Comprehensive Ledger PDF Export Card
             item {
                 Card(
                     shape = RoundedCornerShape(16.dp),

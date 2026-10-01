@@ -54,6 +54,7 @@ interface AmanahRepository {
     suspend fun saveSelectedGoalMode(mode: FinancialGoalMode)
     suspend fun saveSecurityConfig(config: SecurityConfig)
     suspend fun saveMaskBalance(isMasked: Boolean)
+    suspend fun saveShakeFeedbackEnabled(enabled: Boolean)
     suspend fun clearAllPreferences()
 
     // Room Persistent Transactions / Journal Entries
@@ -339,6 +340,11 @@ class AmanahRepositoryImpl(
 
     override suspend fun saveMaskBalance(isMasked: Boolean) = withContext(ioDispatcher) {
         dataStoreManager.saveMaskBalance(isMasked)
+    }
+
+    override suspend fun saveShakeFeedbackEnabled(enabled: Boolean) = withContext(ioDispatcher) {
+        dataStoreManager.saveShakeFeedbackEnabled(enabled)
+        database.settingsDao().insertOrUpdate(SettingsEntity("is_shake_feedback_enabled", enabled.toString()))
     }
 
     override suspend fun markGuideCompleted(guideTitle: String) = withContext(ioDispatcher) {

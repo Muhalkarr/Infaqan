@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.presentation.screens.AddTransactionScreen
 import com.example.presentation.screens.AmilDirectoryScreen
@@ -29,10 +31,14 @@ import com.example.presentation.screens.IslamicKnowledgeGroundingScreen
 import com.example.presentation.screens.MonthlyReportScreen
 import com.example.presentation.screens.MultiWalletScreen
 import com.example.presentation.screens.QardhScreen
+import com.example.presentation.screens.ReceiptArchiveScreen
 import com.example.presentation.screens.RecurringTransactionsScreen
 import com.example.presentation.screens.SecuritySettingsScreen
 import com.example.presentation.screens.SedekahSubuhScreen
 import com.example.presentation.screens.SettingsScreen
+import com.example.presentation.screens.BusinessZakatCalculatorScreen
+import com.example.presentation.screens.GoldNisabTrackerScreen
+import com.example.presentation.screens.ShariahComplianceAuditScreen
 import com.example.presentation.screens.ShariahRulesCustomizationScreen
 import com.example.presentation.screens.VaultDistributionHistoryScreen
 import com.example.presentation.screens.ZakatHubScreen
@@ -64,7 +70,11 @@ object AmanahRoutes {
     const val INTERACTIVE_GUIDE = "interactive_guide"
     const val ISLAMIC_GROUNDING = "islamic_grounding"
     const val SHARIAH_RULES_CUSTOMIZATION = "shariah_rules_customization"
+    const val RECEIPT_ARCHIVE = "receipt_archive"
     const val DEBUG_TERMINAL = "debug_terminal"
+    const val GOLD_NISAB_TRACKER = "gold_nisab_tracker"
+    const val BUSINESS_ZAKAT = "business_zakat"
+    const val SHARIAH_AUDIT = "shariah_audit"
 }
 
 @Composable
@@ -84,11 +94,13 @@ fun AmanahNavHost(
                 }
             }
         } else {
-            navController.navigate(AmanahRoutes.DASHBOARD) {
-                popUpTo(AmanahRoutes.DASHBOARD) { inclusive = false }
-                launchSingleTop = true
+            val popped = navController.popBackStack()
+            if (!popped) {
+                navController.navigate(AmanahRoutes.DASHBOARD) {
+                    popUpTo(AmanahRoutes.DASHBOARD) { inclusive = false }
+                    launchSingleTop = true
+                }
             }
-            onOpenDrawer()
         }
     }
 
@@ -110,9 +122,9 @@ fun AmanahNavHost(
                     viewModel.deactivateGuideMode()
                     navController.navigate(AmanahRoutes.ADD_TRANSACTION)
                 },
-                onEditTransaction = { _ ->
+                onEditTransaction = { entryId ->
                     viewModel.deactivateGuideMode()
-                    navController.navigate(AmanahRoutes.ADD_TRANSACTION)
+                    navController.navigate("${AmanahRoutes.ADD_TRANSACTION}?editEntryId=$entryId")
                 },
                 onNavigateToBudget = {
                     viewModel.deactivateGuideMode()
@@ -201,7 +213,8 @@ fun AmanahNavHost(
             MonthlyReportScreen(
                 viewModel = viewModel,
                 onNavigateBack = handleSmartBack,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToReceiptArchive = { navController.navigate(AmanahRoutes.RECEIPT_ARCHIVE) }
             )
         }
 
@@ -214,12 +227,26 @@ fun AmanahNavHost(
             )
         }
 
-        // 4. Add Transaction
-        composable(AmanahRoutes.ADD_TRANSACTION) {
+        // 4. Add / Edit Transaction
+        composable(
+            route = "${AmanahRoutes.ADD_TRANSACTION}?editEntryId={editEntryId}",
+            arguments = listOf(
+                navArgument("editEntryId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val editEntryId = backStackEntry.arguments?.getString("editEntryId")
             AddTransactionScreen(
                 viewModel = viewModel,
+                editEntryId = editEntryId,
                 onNavigateBack = handleSmartBack,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToFatwa = {
+                    navController.navigate(AmanahRoutes.ISLAMIC_GROUNDING)
+                }
             )
         }
 
@@ -355,7 +382,8 @@ fun AmanahNavHost(
             MonthlyReportScreen(
                 viewModel = viewModel,
                 onNavigateBack = handleSmartBack,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToReceiptArchive = { navController.navigate(AmanahRoutes.RECEIPT_ARCHIVE) }
             )
         }
 
@@ -459,6 +487,49 @@ fun AmanahNavHost(
             ShariahRulesCustomizationScreen(
                 viewModel = viewModel,
                 onNavigateBack = handleSmartBack
+            )
+        }
+
+        // 26. Arsip Bukti Struk Transaksi
+        composable(AmanahRoutes.RECEIPT_ARCHIVE) {
+            ReceiptArchiveScreen(
+                viewModel = viewModel,
+                onBackClick = handleSmartBack,
+                onOpenDrawer = onOpenDrawer,
+                onEditTransaction = { entryId ->
+                    navController.navigate("${AmanahRoutes.ADD_TRANSACTION}?editEntryId=$entryId")
+                }
+            )
+        }
+
+        // 27. Pelacak Emas & Nisab BAZNAS
+        composable(AmanahRoutes.GOLD_NISAB_TRACKER) {
+            GoldNisabTrackerScreen(
+                viewModel = viewModel,
+                onNavigateBack = handleSmartBack,
+                onNavigateToZakatCalculator = { navController.navigate(AmanahRoutes.ISLAMIC_GROUNDING) },
+                onOpenDrawer = onOpenDrawer
+            )
+        }
+
+        // 28. Kalkulator Zakat Bisnis & Saham Syariah
+        composable(AmanahRoutes.BUSINESS_ZAKAT) {
+            BusinessZakatCalculatorScreen(
+                viewModel = viewModel,
+                onNavigateBack = handleSmartBack,
+                onNavigateToInfaqVault = { navController.navigate(AmanahRoutes.INFAQ_VAULT) },
+                onOpenDrawer = onOpenDrawer
+            )
+        }
+
+        // 29. Audit Kepatuhan Syariah Mutasi Kas
+        composable(AmanahRoutes.SHARIAH_AUDIT) {
+            ShariahComplianceAuditScreen(
+                viewModel = viewModel,
+                onNavigateBack = handleSmartBack,
+                onNavigateToSedekahSubuh = { navController.navigate(AmanahRoutes.SEDEKAH_SUBUH) },
+                onNavigateToInfaqVault = { navController.navigate(AmanahRoutes.INFAQ_VAULT) },
+                onOpenDrawer = onOpenDrawer
             )
         }
     }

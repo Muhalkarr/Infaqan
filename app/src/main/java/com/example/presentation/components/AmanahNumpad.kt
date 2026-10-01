@@ -22,6 +22,8 @@ import com.example.core.ui.AmanahHapticEngine
 @Composable
 fun AmanahNumpad(
     onNumberClick: (Int) -> Unit,
+    onZeroZeroZeroClick: () -> Unit,
+    onClearClick: () -> Unit,
     onBackspaceClick: () -> Unit,
     onOperatorClick: (String) -> Unit,
     onDoneClick: () -> Unit,
@@ -66,13 +68,9 @@ fun AmanahNumpad(
                             .clickable {
                                 AmanahHapticEngine.performKeyClick(haptic, context)
                                 when (key) {
+                                    "000" -> onZeroZeroZeroClick()
                                     in "0".."9" -> onNumberClick(key.toInt())
-                                    "000" -> {
-                                        onNumberClick(0)
-                                        onNumberClick(0)
-                                        onNumberClick(0)
-                                    }
-                                    "C" -> onBackspaceClick() // Clear all or backspace depending on implementation
+                                    "C" -> onClearClick()
                                     in listOf("+", "-", "×", "÷") -> onOperatorClick(key)
                                 }
                             },

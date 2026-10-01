@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -57,12 +58,19 @@ import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
     private val viewModel: AmanahLedgerViewModel by viewModels()
+    private var shakeDetector: com.example.core.sensor.ShakeDetector? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         com.example.core.auth.FirebaseSafeInitializer.init(this)
         enableEdgeToEdge()
         viewModel.initContextDependencies(this)
+
+        shakeDetector = com.example.core.sensor.ShakeDetector {
+            if (viewModel.uiState.value.isShakeFeedbackEnabled) {
+                viewModel.openFeedbackSheet(0)
+            }
+        }
 
         setContent {
             val state by viewModel.uiState.collectAsState()
@@ -75,6 +83,16 @@ class MainActivity : FragmentActivity() {
             val effectiveHighContrast = when (state.themeMode) {
                 AppThemeMode.HIGH_CONTRAST_LIGHT, AppThemeMode.HIGH_CONTRAST_DARK -> true
                 else -> state.isHighContrast
+            }
+
+            var showFeedbackSheet by remember { androidx.compose.runtime.mutableStateOf(false) }
+            var feedbackSheetTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+
+            LaunchedEffect(Unit) {
+                viewModel.openFeedbackEvent.collect { tab ->
+                    feedbackSheetTab = tab
+                    showFeedbackSheet = true
+                }
             }
 
             val initialDestination = intent?.getStringExtra("NAVIGATE_TO")
@@ -100,6 +118,13 @@ class MainActivity : FragmentActivity() {
                     if (state.securityConfig.isPinEnabled && state.securityConfig.isAppLocked) {
                         AppLockScreen(viewModel = viewModel)
                     }
+
+                    if (showFeedbackSheet) {
+                        com.example.presentation.components.FeedbackAndChangelogSheet(
+                            onDismissRequest = { showFeedbackSheet = false },
+                            initialTab = feedbackSheetTab
+                        )
+                    }
                 }
             }
         }
@@ -107,12 +132,14 @@ class MainActivity : FragmentActivity() {
 
     override fun onStop() {
         super.onStop()
+        shakeDetector?.stop()
         AppDebugLogger.i("MainActivity", "Aplikasi beralih ke latar belakang (onStop/Background).")
         viewModel.onAppBackgrounded()
     }
 
     override fun onStart() {
         super.onStart()
+        shakeDetector?.start(this)
         AppDebugLogger.i("MainActivity", "Aplikasi aktif di latar depan (onStart/Foreground).")
         viewModel.onAppForegrounded()
     }
@@ -210,7 +237,20 @@ fun AmanahMainApp(
                 onSelectScreen = { screen ->
                     val targetRoute = screen.toRoute()
                     AppDebugLogger.logUserAction("Navigasi Sidebar", "Membuka ${screen.name} ($targetRoute)")
-                    if (currentRoute != targetRoute) {
+                    coroutineScope.launch { drawerState.close() }
+                    if (screen == Screen.DASHBOARD || targetRoute == AmanahRoutes.DASHBOARD) {
+                        if (currentRoute == AmanahRoutes.DASHBOARD) {
+                            viewModel.triggerDashboardScrollToTop()
+                        } else {
+                            navController.navigate(AmanahRoutes.DASHBOARD) {
+                                popUpTo(AmanahRoutes.DASHBOARD) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                            viewModel.triggerDashboardScrollToTop()
+                        }
+                    } else if (currentRoute != targetRoute) {
                         navController.navigate(targetRoute) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 saveState = true
@@ -219,7 +259,6 @@ fun AmanahMainApp(
                             restoreState = true
                         }
                     }
-                    // Do NOT close drawerState so sidebar stays open for swift multi-feature exploration
                 },
                 onCloseDrawer = {
                     coroutineScope.launch { drawerState.close() }
@@ -236,6 +275,9 @@ fun AmanahMainApp(
                     AppDebugLogger.logUserAction("Keamanan", "Pengguna mengunci aplikasi secara instan")
                     coroutineScope.launch { drawerState.close() }
                     viewModel.lockAppNow()
+                },
+                onOpenFeedback = {
+                    viewModel.openFeedbackSheet(0)
                 }
             )
         }
@@ -253,7 +295,20 @@ fun AmanahMainApp(
                                 selected = isSelected,
                                 onClick = {
                                     AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tab '${item.title}' (${item.route})")
-                                    if (currentRoute != item.route) {
+                                    coroutineScope.launch { drawerState.close() }
+                                    if (item.route == AmanahRoutes.DASHBOARD) {
+                                        if (currentRoute == AmanahRoutes.DASHBOARD) {
+                                            viewModel.triggerDashboardScrollToTop()
+                                        } else {
+                                            navController.navigate(AmanahRoutes.DASHBOARD) {
+                                                popUpTo(AmanahRoutes.DASHBOARD) {
+                                                    inclusive = false
+                                                }
+                                                launchSingleTop = true
+                                            }
+                                            viewModel.triggerDashboardScrollToTop()
+                                        }
+                                    } else if (currentRoute != item.route) {
                                         navController.navigate(item.route) {
                                             popUpTo(navController.graph.findStartDestination().id) {
                                                 saveState = true

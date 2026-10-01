@@ -198,6 +198,78 @@ object AmanahDummyDataGenerator {
             notes = "Alhamdulillah dana aqiqah telah tercapai penuh dan siap ditunaikan",
             linkedWalletId = "w_cash",
             isCompleted = true
+        ),
+        IbadahGoal(
+            id = "g_darurat",
+            type = IbadahGoalType.DANA_DARURAT_6_BULAN,
+            title = "Dana Darurat 6 Bulan Keluarga",
+            targetAmount = 30000000.0,
+            currentAccumulated = 15000000.0,
+            targetMonthsRemaining = 6,
+            targetHijriYearMonth = "Desember 2026",
+            notes = "Ketahanan finansial keluarga jika terjadi resiko tak terduga",
+            linkedWalletId = "w_bsi",
+            isCompleted = false
+        ),
+        IbadahGoal(
+            id = "g_pendidikan",
+            type = IbadahGoalType.BIAYA_SEKOLAH_ANAK,
+            title = "Tabungan Pendidikan SD Islam Terpadu",
+            targetAmount = 15000000.0,
+            currentAccumulated = 8500000.0,
+            targetMonthsRemaining = 5,
+            targetHijriYearMonth = "Juli 2027",
+            notes = "Biaya uang pangkal dan seragam sekolah anak",
+            linkedWalletId = "w_bsi",
+            isCompleted = false
+        ),
+        IbadahGoal(
+            id = "g_rumah",
+            type = IbadahGoalType.DP_RUMAH_IDAMAN,
+            title = "DP Rumah Hunian Syariah Tanpa Riba",
+            targetAmount = 50000000.0,
+            currentAccumulated = 22000000.0,
+            targetMonthsRemaining = 14,
+            targetHijriYearMonth = "Muharram 1449 H",
+            notes = "Akad istishna / murabahah murni tanpa denda keterlambatan",
+            linkedWalletId = "w_bsi",
+            isCompleted = false
+        ),
+        IbadahGoal(
+            id = "g_motor",
+            type = IbadahGoalType.BELI_MOTOR_TUNAI,
+            title = "Beli Motor Matik Tunai Operasional",
+            targetAmount = 22000000.0,
+            currentAccumulated = 14000000.0,
+            targetMonthsRemaining = 4,
+            targetHijriYearMonth = "Sya'ban 1448 H",
+            notes = "Pembelian cash keras menghindari leasing konvensional",
+            linkedWalletId = "w_bsi",
+            isCompleted = false
+        ),
+        IbadahGoal(
+            id = "g_bisnis",
+            type = IbadahGoalType.MODAL_USAHA_BAROKAH,
+            title = "Modal Usaha Kuliner Halal Barokah",
+            targetAmount = 25000000.0,
+            currentAccumulated = 10000000.0,
+            targetMonthsRemaining = 6,
+            targetHijriYearMonth = "Dzulqa'dah 1448 H",
+            notes = "Modal kerja rintisan usaha kuliner keluarga",
+            linkedWalletId = "w_bsi",
+            isCompleted = false
+        ),
+        IbadahGoal(
+            id = "g_nikah",
+            type = IbadahGoalType.PERNIKAHAN_SYARI,
+            title = "Tabungan Walimatul 'Ursy Syar'i",
+            targetAmount = 35000000.0,
+            currentAccumulated = 20000000.0,
+            targetMonthsRemaining = 5,
+            targetHijriYearMonth = "Syawwal 1448 H",
+            notes = "Hajat pernikahan sederhana, berkah dan khidmat",
+            linkedWalletId = "w_bsi",
+            isCompleted = false
         )
     )
 

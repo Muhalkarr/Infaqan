@@ -523,10 +523,10 @@ fun SettingsScreen(
                             )
                         }
                         Slider(
-                            value = state.sedekahSubuhTargetDays.toFloat(),
-                            onValueChange = { viewModel.updateSedekahSubuhTargetDays(it.toInt()) },
-                            valueRange = 7f..100f,
-                            steps = 92,
+                            value = state.sedekahSubuhTargetDays.toFloat().coerceIn(1f, 365f),
+                            onValueChange = { viewModel.updateSedekahSubuhTargetDays(it.toInt().coerceIn(1, 365)) },
+                            valueRange = 1f..365f,
+                            steps = 363,
                             colors = SliderDefaults.colors(
                                 thumbColor = MaterialTheme.colorScheme.primary,
                                 activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -534,6 +534,30 @@ fun SettingsScreen(
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            listOf(7, 21, 30, 40, 100, 365).forEach { d ->
+                                val isSel = state.sedekahSubuhTargetDays == d
+                                androidx.compose.material3.Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { viewModel.updateSedekahSubuhTargetDays(d) }
+                                ) {
+                                    Box(modifier = Modifier.padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = "$d H",
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     SettingsRowToggle(

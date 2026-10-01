@@ -15,7 +15,7 @@ enum class Screen(val title: String) {
     SECURITY_SETTINGS("Keamanan & PIN"),
     CENTRAL_SETTINGS("Pengaturan Kas Mukmin"),
     MULTI_WALLET("Multi-Wallet Kas"),
-    IBADAH_GOALS("Target Tabungan Ibadah"),
+    IBADAH_GOALS("Target Finansial dan Ibadah"),
     ZAKAT_HUB("Zakat Hub & Penyaluran"),
     BACKUP_RESTORE("Cadangan & Pemulihan"),
     QARDH("Hutang Piutang Syariah"),
@@ -24,6 +24,7 @@ enum class Screen(val title: String) {
     EXPORT_REPORT("Ekspor Laporan Resmi"),
     ISLAMIC_GROUNDING("Fatwa & Fiqih Muamalah"),
     SHARIAH_RULES_CUSTOMIZATION("Kustomisasi Logika Syariah"),
+    RECEIPT_ARCHIVE("Arsip Bukti Struk"),
     DEBUG_TERMINAL("Terminal Log & Diagnostik");
 
     fun toRoute(): String = when (this) {
@@ -50,6 +51,7 @@ enum class Screen(val title: String) {
         EXPORT_REPORT -> com.example.navigation.AmanahRoutes.EXPORT_REPORT
         ISLAMIC_GROUNDING -> com.example.navigation.AmanahRoutes.ISLAMIC_GROUNDING
         SHARIAH_RULES_CUSTOMIZATION -> com.example.navigation.AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION
+        RECEIPT_ARCHIVE -> com.example.navigation.AmanahRoutes.RECEIPT_ARCHIVE
         DEBUG_TERMINAL -> com.example.navigation.AmanahRoutes.DEBUG_TERMINAL
     }
 
@@ -78,6 +80,7 @@ enum class Screen(val title: String) {
             com.example.navigation.AmanahRoutes.EXPORT_REPORT -> EXPORT_REPORT
             com.example.navigation.AmanahRoutes.ISLAMIC_GROUNDING -> ISLAMIC_GROUNDING
             com.example.navigation.AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION -> SHARIAH_RULES_CUSTOMIZATION
+            com.example.navigation.AmanahRoutes.RECEIPT_ARCHIVE -> RECEIPT_ARCHIVE
             com.example.navigation.AmanahRoutes.DEBUG_TERMINAL -> DEBUG_TERMINAL
             else -> DASHBOARD
         }

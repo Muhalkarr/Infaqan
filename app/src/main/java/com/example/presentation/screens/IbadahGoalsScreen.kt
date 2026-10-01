@@ -32,12 +32,23 @@ import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Storefront
 import androidx.compose.material.icons.filled.Mosque
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Stars
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import com.example.core.ibadah.GoalCategory
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -109,6 +120,8 @@ fun IbadahGoalsScreen(
     var depositingGoal by remember { mutableStateOf<IbadahGoal?>(null) }
     var editingGoal by remember { mutableStateOf<IbadahGoal?>(null) }
     var completedGoalCelebration by remember { mutableStateOf<IbadahGoal?>(null) }
+    var selectedCategoryFilter by remember { mutableStateOf<GoalCategory?>(null) }
+    var selectedStatusFilter by remember { mutableStateOf(0) } // 0: Semua, 1: Berjalan, 2: Tercapai
 
     val totalTarget = state.ibadahGoals.sumOf { it.targetAmount }
     val totalAccumulated = state.ibadahGoals.sumOf { it.currentAccumulated }
@@ -120,12 +133,12 @@ fun IbadahGoalsScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Perencana Target Ibadah",
+                            text = "Target Finansial dan Ibadah",
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
                         Text(
-                            text = "Tabungan Qurban, Haji BPIH, Umrah & Waqaf",
+                            text = "Ibadah, Dana Darurat, Pendidikan, Papan, Usaha & Pribadi",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -163,7 +176,7 @@ fun IbadahGoalsScreen(
                 contentColor = Color.Black,
                 modifier = Modifier.testTag("add_ibadah_goal_fab")
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Tambah Target Ibadah")
+                Icon(Icons.Default.Add, contentDescription = "Tambah Target Finansial & Ibadah")
             }
         }
     ) { paddingValues ->
@@ -190,7 +203,7 @@ fun IbadahGoalsScreen(
                     ) {
                         Column {
                             Text(
-                                text = "TOTAL AKUMULASI DANA IBADAH",
+                                text = "TOTAL AKUMULASI TARGET FINANSIAL & IBADAH",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -257,7 +270,7 @@ fun IbadahGoalsScreen(
                 Tab(
                     selected = selectedTabIndex == 0,
                     onClick = { selectedTabIndex = 0 },
-                    text = { Text("Program Aktif (${state.ibadahGoals.count { !it.isCompleted }})", fontWeight = FontWeight.SemiBold) }
+                    text = { Text("Daftar Target (${state.ibadahGoals.size})", fontWeight = FontWeight.SemiBold) }
                 )
                 Tab(
                     selected = selectedTabIndex == 1,
@@ -267,8 +280,67 @@ fun IbadahGoalsScreen(
             }
 
             if (selectedTabIndex == 0) {
+                // Category Filter Chips
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = selectedCategoryFilter == null,
+                        onClick = { selectedCategoryFilter = null },
+                        label = { Text("Semua (${state.ibadahGoals.size})") }
+                    )
+                    GoalCategory.entries.forEach { cat ->
+                        val count = state.ibadahGoals.count { it.category == cat }
+                        FilterChip(
+                            selected = selectedCategoryFilter == cat,
+                            onClick = {
+                                selectedCategoryFilter = if (selectedCategoryFilter == cat) null else cat
+                            },
+                            label = { Text("${cat.displayName} ($count)") }
+                        )
+                    }
+                }
+
+                // Status Filter Chips
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = selectedStatusFilter == 0,
+                        onClick = { selectedStatusFilter = 0 },
+                        label = { Text("Semua Status") }
+                    )
+                    FilterChip(
+                        selected = selectedStatusFilter == 1,
+                        onClick = { selectedStatusFilter = 1 },
+                        label = { Text("Berjalan (${state.ibadahGoals.count { !it.isCompleted }})") }
+                    )
+                    FilterChip(
+                        selected = selectedStatusFilter == 2,
+                        onClick = { selectedStatusFilter = 2 },
+                        label = { Text("Tercapai (${state.ibadahGoals.count { it.isCompleted }})") }
+                    )
+                }
+
+                val filteredGoals = state.ibadahGoals.filter { goal ->
+                    val matchCat = selectedCategoryFilter == null || goal.category == selectedCategoryFilter
+                    val matchStatus = when (selectedStatusFilter) {
+                        1 -> !goal.isCompleted
+                        2 -> goal.isCompleted
+                        else -> true
+                    }
+                    matchCat && matchStatus
+                }
+
                 // Goals List Tab
-                if (state.ibadahGoals.isEmpty()) {
+                if (filteredGoals.isEmpty()) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -277,30 +349,44 @@ fun IbadahGoalsScreen(
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
-                                Icons.Default.Mosque,
+                                Icons.Default.Savings,
                                 contentDescription = null,
                                 modifier = Modifier.size(52.dp),
                                 tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "Belum Ada Target Ibadah",
+                                text = if (state.ibadahGoals.isEmpty()) "Belum Ada Target Finansial & Ibadah" else "Tidak Ada Target yang Cocok",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
                             Text(
-                                text = "Mulai rencanakan tabungan Qurban, porsi Haji, atau Umrah keluarga dengan istiqomah.",
+                                text = if (state.ibadahGoals.isEmpty())
+                                    "Mulai rencanakan tabungan ibadah (Qurban/Haji/Umrah), dana darurat, pendidikan, rumah, kendaraan, hingga modal usaha."
+                                else
+                                    "Tidak ada target pada kategori atau status yang dipilih. Anda dapat mereset filter atau membuat target baru.",
                                 fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 modifier = Modifier.padding(horizontal = 32.dp, vertical = 6.dp)
                             )
                             Spacer(modifier = Modifier.height(12.dp))
+                            if (state.ibadahGoals.isNotEmpty()) {
+                                OutlinedButton(
+                                    onClick = {
+                                        selectedCategoryFilter = null
+                                        selectedStatusFilter = 0
+                                    }
+                                ) {
+                                    Text("Reset Filter")
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
                             Button(
                                 onClick = { showAddGoalDialog = true },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                             ) {
-                                Text("Buat Target Ibadah")
+                                Text("Buat Target Baru")
                             }
                         }
                     }
@@ -311,7 +397,7 @@ fun IbadahGoalsScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        items(state.ibadahGoals, key = { it.id }) { goal ->
+                        items(filteredGoals, key = { it.id }) { goal ->
                             IbadahGoalCard(
                                 goal = goal,
                                 isMasked = state.securityConfig.isMaskBalance,
@@ -519,12 +605,25 @@ private fun IbadahGoalCard(
     val progress = (goal.currentAccumulated / goal.targetAmount.coerceAtLeast(1.0)).toFloat().coerceIn(0f, 1f)
     val percent = (progress * 100).toInt()
 
-    val icon = when (goal.type) {
-        IbadahGoalType.QURBAN_KAMBING, IbadahGoalType.QURBAN_SAPI_PATUNGAN, IbadahGoalType.QURBAN_SAPI_1_EKOR -> Icons.Default.Pets
-        IbadahGoalType.SETORAN_AWAL_HAJI -> Icons.Default.Mosque
-        IbadahGoalType.PAKET_UMRAH_MUKMIN -> Icons.Default.FlightTakeoff
-        IbadahGoalType.WAKAF_PRODUKTIF -> Icons.Default.VolunteerActivism
-        IbadahGoalType.CUSTOM_IBADAH -> Icons.Default.Savings
+    val (icon, badgeColor, categoryLabel) = when (goal.category) {
+        GoalCategory.IBADAH -> when (goal.type) {
+            IbadahGoalType.QURBAN_KAMBING, IbadahGoalType.QURBAN_SAPI_PATUNGAN, IbadahGoalType.QURBAN_SAPI_1_EKOR ->
+                Triple(Icons.Default.Pets, EmeraldDark, "Ibadah • Qurban")
+            IbadahGoalType.SETORAN_AWAL_HAJI ->
+                Triple(Icons.Default.Mosque, EmeraldDark, "Ibadah • Haji")
+            IbadahGoalType.PAKET_UMRAH_MUKMIN ->
+                Triple(Icons.Default.FlightTakeoff, EmeraldDark, "Ibadah • Umrah")
+            IbadahGoalType.WAKAF_PRODUKTIF ->
+                Triple(Icons.Default.VolunteerActivism, EmeraldDark, "Ibadah • Wakaf")
+            else ->
+                Triple(Icons.Default.Savings, EmeraldDark, "Ibadah • Spiritual")
+        }
+        GoalCategory.DANA_DARURAT -> Triple(Icons.Default.Shield, Color(0xFFD97706), "Dana Darurat")
+        GoalCategory.PENDIDIKAN -> Triple(Icons.Default.School, Color(0xFF4F46E5), "Pendidikan")
+        GoalCategory.RUMAH -> Triple(Icons.Default.Home, Color(0xFF0891B2), "Rumah & Papan")
+        GoalCategory.KENDARAAN -> Triple(Icons.Default.DirectionsCar, Color(0xFF2563EB), "Kendaraan")
+        GoalCategory.BISNIS -> Triple(Icons.Default.Storefront, Color(0xFF7C3AED), "Bisnis & Usaha")
+        GoalCategory.PRIBADI -> Triple(Icons.Default.Favorite, Color(0xFFE11D48), "Rencana Pribadi")
     }
 
     Card(
@@ -542,24 +641,37 @@ private fun IbadahGoalCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f, fill = false)) {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(44.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f))
-                            .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
+                            .background(badgeColor.copy(alpha = 0.15f))
+                            .border(1.dp, badgeColor.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             icon,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
+                            tint = badgeColor,
                             modifier = Modifier.size(24.dp)
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
+                        Surface(
+                            color = badgeColor.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(4.dp)
+                        ) {
+                            Text(
+                                text = categoryLabel,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = badgeColor,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = goal.title,
                             fontWeight = FontWeight.Bold,
@@ -594,7 +706,7 @@ private fun IbadahGoalCard(
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
-                color = if (goal.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                color = if (goal.isCompleted) MaterialTheme.colorScheme.primary else badgeColor,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
 
@@ -610,7 +722,7 @@ private fun IbadahGoalCard(
                         text = "Terkumpul $percent%",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (goal.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                        color = if (goal.isCompleted) MaterialTheme.colorScheme.primary else badgeColor
                     )
                     Text(
                         text = if (isMasked) "Rp •••••••• / Rp ••••••••" else "Rp ${nf.format(goal.currentAccumulated)} / Rp ${nf.format(goal.targetAmount)}",
@@ -623,8 +735,8 @@ private fun IbadahGoalCard(
                 Button(
                     onClick = onDeposit,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (goal.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-                        contentColor = if (goal.isCompleted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary
+                        containerColor = if (goal.isCompleted) MaterialTheme.colorScheme.primary else badgeColor,
+                        contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.testTag("goal_deposit_btn_${goal.id}")
@@ -663,22 +775,26 @@ private fun IbadahGoalFormDialog(
     onDismiss: () -> Unit,
     onSave: (IbadahGoal) -> Unit
 ) {
-    var title by remember { mutableStateOf(initialGoal?.title ?: "") }
+    var selectedCategory by remember { mutableStateOf(initialGoal?.category ?: GoalCategory.IBADAH) }
     var selectedType by remember { mutableStateOf(initialGoal?.type ?: IbadahGoalType.QURBAN_KAMBING) }
-    var targetAmountText by remember { mutableStateOf(initialGoal?.targetAmount?.toLong()?.toString() ?: "3500000") }
+    var title by remember { mutableStateOf(initialGoal?.title ?: selectedType.title) }
+    var targetAmountText by remember { mutableStateOf(initialGoal?.targetAmount?.toLong()?.toString() ?: selectedType.defaultEstimate.toLong().toString()) }
     var initialAccumulatedText by remember { mutableStateOf(initialGoal?.currentAccumulated?.toLong()?.toString() ?: "0") }
     var targetHijriYearMonth by remember { mutableStateOf(initialGoal?.targetHijriYearMonth ?: "10 Dzulhijjah 1448 H") }
     var monthsRemainingText by remember { mutableStateOf(initialGoal?.targetMonthsRemaining?.toString() ?: "10") }
-    var linkedWalletId by remember { mutableStateOf(initialGoal?.linkedWalletId ?: wallets.firstOrNull()?.id ?: "") }
+    var linkedWalletId by remember { mutableStateOf(initialGoal?.linkedWalletId ?: wallets.firstOrNull()?.id ?: "acc_bank") }
     var notes by remember { mutableStateOf(initialGoal?.notes ?: "") }
+    var isManuallyCompleted by remember { mutableStateOf(initialGoal?.isCompleted ?: false) }
 
     var typeExpanded by remember { mutableStateOf(false) }
     var walletExpanded by remember { mutableStateOf(false) }
 
+    val nf = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(if (initialGoal != null) "Edit Target Ibadah" else "Tambah Target Ibadah Baru", fontWeight = FontWeight.Bold)
+            Text(if (initialGoal != null) "Edit Target Finansial & Ibadah" else "Tambah Target Finansial & Ibadah Baru", fontWeight = FontWeight.Bold)
         },
         text = {
             Column(
@@ -687,21 +803,42 @@ private fun IbadahGoalFormDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Nama Rencana Ibadah") },
-                    placeholder = { Text("cth: Qurban Kambing 1448 H, Setoran Haji") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Category Selection
+                Column {
+                    Text("Kategori Rencana:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        GoalCategory.entries.forEach { cat ->
+                            FilterChip(
+                                selected = selectedCategory == cat,
+                                onClick = {
+                                    selectedCategory = cat
+                                    val availableTypes = IbadahGoalType.entries.filter { it.category == cat }
+                                    if (selectedType.category != cat && availableTypes.isNotEmpty()) {
+                                        val firstType = availableTypes.first()
+                                        selectedType = firstType
+                                        title = firstType.title
+                                        targetAmountText = firstType.defaultEstimate.toLong().toString()
+                                    }
+                                },
+                                label = { Text(cat.displayName) }
+                            )
+                        }
+                    }
+                }
 
-                // Type Dropdown
+                // Type Dropdown (Filtered by selected category)
                 Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = selectedType.title,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Jenis Ibadah") },
+                        label = { Text("Template / Jenis Rencana") },
                         trailingIcon = {
                             IconButton(onClick = { typeExpanded = !typeExpanded }) {
                                 Icon(
@@ -716,14 +853,23 @@ private fun IbadahGoalFormDialog(
                         expanded = typeExpanded,
                         onDismissRequest = { typeExpanded = false }
                     ) {
-                        IbadahGoalType.entries.forEach { type ->
+                        val availableTypes = IbadahGoalType.entries.filter { it.category == selectedCategory }
+                        availableTypes.forEach { type ->
                             DropdownMenuItem(
-                                text = { Text(type.title) },
+                                text = {
+                                    Column {
+                                        Text(type.title, fontWeight = FontWeight.Medium)
+                                        Text(
+                                            "Estimasi: Rp ${nf.format(type.defaultEstimate.toLong())}",
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                },
                                 onClick = {
                                     selectedType = type
-                                    if (title.isBlank() || title == selectedType.title) {
-                                        title = type.title
-                                    }
+                                    title = type.title
+                                    targetAmountText = type.defaultEstimate.toLong().toString()
                                     typeExpanded = false
                                 }
                             )
@@ -732,12 +878,78 @@ private fun IbadahGoalFormDialog(
                 }
 
                 OutlinedTextField(
-                    value = targetAmountText,
-                    onValueChange = { targetAmountText = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Target Biaya (Rp)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Nama Rencana Target") },
+                    placeholder = { Text("cth: Qurban Kambing, DP Rumah, Dana Darurat") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // Linked Wallet Dropdown
+                val selectedWallet = wallets.firstOrNull { it.id == linkedWalletId }
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = selectedWallet?.name ?: "Pilih Kantong / Rekening Simpanan",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Kantong / Rekening Terhubung") },
+                        trailingIcon = {
+                            IconButton(onClick = { walletExpanded = !walletExpanded }) {
+                                Icon(
+                                    imageVector = if (walletExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    DropdownMenu(
+                        expanded = walletExpanded,
+                        onDismissRequest = { walletExpanded = false }
+                    ) {
+                        wallets.forEach { w ->
+                            DropdownMenuItem(
+                                text = { Text("${w.name} (${w.institutionName})") },
+                                onClick = {
+                                    linkedWalletId = w.id
+                                    walletExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                // Target Amount and Presets
+                Column {
+                    OutlinedTextField(
+                        value = targetAmountText,
+                        onValueChange = { targetAmountText = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Target Biaya (Rp)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Pilihan Cepat Target Biaya:", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        listOf(1000000L to "1 Jt", 3500000L to "3.5 Jt", 5000000L to "5 Jt", 25000000L to "25 Jt", 35000000L to "35 Jt").forEach { (amt, lbl) ->
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { targetAmountText = amt.toString() }
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
+                                    Text(lbl, fontSize = 9.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+                }
 
                 OutlinedTextField(
                     value = initialAccumulatedText,
@@ -747,30 +959,102 @@ private fun IbadahGoalFormDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Months Remaining and Presets
+                Column {
+                    OutlinedTextField(
+                        value = monthsRemainingText,
+                        onValueChange = { monthsRemainingText = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Estimasi Bulan Tersisa Menabung") },
+                        placeholder = { Text("cth: 12") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        listOf(3, 6, 10, 12, 24, 36).forEach { m ->
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { monthsRemainingText = m.toString() }
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
+                                    Text("${m}bln", fontSize = 9.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Live calculation preview
+                val curTarget = targetAmountText.toDoubleOrNull() ?: 0.0
+                val curAccum = initialAccumulatedText.toDoubleOrNull() ?: 0.0
+                val curMonths = (monthsRemainingText.toIntOrNull() ?: 1).coerceAtLeast(1)
+                val curRemaining = (curTarget - curAccum).coerceAtLeast(0.0)
+                val monthlyReco = curRemaining / curMonths
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "💡 Simulasi Tabungan Bulanan",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Sisa kebutuhan: Rp ${nf.format(curRemaining.toLong())} dalam $curMonths bulan",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Rekomendasi Setor: Rp ${nf.format(monthlyReco.toLong())} / bulan",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value = targetHijriYearMonth,
                     onValueChange = { targetHijriYearMonth = it },
-                    label = { Text("Target Waktu Hijriah") },
-                    placeholder = { Text("cth: 10 Dzulhijjah 1448 H / Syawal 1449 H") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = monthsRemainingText,
-                    onValueChange = { monthsRemainingText = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Estimasi Bulan Tersisa") },
-                    placeholder = { Text("cth: 12") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    label = { Text("Target Waktu Pencapaian") },
+                    placeholder = { Text("cth: 10 Dzulhijjah 1448 H / Des 2026") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Catatan Niat / Pelaksanaan") },
-                    placeholder = { Text("cth: Disalurkan ke amil qurban pedalaman") },
+                    label = { Text("Catatan Rencana / Hajat") },
+                    placeholder = { Text("cth: Pembelian tunai bebas riba / biaya uang pangkal") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Status Selesai / Tercapai", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text("Tandai jika target sudah ditunaikan", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = isManuallyCompleted,
+                        onCheckedChange = { isManuallyCompleted = it }
+                    )
+                }
             }
         },
         confirmButton = {
@@ -784,6 +1068,7 @@ private fun IbadahGoalFormDialog(
                         val goal = IbadahGoal(
                             id = initialGoal?.id ?: "goal_${UUID.randomUUID().toString().take(8)}",
                             type = selectedType,
+                            category = selectedCategory,
                             title = title,
                             targetAmount = targetAmount,
                             currentAccumulated = accumulated,
@@ -791,7 +1076,7 @@ private fun IbadahGoalFormDialog(
                             targetMonthsRemaining = months,
                             linkedWalletId = linkedWalletId,
                             notes = notes,
-                            isCompleted = accumulated >= targetAmount
+                            isCompleted = isManuallyCompleted || accumulated >= targetAmount
                         )
                         onSave(goal)
                     }

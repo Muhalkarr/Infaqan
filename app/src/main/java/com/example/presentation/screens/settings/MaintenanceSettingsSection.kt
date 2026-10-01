@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Copyright
+import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -64,7 +65,6 @@ import java.util.Locale
 
 @Composable
 fun MaintenanceSettingsSection(
-    
     state: AmanahLedgerUiState,
     context: Context,
     clipboardManager: ClipboardManager,
@@ -74,7 +74,9 @@ fun MaintenanceSettingsSection(
     onNavigateToBackupRestore: () -> Unit,
     onNavigateToDebugTerminal: () -> Unit,
     onRequestResetConfirmation: () -> Unit,
-    onLoadDummyData: () -> Unit
+    onLoadDummyData: () -> Unit,
+    onSetShakeFeedbackEnabled: ((Boolean) -> Unit)? = null,
+    onOpenFeedbackSheet: ((Int) -> Unit)? = null
 ) {
     
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -94,7 +96,7 @@ fun MaintenanceSettingsSection(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "Versi: 2.4 (Stable Release)\nArsitektur: 100% Offline & Syariah-Compliant",
+                        "Versi: 2.5 (Stable Release)\nArsitektur: 100% Offline & Syariah-Compliant",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -107,7 +109,7 @@ fun MaintenanceSettingsSection(
                         color = MaterialTheme.colorScheme.secondary
                     )
                     Text(
-                        "Muhammad Abdul Kholik Arrasyid",
+                        "Muhalkarr",
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -126,6 +128,32 @@ fun MaintenanceSettingsSection(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                showAboutDialog = false
+                                onOpenFeedbackSheet?.invoke(0)
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Kirim Masukan", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                showAboutDialog = false
+                                onOpenFeedbackSheet?.invoke(2)
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Changelog", fontSize = 11.sp)
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -135,6 +163,38 @@ fun MaintenanceSettingsSection(
             }
         )
     }
+
+    SettingsSectionCard(
+        title = "Masukan & Log Pembaruan (Changelog)",
+        subtitle = "Saran pengembangan, laporan kendala, dan riwayat pembaruan aplikasi v0-v2.5",
+        icon = Icons.Default.Feedback
+    ) {
+        SettingsSwitchRow(
+            title = "Aktivasi Goyang Ponsel (Shake-to-Feedback)",
+            subtitle = "Goyangkan ponsel saat menggunakan aplikasi untuk memunculkan formulir masukan",
+            checked = state.isShakeFeedbackEnabled,
+            testTag = "settings_shake_feedback_switch",
+            onCheckedChange = { onSetShakeFeedbackEnabled?.invoke(it) }
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = { onOpenFeedbackSheet?.invoke(0) },
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag("settings_open_feedback_button"),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+        ) {
+            Icon(imageVector = Icons.Default.Feedback, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Buka Masukan & Changelog (Muhalkarr)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
     SettingsSectionCard(
         title = "Fiqh Edukasi & Pemeliharaan Data",
         subtitle = "Panduan interaktif pengguna dan pencadangan data kas",

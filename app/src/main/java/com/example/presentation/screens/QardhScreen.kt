@@ -5,6 +5,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -47,6 +49,7 @@ fun QardhScreen(
     }
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingQardh by remember { mutableStateOf<QardhRecord?>(null) }
     var selectedQardhForInstallment by remember { mutableStateOf<QardhRecord?>(null) }
     var filterType by remember { mutableStateOf<QardhType?>(null) }
 
@@ -277,6 +280,7 @@ fun QardhScreen(
                         rupiahFormat = rupiahFormat,
                         onPayInstallment = { selectedQardhForInstallment = record },
                         onForgiveSedekah = { viewModel.forgiveQardhAsSedekah(record.id) },
+                        onEdit = { editingQardh = record },
                         onDelete = { viewModel.deleteQardhRecord(record.id) }
                     )
                 }
@@ -284,13 +288,22 @@ fun QardhScreen(
         }
     }
 
-    if (showAddDialog) {
-        AddQardhDialog(
+    if (showAddDialog || editingQardh != null) {
+        QardhFormDialog(
+            initialRecord = editingQardh,
             wallets = uiState.wallets,
-            onDismiss = { showAddDialog = false },
-            onSave = { newRecord ->
-                viewModel.addQardhRecord(newRecord)
+            onDismiss = {
                 showAddDialog = false
+                editingQardh = null
+            },
+            onSave = { recordToSave ->
+                if (editingQardh != null) {
+                    viewModel.updateQardhRecord(recordToSave)
+                } else {
+                    viewModel.addQardhRecord(recordToSave)
+                }
+                showAddDialog = false
+                editingQardh = null
             }
         )
     }
@@ -321,6 +334,7 @@ fun QardhCardItem(
     rupiahFormat: NumberFormat,
     onPayInstallment: () -> Unit,
     onForgiveSedekah: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -523,7 +537,17 @@ if (record.dueDateMillis != null) {
                             }
                         }
 
-                        IconButton(onClick = onDelete) {
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier.testTag("edit_qardh_${record.id}")
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit Catatan", tint = MaterialTheme.colorScheme.primary)
+                        }
+
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier.testTag("delete_qardh_${record.id}")
+                        ) {
                             Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = MaterialTheme.colorScheme.error)
                         }
                     }
@@ -535,26 +559,36 @@ if (record.dueDateMillis != null) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddQardhDialog(
+fun QardhFormDialog(
+    initialRecord: QardhRecord?,
     wallets: List<com.example.core.wallet.WalletAccount>,
     onDismiss: () -> Unit,
     onSave: (QardhRecord) -> Unit
 ) {
-    var type by remember { mutableStateOf(QardhType.PIUTANG_SAYA) }
-    var counterpartyName by remember { mutableStateOf("") }
-    var contactInfo by remember { mutableStateOf("") }
-    var amountText by remember { mutableStateOf("") }
-    var witnessName by remember { mutableStateOf("") }
-    var agreementTerms by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
+    var type by remember { mutableStateOf(initialRecord?.type ?: QardhType.PIUTANG_SAYA) }
+    var counterpartyName by remember { mutableStateOf(initialRecord?.counterpartyName ?: "") }
+    var contactInfo by remember { mutableStateOf(initialRecord?.contactInfo ?: "") }
+    var amountText by remember { mutableStateOf(initialRecord?.totalAmount?.toLong()?.toString() ?: "") }
+    var remainingAmountText by remember { mutableStateOf(initialRecord?.remainingAmount?.toLong()?.toString() ?: "") }
+    var witnessName by remember { mutableStateOf(initialRecord?.witnessName ?: "") }
+    var agreementTerms by remember { mutableStateOf(initialRecord?.agreementTerms ?: "") }
+    var notes by remember { mutableStateOf(initialRecord?.notes ?: "") }
     var dueDaysText by remember { mutableStateOf("30") }
+    var status by remember { mutableStateOf(initialRecord?.status ?: QardhStatus.AKTIF) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Pencatatan Akad Qardh Baru", fontWeight = FontWeight.Bold) },
+        title = {
+            Text(
+                if (initialRecord != null) "Edit Catatan Akad Qardh" else "Pencatatan Akad Qardh Baru",
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Type selector
@@ -562,7 +596,7 @@ fun AddQardhDialog(
                     FilterChip(
                         selected = type == QardhType.PIUTANG_SAYA,
                         onClick = { type = QardhType.PIUTANG_SAYA },
-                        label = { Text("Piutang (Saya Meminjamkan)") },
+                        label = { Text("Piutang (Saya Memberi)") },
                         modifier = Modifier.weight(1f)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -591,16 +625,61 @@ fun AddQardhDialog(
 
                 OutlinedTextField(
                     value = amountText,
-                    onValueChange = { amountText = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Nominal Pinjaman (Rp)") },
+                    onValueChange = { 
+                        amountText = it.filter { ch -> ch.isDigit() } 
+                        if (initialRecord == null) remainingAmountText = amountText
+                    },
+                    label = { Text("Nominal Pokok Akad (Rp)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                if (initialRecord != null) {
+                    OutlinedTextField(
+                        value = remainingAmountText,
+                        onValueChange = { remainingAmountText = it.filter { ch -> ch.isDigit() } },
+                        label = { Text("Sisa Kewajiban Pokok Belum Lunas (Rp)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Status selector
+                    Text("Status Akad Saat Ini:", fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        QardhStatus.entries.forEach { st ->
+                            val isSel = status == st
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { status = st }
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = when(st) {
+                                            QardhStatus.AKTIF -> "Aktif"
+                                            QardhStatus.SEBAGIAN_LUNAS -> "Sebagian"
+                                            QardhStatus.LUNAS -> "Lunas"
+                                            QardhStatus.DIIKHLASKAN_SEDEKAH -> "Ikhlas"
+                                        },
+                                        fontSize = 9.sp,
+                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSel) Color.White else MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value = dueDaysText,
                     onValueChange = { dueDaysText = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Target Pelunasan (Berapa Hari)") },
+                    label = { Text("Target Jatuh Tempo (Hari dari sekarang)") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -620,34 +699,61 @@ fun AddQardhDialog(
                     placeholder = { Text("cth: Pengembalian cicilan tanpa bunga/riba") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Catatan Tambahan") },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
                     val amount = amountText.toDoubleOrNull() ?: 0.0
+                    val remaining = remainingAmountText.toDoubleOrNull() ?: amount
                     val dueDays = dueDaysText.toIntOrNull() ?: 30
                     if (counterpartyName.isNotBlank() && amount > 0) {
-                        val dueMillis = System.currentTimeMillis() + (dueDays * 86400000L)
-                        onSave(
-                            QardhRecord(
-                                type = type,
-                                counterpartyName = counterpartyName,
-                                contactInfo = contactInfo,
-                                totalAmount = amount,
-                                remainingAmount = amount,
-                                dueDateMillis = dueMillis,
-                                witnessName = witnessName,
-                                agreementTerms = agreementTerms,
-                                notes = notes,
-                                status = QardhStatus.AKTIF
-                            )
+                        val dueMillis = if (initialRecord?.dueDateMillis != null && dueDaysText == "30") {
+                            initialRecord.dueDateMillis
+                        } else {
+                            System.currentTimeMillis() + (dueDays * 86400000L)
+                        }
+
+                        val resolvedStatus = if (remaining <= 0.0 && status == QardhStatus.AKTIF) {
+                            QardhStatus.LUNAS
+                        } else status
+
+                        val result = initialRecord?.copy(
+                            type = type,
+                            counterpartyName = counterpartyName,
+                            contactInfo = contactInfo,
+                            totalAmount = amount,
+                            remainingAmount = remaining.coerceAtMost(amount),
+                            dueDateMillis = dueMillis,
+                            witnessName = witnessName,
+                            agreementTerms = agreementTerms,
+                            notes = notes,
+                            status = resolvedStatus
+                        ) ?: QardhRecord(
+                            type = type,
+                            counterpartyName = counterpartyName,
+                            contactInfo = contactInfo,
+                            totalAmount = amount,
+                            remainingAmount = amount,
+                            dueDateMillis = dueMillis,
+                            witnessName = witnessName,
+                            agreementTerms = agreementTerms,
+                            notes = notes,
+                            status = QardhStatus.AKTIF
                         )
+                        onSave(result)
                     }
                 },
                 enabled = counterpartyName.isNotBlank() && (amountText.toDoubleOrNull() ?: 0.0) > 0
             ) {
-                Text("Simpan Akad")
+                Text(if (initialRecord != null) "Perbarui Akad" else "Simpan Akad")
             }
         },
         dismissButton = {

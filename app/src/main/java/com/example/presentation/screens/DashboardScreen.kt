@@ -166,6 +166,14 @@ fun DashboardScreen(
     var dismissBackupNudge by remember { mutableStateOf(false) }
     var transactionDisplayLimit by remember { mutableStateOf(30) }
 
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.dashboardScrollToTopEvent.collect {
+            listState.animateScrollToItem(0)
+        }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -231,6 +239,7 @@ fun DashboardScreen(
         }
     ) { paddingValues ->
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)

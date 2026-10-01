@@ -2,6 +2,8 @@ package com.example.presentation.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FileDownload
@@ -74,6 +77,10 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,7 +88,8 @@ import kotlin.math.ceil
 fun MonthlyReportScreen(
     viewModel: AmanahLedgerViewModel,
     onNavigateBack: () -> Unit,
-    onOpenDrawer: () -> Unit = {}
+    onOpenDrawer: () -> Unit = {},
+    onNavigateToReceiptArchive: (() -> Unit)? = null
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -95,6 +103,7 @@ fun MonthlyReportScreen(
     // Transaction Pagination & Filter State
     var searchQuery by remember { mutableStateOf("") }
     var selectedTypeFilter by remember { mutableStateOf("SEMUA") }
+    var onlyWithReceipts by remember { mutableStateOf(false) }
     var currentPage by remember { mutableIntStateOf(1) }
     var previewReceiptPath by remember { mutableStateOf<String?>(null) }
     val pageSize = 8
@@ -579,7 +588,9 @@ fun MonthlyReportScreen(
 
                         // Filter Chips
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             val filters = listOf("SEMUA" to "Semua", "EXPENSE" to "Beban", "INCOME" to "Kasab", "TRANSFER" to "Transfer", "INFAQ" to "Infaq")
@@ -595,6 +606,38 @@ fun MonthlyReportScreen(
                                         selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
+                                )
+                            }
+
+                            FilterChip(
+                                selected = onlyWithReceipts,
+                                onClick = {
+                                    onlyWithReceipts = !onlyWithReceipts
+                                    currentPage = 1
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.AttachFile, contentDescription = null, modifier = Modifier.size(13.dp))
+                                },
+                                label = { Text("Ada Struk 📎", fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            )
+
+                            if (onNavigateToReceiptArchive != null) {
+                                AssistChip(
+                                    onClick = onNavigateToReceiptArchive,
+                                    leadingIcon = {
+                                        Icon(
+                                            Icons.Default.PhotoLibrary,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(13.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    },
+                                    label = { Text("Galeri Struk ↗", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary) },
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
                                 )
                             }
                         }
@@ -613,7 +656,8 @@ fun MonthlyReportScreen(
                             }
                             val matchesSearch = searchQuery.isBlank() ||
                                 entry.description.contains(searchQuery, ignoreCase = true)
-                            matchesType && matchesSearch
+                            val matchesReceipt = !onlyWithReceipts || (entry.receiptAttachment != null)
+                            matchesType && matchesSearch && matchesReceipt
                         }
 
                         val totalCount = filteredList.size

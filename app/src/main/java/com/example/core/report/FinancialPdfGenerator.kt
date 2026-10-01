@@ -12,6 +12,10 @@ import androidx.core.content.FileProvider
 import com.example.core.calendar.HijriCalendarEngine
 import com.example.core.state.AmanahLedgerUiState
 import com.example.core.accounting.JournalEntry
+import com.example.core.qardh.QardhRecord
+import com.example.core.qardh.QardhType
+import com.example.core.qardh.QardhStatus
+import com.example.core.wallet.WalletAccount
 import java.io.File
 import java.io.FileOutputStream
 import java.text.NumberFormat
@@ -978,6 +982,358 @@ object FinancialPdfGenerator {
         paint.textSize = 9.5f
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         canvas.drawText(value, x, y + 34f, paint)
+    }
+
+    /**
+     * Menghasilkan PDF Laporan Kondisi Finansial Komprehensif
+     * Merangkum seluruh kondisi finansial pengguna: Saldo Dompet, Kekayaan Bersih (Net Worth),
+     * Buku Hutang Piutang Qardhul Hasan, dan Status Kewajiban Zakat.
+     */
+    fun generateComprehensiveFinancialPdf(
+        context: Context,
+        state: AmanahLedgerUiState
+    ): File {
+        val document = PdfDocument()
+        val session = PdfPageSession(
+            document = document,
+            documentTitle = "Laporan Kondisi Finansial Komprehensif",
+            subtitle = "Neraca Saldo Dompet, Buku Hutang Piutang & Status Zakat"
+        )
+
+        val cal = Calendar.getInstance()
+        val printDateStr = SimpleDateFormat("dd MMMM yyyy HH:mm", Locale("id", "ID")).format(cal.time)
+        val hijriDate = HijriCalendarEngine.fromGregorian(cal.time)
+
+        val emeraldDark = Color.rgb(0, 77, 64)
+        val emeraldPrimary = Color.rgb(0, 137, 123)
+        val goldAccent = Color.rgb(218, 165, 32)
+        val coralRed = Color.rgb(198, 40, 40)
+        val blueInfo = Color.rgb(21, 101, 192)
+        val textMuted = Color.rgb(90, 105, 110)
+        val bgCard = Color.rgb(245, 247, 248)
+        val bgRowAlt = Color.rgb(240, 245, 244)
+        val paint = session.paint
+        val canvas = session.canvas
+
+        // 1. BANNER HEADER
+        paint.color = emeraldDark
+        canvas.drawRoundRect(RectF(32f, session.y, 563f, session.y + 80f), 8f, 8f, paint)
+
+        // Accent gold stripe
+        paint.color = goldAccent
+        canvas.drawRect(RectF(32f, session.y + 76f, 563f, session.y + 80f), paint)
+
+        // Judul Utama
+        paint.color = Color.WHITE
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.textSize = 15f
+        canvas.drawText("INFAQAN SYARIAH (AMANAH LEDGER)", 46f, session.y + 24f, paint)
+
+        // Sub-judul
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        paint.textSize = 8.5f
+        paint.color = Color.rgb(220, 245, 242)
+        canvas.drawText("Laporan Kondisi Finansial Komprehensif, Hutang Piutang & Zakat", 46f, session.y + 40f, paint)
+
+        // Info Pemilik & Tanggal
+        paint.color = goldAccent
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.textSize = 9.5f
+        canvas.drawText("Pemilik: ${state.userNameKasMukmin} • ${hijriDate.day} ${hijriDate.monthName} ${hijriDate.year} H", 46f, session.y + 60f, paint)
+
+        // Timestamp
+        paint.textSize = 7.5f
+        paint.color = Color.rgb(200, 230, 225)
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        canvas.drawText("Dicetak: $printDateStr WIB", 420f, session.y + 24f, paint)
+
+        session.y += 94f
+
+        // 2. KALKULASI NERACA EKSEKUTIF
+        val totalWalletBalance = state.totalWalletBalance
+        val receivables = state.qardhRecords.filter { it.type == QardhType.PIUTANG_SAYA }
+        val payables = state.qardhRecords.filter { it.type == QardhType.HUTANG_SAYA }
+        val activeReceivables = receivables.filter { it.status == QardhStatus.AKTIF || it.status == QardhStatus.SEBAGIAN_LUNAS }
+        val activePayables = payables.filter { it.status == QardhStatus.AKTIF || it.status == QardhStatus.SEBAGIAN_LUNAS }
+        val totalPiutang = activeReceivables.sumOf { it.remainingAmount }
+        val totalHutang = activePayables.sumOf { it.remainingAmount }
+        val netWorth = totalWalletBalance + totalPiutang - totalHutang
+
+        val cardWidth = 126f
+        val cardHeight = 52f
+        val cardSpacing = 8.6f
+
+        drawSummaryCard(session.canvas, paint, 32f, session.y, cardWidth, cardHeight, bgCard, "TOTAL SALDO KAS", "Rp ${formatRp(totalWalletBalance)}", emeraldPrimary)
+        drawSummaryCard(session.canvas, paint, 32f + (cardWidth + cardSpacing), session.y, cardWidth, cardHeight, bgCard, "PIUTANG AKTIF", "Rp ${formatRp(totalPiutang)}", blueInfo)
+        drawSummaryCard(session.canvas, paint, 32f + (cardWidth + cardSpacing) * 2, session.y, cardWidth, cardHeight, bgCard, "HUTANG KEWAJIBAN", "Rp ${formatRp(totalHutang)}", coralRed)
+        drawSummaryCard(session.canvas, paint, 32f + (cardWidth + cardSpacing) * 3, session.y, cardWidth, cardHeight, bgCard, "KEKAYAAN BERSIH", "Rp ${formatRp(netWorth)}", if (netWorth >= 0) emeraldDark else coralRed)
+
+        session.y += 66f
+
+        // 3. SECTION 1: RINCIAN SALDO SELURUH DOMPET & REKENING
+        paint.color = emeraldDark
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.textSize = 10.5f
+        session.canvas.drawText("1. Neraca Saldo Seluruh Kantong Kas & Rekening Bank", 32f, session.y, paint)
+        session.y += 14f
+
+        fun drawWalletTableHeader(c: Canvas, topY: Float): Float {
+            paint.color = emeraldPrimary
+            c.drawRoundRect(RectF(32f, topY, 563f, topY + 18f), 4f, 4f, paint)
+            paint.color = Color.WHITE
+            paint.textSize = 8.5f
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            c.drawText("Nama Kantong / Rekening", 40f, topY + 12f, paint)
+            c.drawText("Tipe Akun", 230f, topY + 12f, paint)
+            c.drawText("Nomor Rekening", 340f, topY + 12f, paint)
+            c.drawText("Saldo Saat Ini (Rp)", 465f, topY + 12f, paint)
+            return topY + 22f
+        }
+
+        session.y = drawWalletTableHeader(session.canvas, session.y)
+
+        if (state.wallets.isEmpty()) {
+            paint.color = textMuted
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+            paint.textSize = 8.5f
+            session.canvas.drawText("Belum ada akun dompet kas yang terdaftar.", 40f, session.y + 12f, paint)
+            session.y += 24f
+        } else {
+            var rowIndex = 0
+            for (w in state.wallets) {
+                session.ensureSpace(18f) { c, topY -> drawWalletTableHeader(c, topY) }
+                val balance = state.getWalletBalance(w.id)
+                if (rowIndex % 2 == 1) {
+                    paint.color = bgRowAlt
+                    session.canvas.drawRect(RectF(32f, session.y, 563f, session.y + 16f), paint)
+                }
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                paint.color = emeraldDark
+                paint.textSize = 8.5f
+                session.canvas.drawText(w.name, 40f, session.y + 11f, paint)
+
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                paint.color = textMuted
+                session.canvas.drawText(w.type.displayName, 230f, session.y + 11f, paint)
+                session.canvas.drawText(w.accountNumber.ifBlank { "-" }, 340f, session.y + 11f, paint)
+
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                paint.color = if (balance >= 0) emeraldPrimary else coralRed
+                session.canvas.drawText("Rp ${formatRp(balance)}", 465f, session.y + 11f, paint)
+
+                session.y += 16f
+                rowIndex++
+            }
+            // Garis total dompet
+            session.ensureSpace(20f)
+            paint.color = emeraldDark
+            session.canvas.drawLine(32f, session.y + 2f, 563f, session.y + 2f, paint)
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            paint.textSize = 9f
+            session.canvas.drawText("TOTAL SALDO KAS TERSEDIA:", 280f, session.y + 14f, paint)
+            session.canvas.drawText("Rp ${formatRp(totalWalletBalance)}", 465f, session.y + 14f, paint)
+            session.y += 26f
+        }
+
+        // 4. SECTION 2: BUKU PIUTANG KEBAJIKAN (QARDHUL HASAN)
+        session.ensureSpace(35f)
+        paint.color = emeraldDark
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.textSize = 10.5f
+        session.canvas.drawText("2. Rekapitulasi Piutang Kebajikan (Qardhul Hasan)", 32f, session.y, paint)
+        session.y += 14f
+
+        fun drawReceivableTableHeader(c: Canvas, topY: Float): Float {
+            paint.color = blueInfo
+            c.drawRoundRect(RectF(32f, topY, 563f, topY + 18f), 4f, 4f, paint)
+            paint.color = Color.WHITE
+            paint.textSize = 8.5f
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            c.drawText("Nama Peminjam (Debitur)", 40f, topY + 12f, paint)
+            c.drawText("Jatuh Tempo", 200f, topY + 12f, paint)
+            c.drawText("Total Dipinjam", 295f, topY + 12f, paint)
+            c.drawText("Sisa Piutang", 390f, topY + 12f, paint)
+            c.drawText("Status Akad", 485f, topY + 12f, paint)
+            return topY + 22f
+        }
+
+        session.y = drawReceivableTableHeader(session.canvas, session.y)
+
+        if (receivables.isEmpty()) {
+            paint.color = textMuted
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+            paint.textSize = 8.5f
+            session.canvas.drawText("Tidak ada data piutang kebajikan yang tercatat.", 40f, session.y + 12f, paint)
+            session.y += 24f
+        } else {
+            var rowIndex = 0
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale("id", "ID"))
+            for (q in receivables) {
+                session.ensureSpace(18f) { c, topY -> drawReceivableTableHeader(c, topY) }
+                if (rowIndex % 2 == 1) {
+                    paint.color = bgRowAlt
+                    session.canvas.drawRect(RectF(32f, session.y, 563f, session.y + 16f), paint)
+                }
+
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                paint.color = emeraldDark
+                paint.textSize = 8.5f
+                session.canvas.drawText(q.counterpartyName, 40f, session.y + 11f, paint)
+
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                paint.color = textMuted
+                val dueStr = q.dueDateMillis?.let { sdf.format(Date(it)) } ?: "Tanpa Batas"
+                session.canvas.drawText(dueStr, 200f, session.y + 11f, paint)
+                session.canvas.drawText("Rp ${formatRp(q.totalAmount)}", 295f, session.y + 11f, paint)
+
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                paint.color = blueInfo
+                session.canvas.drawText("Rp ${formatRp(q.remainingAmount)}", 390f, session.y + 11f, paint)
+
+                paint.textSize = 8f
+                paint.color = if (q.status == QardhStatus.LUNAS) emeraldPrimary else textMuted
+                session.canvas.drawText(q.status.displayName, 485f, session.y + 11f, paint)
+
+                session.y += 16f
+                rowIndex++
+            }
+            session.ensureSpace(20f)
+            paint.color = blueInfo
+            session.canvas.drawLine(32f, session.y + 2f, 563f, session.y + 2f, paint)
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            paint.textSize = 9f
+            session.canvas.drawText("TOTAL PIUTANG AKTIF BELUM TERTARIK:", 220f, session.y + 14f, paint)
+            session.canvas.drawText("Rp ${formatRp(totalPiutang)}", 465f, session.y + 14f, paint)
+            session.y += 26f
+        }
+
+        // 5. SECTION 3: BUKU HUTANG SYARIAH (KEWAJIBAN PENGGUNA)
+        session.ensureSpace(35f)
+        paint.color = emeraldDark
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.textSize = 10.5f
+        session.canvas.drawText("3. Rekapitulasi Kewajiban Hutang Syariah Pengguna", 32f, session.y, paint)
+        session.y += 14f
+
+        fun drawPayableTableHeader(c: Canvas, topY: Float): Float {
+            paint.color = coralRed
+            c.drawRoundRect(RectF(32f, topY, 563f, topY + 18f), 4f, 4f, paint)
+            paint.color = Color.WHITE
+            paint.textSize = 8.5f
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            c.drawText("Pemberi Pinjaman (Kreditur)", 40f, topY + 12f, paint)
+            c.drawText("Jatuh Tempo", 200f, topY + 12f, paint)
+            c.drawText("Total Pokok", 295f, topY + 12f, paint)
+            c.drawText("Sisa Hutang", 390f, topY + 12f, paint)
+            c.drawText("Status Kewajiban", 485f, topY + 12f, paint)
+            return topY + 22f
+        }
+
+        session.y = drawPayableTableHeader(session.canvas, session.y)
+
+        if (payables.isEmpty()) {
+            paint.color = textMuted
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+            paint.textSize = 8.5f
+            session.canvas.drawText("Alhamdulillah, tidak ada catatan kewajiban hutang.", 40f, session.y + 12f, paint)
+            session.y += 24f
+        } else {
+            var rowIndex = 0
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale("id", "ID"))
+            for (q in payables) {
+                session.ensureSpace(18f) { c, topY -> drawPayableTableHeader(c, topY) }
+                if (rowIndex % 2 == 1) {
+                    paint.color = bgRowAlt
+                    session.canvas.drawRect(RectF(32f, session.y, 563f, session.y + 16f), paint)
+                }
+
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                paint.color = emeraldDark
+                paint.textSize = 8.5f
+                session.canvas.drawText(q.counterpartyName, 40f, session.y + 11f, paint)
+
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                paint.color = textMuted
+                val dueStr = q.dueDateMillis?.let { sdf.format(Date(it)) } ?: "Tanpa Batas"
+                session.canvas.drawText(dueStr, 200f, session.y + 11f, paint)
+                session.canvas.drawText("Rp ${formatRp(q.totalAmount)}", 295f, session.y + 11f, paint)
+
+                paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                paint.color = coralRed
+                session.canvas.drawText("Rp ${formatRp(q.remainingAmount)}", 390f, session.y + 11f, paint)
+
+                paint.textSize = 8f
+                paint.color = if (q.status == QardhStatus.LUNAS) emeraldPrimary else textMuted
+                session.canvas.drawText(q.status.displayName, 485f, session.y + 11f, paint)
+
+                session.y += 16f
+                rowIndex++
+            }
+            session.ensureSpace(20f)
+            paint.color = coralRed
+            session.canvas.drawLine(32f, session.y + 2f, 563f, session.y + 2f, paint)
+            paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            paint.textSize = 9f
+            session.canvas.drawText("TOTAL HUTANG YANG WAJIB DILUNASI:", 220f, session.y + 14f, paint)
+            session.canvas.drawText("Rp ${formatRp(totalHutang)}", 465f, session.y + 14f, paint)
+            session.y += 26f
+        }
+
+        // 6. SECTION 4: STATUS KEWAJIBAN ZAKAT & TABARRU'
+        session.ensureSpace(80f)
+        paint.color = emeraldDark
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        paint.textSize = 10.5f
+        session.canvas.drawText("4. Ringkasan Status Zakat & Tabarru'", 32f, session.y, paint)
+        session.y += 14f
+
+        val nisabValue = state.goldPricePerGram * 85.0
+        val isZakatWajib = totalWalletBalance >= nisabValue
+        val zakatEstimation = if (isZakatWajib) totalWalletBalance * 0.025 else 0.0
+
+        paint.color = bgCard
+        session.canvas.drawRoundRect(RectF(32f, session.y, 563f, session.y + 60f), 6f, 6f, paint)
+        paint.color = goldAccent
+        session.canvas.drawRoundRect(RectF(32f, session.y, 36f, session.y + 60f), 2f, 2f, paint)
+
+        paint.color = emeraldDark
+        paint.textSize = 8.5f
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        session.canvas.drawText("Standar Nisab Emas (85 gram):", 46f, session.y + 18f, paint)
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        session.canvas.drawText("Rp ${formatRp(nisabValue)} (@ Rp ${formatRp(state.goldPricePerGram)}/gram)", 220f, session.y + 18f, paint)
+
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        session.canvas.drawText("Status Nisab Harta Kas:", 46f, session.y + 34f, paint)
+        paint.color = if (isZakatWajib) emeraldPrimary else textMuted
+        session.canvas.drawText(if (isZakatWajib) "Mencapai Nisab (Wajib Zakat jika Haul Genap)" else "Belum Mencapai Nisab", 220f, session.y + 34f, paint)
+
+        paint.color = emeraldDark
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        session.canvas.drawText("Estimasi Zakat Maal (2.5%):", 46f, session.y + 50f, paint)
+        paint.color = if (zakatEstimation > 0) goldAccent else textMuted
+        session.canvas.drawText("Rp ${formatRp(zakatEstimation)}", 220f, session.y + 50f, paint)
+
+        paint.color = emeraldDark
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        session.canvas.drawText("Titipan Infaq Vault:", 390f, session.y + 18f, paint)
+        paint.color = emeraldPrimary
+        session.canvas.drawText("Rp ${formatRp(state.virtualInfaqVaultBalance)}", 495f, session.y + 18f, paint)
+
+        session.y += 74f
+
+        // Jaminan Syariah
+        session.ensureSpace(40f)
+        paint.color = emeraldDark
+        session.canvas.drawLine(32f, session.y, 563f, session.y, paint)
+        paint.color = textMuted
+        paint.textSize = 7.5f
+        paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.ITALIC)
+        session.canvas.drawText("Prinsip Fiqih: 'Harta yang bersih adalah harta yang ditunaikan zakatnya dan disucikan dari riba.' (QS. At-Taubah: 103)", 32f, session.y + 14f, paint)
+        session.canvas.drawText("Pencatatan hutang piutang selaras syariat QS. Al-Baqarah: 282 tanpa bunga dan tanpa denda riba.", 32f, session.y + 26f, paint)
+
+        session.finish()
+        return savePdfToFile(context, document, "Laporan_Finansial_Komprehensif")
     }
 
     private fun Double.ifZero(fallback: Double): Double = if (this <= 0.0) fallback else this

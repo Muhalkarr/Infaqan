@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Schedule
@@ -85,6 +86,7 @@ fun RecurringTransactionsScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingRecurring by remember { mutableStateOf<RecurringTransaction?>(null) }
     var selectedToExecute by remember { mutableStateOf<RecurringTransaction?>(null) }
     var executionSuccessMsg by remember { mutableStateOf<String?>(null) }
 
@@ -447,6 +449,18 @@ fun RecurringTransactionsScreen(
 
                                 Row {
                                     IconButton(
+                                        onClick = { editingRecurring = item },
+                                        modifier = Modifier.size(32.dp).testTag("edit_recurring_${item.id}")
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit Jadwal",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+
+                                    IconButton(
                                         onClick = { viewModel.deleteRecurringTransaction(item.id) },
                                         modifier = Modifier.size(32.dp).testTag("delete_recurring_${item.id}")
                                     ) {
@@ -490,14 +504,20 @@ fun RecurringTransactionsScreen(
         }
     }
 
-    // Dialog Tambah Jadwal Rutin
-    if (showAddDialog) {
-        AddRecurringDialog(
+    // Dialog Tambah / Edit Jadwal Rutin
+    if (showAddDialog || editingRecurring != null) {
+        RecurringTransactionFormDialog(
+            initialItem = editingRecurring,
             viewModel = viewModel,
-            onDismiss = { showAddDialog = false },
-            onSaved = {
+            onDismiss = {
                 showAddDialog = false
-                executionSuccessMsg = "Jadwal rutin baru berhasil ditambahkan!"
+                editingRecurring = null
+            },
+            onSaved = {
+                val wasEdit = editingRecurring != null
+                showAddDialog = false
+                editingRecurring = null
+                executionSuccessMsg = if (wasEdit) "Jadwal rutin berhasil diperbarui!" else "Jadwal rutin baru berhasil ditambahkan!"
             }
         )
     }
@@ -505,19 +525,20 @@ fun RecurringTransactionsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddRecurringDialog(
+fun RecurringTransactionFormDialog(
+    initialItem: RecurringTransaction?,
     viewModel: AmanahLedgerViewModel,
     onDismiss: () -> Unit,
     onSaved: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    var title by remember { mutableStateOf("") }
-    var isIncome by remember { mutableStateOf(false) }
-    var amountText by remember { mutableStateOf("") }
-    var frequency by remember { mutableStateOf(RecurringFrequency.MONTHLY) }
-    var dayOfMonth by remember { mutableIntStateOf(1) }
-    var infaqRatePercent by remember { mutableDoubleStateOf(5.0) }
+    var title by remember { mutableStateOf(initialItem?.title ?: "") }
+    var isIncome by remember { mutableStateOf(initialItem?.type == RecurringType.INCOME) }
+    var amountText by remember { mutableStateOf(initialItem?.amount?.toLong()?.toString() ?: "") }
+    var frequency by remember { mutableStateOf(initialItem?.frequency ?: RecurringFrequency.MONTHLY) }
+    var dayOfMonth by remember { mutableIntStateOf(initialItem?.dayOfMonthOrWeek ?: 1) }
+    var infaqRatePercent by remember { mutableDoubleStateOf((initialItem?.customInfaqRate ?: 0.05) * 100.0) }
 
     val expenseCategories = remember(state.accounts) {
         state.accounts.filter { it.category == AccountCategory.EXPENSE && it.id != "acc_disbursed" }
@@ -530,10 +551,18 @@ fun AddRecurringDialog(
     }
 
     var selectedCategoryId by remember(isIncome) {
-        mutableStateOf(if (isIncome) incomeCategories.firstOrNull()?.id ?: "acc_salary" else expenseCategories.firstOrNull()?.id ?: "acc_living")
+        mutableStateOf(
+            if (initialItem != null && (if (isIncome) initialItem.type == RecurringType.INCOME else initialItem.type == RecurringType.EXPENSE)) {
+                initialItem.categoryAccountId
+            } else if (isIncome) {
+                incomeCategories.firstOrNull()?.id ?: "acc_salary"
+            } else {
+                expenseCategories.firstOrNull()?.id ?: "acc_living"
+            }
+        )
     }
     var selectedAssetId by remember {
-        mutableStateOf(assetAccounts.firstOrNull()?.id ?: "acc_bank")
+        mutableStateOf(initialItem?.assetAccountId ?: assetAccounts.firstOrNull()?.id ?: "acc_bank")
     }
 
     AlertDialog(
@@ -689,7 +718,16 @@ fun AddRecurringDialog(
                 onClick = {
                     val amountVal = amountText.toDoubleOrNull() ?: 0.0
                     if (title.isNotBlank() && amountVal > 0.0) {
-                        val newRecurring = RecurringTransaction(
+                        val recurringItem = initialItem?.copy(
+                            title = title,
+                            type = if (isIncome) RecurringType.INCOME else RecurringType.EXPENSE,
+                            amount = amountVal,
+                            categoryAccountId = selectedCategoryId,
+                            assetAccountId = selectedAssetId,
+                            frequency = frequency,
+                            dayOfMonthOrWeek = dayOfMonth,
+                            customInfaqRate = infaqRatePercent / 100.0
+                        ) ?: RecurringTransaction(
                             title = title,
                             type = if (isIncome) RecurringType.INCOME else RecurringType.EXPENSE,
                             amount = amountVal,
@@ -701,14 +739,18 @@ fun AddRecurringDialog(
                             isActive = true,
                             autoExecute = true
                         )
-                        viewModel.addRecurringTransaction(newRecurring)
+                        if (initialItem != null) {
+                            viewModel.updateRecurringTransaction(recurringItem)
+                        } else {
+                            viewModel.addRecurringTransaction(recurringItem)
+                        }
                         onSaved()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.testTag("save_recurring_button")
             ) {
-                Text("Simpan Jadwal", fontWeight = FontWeight.Bold)
+                Text(if (initialItem != null) "Perbarui Jadwal" else "Simpan Jadwal", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

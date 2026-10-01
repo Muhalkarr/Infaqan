@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Rule
 import androidx.compose.material3.AlertDialog
@@ -84,6 +87,7 @@ fun InfaqRulesScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingRule by remember { mutableStateOf<InfaqRule?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -158,6 +162,7 @@ fun InfaqRulesScreen(
             items(state.rules, key = { it.id }) { rule ->
                 InfaqRuleItemCard(
                     rule = rule,
+                    onEdit = { editingRule = rule },
                     onDelete = { viewModel.deleteRule(rule.id) }
                 )
             }
@@ -166,12 +171,21 @@ fun InfaqRulesScreen(
         }
     }
 
-    if (showAddDialog) {
-        AddRuleDialog(
-            onDismiss = { showAddDialog = false },
-            onAdd = { newRule ->
-                viewModel.addRule(newRule)
+    if (showAddDialog || editingRule != null) {
+        InfaqRuleFormDialog(
+            initialRule = editingRule,
+            onDismiss = {
                 showAddDialog = false
+                editingRule = null
+            },
+            onSave = { ruleToSave ->
+                if (editingRule != null) {
+                    viewModel.updateRule(ruleToSave)
+                } else {
+                    viewModel.addRule(ruleToSave)
+                }
+                showAddDialog = false
+                editingRule = null
             }
         )
     }
@@ -180,10 +194,11 @@ fun InfaqRulesScreen(
 @Composable
 fun InfaqRuleItemCard(
     rule: InfaqRule,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("rule_card_${rule.id}"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
@@ -223,13 +238,30 @@ fun InfaqRuleItemCard(
                 )
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Hapus Aturan",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    modifier = Modifier.size(18.dp)
-                )
+            Row {
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.size(32.dp).testTag("edit_rule_${rule.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Aturan",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(32.dp).testTag("delete_rule_${rule.id}")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Hapus Aturan",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
@@ -237,21 +269,22 @@ fun InfaqRuleItemCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddRuleDialog(
+fun InfaqRuleFormDialog(
+    initialRule: InfaqRule?,
     onDismiss: () -> Unit,
-    onAdd: (InfaqRule) -> Unit
+    onSave: (InfaqRule) -> Unit
 ) {
-    var title by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf(AccountCategory.INCOME_KASAB) }
+    var title by remember { mutableStateOf(initialRule?.title ?: "") }
+    var selectedCategory by remember { mutableStateOf(initialRule?.targetCategory ?: AccountCategory.INCOME_KASAB) }
     var categoryExpanded by remember { mutableStateOf(false) }
 
-    var selectedCalcType by remember { mutableStateOf(InfaqCalculationType.PERCENTAGE) }
+    var selectedCalcType by remember { mutableStateOf(initialRule?.calculationType ?: InfaqCalculationType.PERCENTAGE) }
     var calcTypeExpanded by remember { mutableStateOf(false) }
 
-    var percentageRate by remember { mutableDoubleStateOf(0.05) }
-    var roundUpStep by remember { mutableDoubleStateOf(5000.0) }
-    var enableFriday by remember { mutableStateOf(true) }
-    var enableRamadan by remember { mutableStateOf(true) }
+    var percentageRate by remember { mutableDoubleStateOf(initialRule?.rate ?: 0.05) }
+    var roundUpStep by remember { mutableDoubleStateOf(initialRule?.roundUpStep ?: 5000.0) }
+    var enableFriday by remember { mutableStateOf(initialRule?.enableFridayMultiplier ?: true) }
+    var enableRamadan by remember { mutableStateOf(initialRule?.enableRamadanMultiplier ?: true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -261,7 +294,7 @@ fun AddRuleDialog(
         shape = RoundedCornerShape(16.dp),
         title = {
             Text(
-                text = "Tambah Aturan Infaq Baru",
+                text = if (initialRule != null) "Edit Aturan Infaq" else "Tambah Aturan Infaq Baru",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -269,7 +302,9 @@ fun AddRuleDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 OutlinedTextField(
@@ -421,12 +456,53 @@ fun AddRuleDialog(
                         )
                     )
                 }
+
+                if (selectedCalcType == InfaqCalculationType.ROUND_UP) {
+                    Text(
+                        text = "Kelipatan Pembulatan:",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(100.0 to "100", 500.0 to "500", 1000.0 to "1.000", 5000.0 to "5.000", 10000.0 to "10.000").forEach { (step, lbl) ->
+                            val isSel = Math.abs(roundUpStep - step) < 1.0
+                            androidx.compose.material3.Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, if (isSel) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { roundUpStep = step }
+                            ) {
+                                Box(modifier = Modifier.padding(vertical = 4.dp), contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = lbl,
+                                        fontSize = 9.sp,
+                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val r = InfaqRule(
+                    val r = initialRule?.copy(
+                        title = title.ifBlank { "Aturan Infaq Kustom" },
+                        targetCategory = selectedCategory,
+                        calculationType = selectedCalcType,
+                        rate = percentageRate,
+                        roundUpStep = roundUpStep,
+                        enableFridayMultiplier = enableFriday,
+                        enableRamadanMultiplier = enableRamadan
+                    ) ?: InfaqRule(
                         id = "rule_${UUID.randomUUID().toString().take(6)}",
                         title = title.ifBlank { "Aturan Infaq Kustom" },
                         targetCategory = selectedCategory,
@@ -436,14 +512,14 @@ fun AddRuleDialog(
                         enableFridayMultiplier = enableFriday,
                         enableRamadanMultiplier = enableRamadan
                     )
-                    onAdd(r)
+                    onSave(r)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White
                 )
             ) {
-                Text("Simpan Aturan")
+                Text(if (initialRule != null) "Perbarui Aturan" else "Simpan Aturan")
             }
         },
         dismissButton = {

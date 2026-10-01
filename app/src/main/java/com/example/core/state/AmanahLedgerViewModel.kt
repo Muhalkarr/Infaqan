@@ -13,6 +13,9 @@ import com.example.core.accounting.JournalLine
 import com.example.core.accounting.CurrencyPrecisionUtils
 import com.example.core.receipt.ReceiptImageStorage
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import com.example.core.backup.BackupEngine
 import com.example.core.backup.RestoreResult
 import com.example.core.budget.BudgetAllocation
@@ -172,6 +175,7 @@ data class AmanahLedgerUiState(
     val uiScaleFactor: Float = 1.0f,
     val completedGuides: Set<String> = emptySet(),
     val hasCompletedOnboarding: Boolean = false,
+    val isShakeFeedbackEnabled: Boolean = true,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false
 ) {
@@ -378,6 +382,20 @@ class AmanahLedgerViewModel : ViewModel() {
     val uiState: StateFlow<AmanahLedgerUiState> = _uiState.asStateFlow()
     val appStateNotifier: AppStateNotifier = AppStateNotifier()
 
+    private val _openFeedbackEvent = kotlinx.coroutines.flow.MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val openFeedbackEvent: kotlinx.coroutines.flow.SharedFlow<Int> = _openFeedbackEvent.asSharedFlow()
+
+    fun openFeedbackSheet(tab: Int = 0) {
+        _openFeedbackEvent.tryEmit(tab)
+    }
+
+    private val _dashboardScrollToTopEvent = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val dashboardScrollToTopEvent: kotlinx.coroutines.flow.SharedFlow<Unit> = _dashboardScrollToTopEvent.asSharedFlow()
+
+    fun triggerDashboardScrollToTop() {
+        _dashboardScrollToTopEvent.tryEmit(Unit)
+    }
+
     // Interactive Guide State Tracking
     var activeGuideTopicIndex by mutableIntStateOf(0)
         private set
@@ -431,7 +449,7 @@ class AmanahLedgerViewModel : ViewModel() {
             Account("acc_salary", "401", "Kasab: Ujrah / Gaji Pokok", AccountCategory.INCOME_KASAB, "Penghasilan kerja aktif"),
             Account("acc_trade", "402", "Kasab: Margin Usaha Dagang", AccountCategory.INCOME_KASAB, "Laba tijarah halal"),
             Account("acc_gift", "451", "Non-Kasab: Hibah & Hadiah", AccountCategory.INCOME_NON_KASAB, "Pemberian sukarela keluarga/rekan"),
-            Account("acc_rikaz", "452", "Non-Kasab: Rikaz / Temuan", AccountCategory.INCOME_NON_KASAB, "Harta karun/windfall wajib 20%"),
+            Account("acc_rikaz", "452", "Non-Kasab: Rikaz / Temuan", AccountCategory.INCOME_NON_KASAB, "Harta karun purbakala kuno (wajib zakat 20% seketika - HR. Bukhari No. 1499 & PMA No. 52/2014)"),
             Account("acc_syubhat", "453", "Non-Kasab: Karantina Syubhat", AccountCategory.INCOME_NON_KASAB, "Dana bunga bank / tidak jelas halal"),
             Account("acc_living", "501", "Biaya Hidup & Pangan", AccountCategory.EXPENSE, "Belanja pangan, konsumsi & dapur"),
             Account("acc_transport", "502", "Transportasi & Bensin", AccountCategory.EXPENSE, "Bahan bakar, ojek, tol & servis"),
@@ -1153,6 +1171,20 @@ class AmanahLedgerViewModel : ViewModel() {
         }
     }
 
+    fun updateRule(rule: InfaqRule) {
+        _uiState.update { state ->
+            state.copy(rules = state.rules.map { if (it.id == rule.id) rule else it })
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveInfaqRule(rule)
+        }
+        appStateNotifier.notify(
+            title = "Aturan Infaq Diperbarui",
+            message = "Aturan '${rule.title}' berhasil disesuaikan.",
+            severity = NotificationSeverity.SUCCESS
+        )
+    }
+
 
     fun toggleDarkMode() {
         val newMode = !_uiState.value.isDarkMode
@@ -1274,6 +1306,11 @@ class AmanahLedgerViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             repository?.saveRecurringTransaction(recurring)
         }
+        appStateNotifier.notify(
+            title = "Jadwal Diperbarui",
+            message = "Transaksi rutin '${recurring.title}' berhasil disesuaikan.",
+            severity = NotificationSeverity.SUCCESS
+        )
     }
 
     fun deleteRecurringTransaction(id: String) {
@@ -1796,6 +1833,13 @@ class AmanahLedgerViewModel : ViewModel() {
         }
     }
 
+    fun setShakeFeedbackEnabled(enabled: Boolean) {
+        _uiState.update { it.copy(isShakeFeedbackEnabled = enabled) }
+        viewModelScope.launch {
+            repository?.saveShakeFeedbackEnabled(enabled)
+        }
+    }
+
     fun setMaskBalanceByDefault(enabled: Boolean) {
         val newCfg = _uiState.value.securityConfig.copy(
             maskBalanceByDefault = enabled,
@@ -1861,29 +1905,17 @@ class AmanahLedgerViewModel : ViewModel() {
     // PENGATURAN TERPUSAT (CENTRALIZED SETTINGS)
     // ==========================================
 
-    fun setUserNameKasMukmin(name: String) {
-        _uiState.update { it.copy(userNameKasMukmin = name) }
-    }
+    fun setUserNameKasMukmin(name: String) = updateUserName(name)
 
-    fun setPrimaryCurrencySymbol(symbol: String) {
-        _uiState.update { it.copy(primaryCurrencySymbol = symbol) }
-    }
+    fun setPrimaryCurrencySymbol(symbol: String) = updateCurrencySymbol(symbol)
 
-    fun setDefaultInfaqRate(rate: Double) {
-        _uiState.update { it.copy(defaultInfaqRate = rate.coerceIn(0.01, 0.50)) }
-    }
+    fun setDefaultInfaqRate(rate: Double) = updateDefaultInfaqRate(rate)
 
-    fun setAutoDeductInfaqEnabled(enabled: Boolean) {
-        _uiState.update { it.copy(isAutoDeductInfaqEnabled = enabled) }
-    }
+    fun setAutoDeductInfaqEnabled(enabled: Boolean) = updateAutoDeductInfaq(enabled)
 
-    fun setVaultMonthlyTarget(target: Double) {
-        _uiState.update { it.copy(vaultMonthlyTarget = target.coerceAtLeast(0.0)) }
-    }
+    fun setVaultMonthlyTarget(target: Double) = updateVaultMonthlyTarget(target)
 
-    fun setSedekahSubuhTargetDays(days: Int) {
-        _uiState.update { it.copy(sedekahSubuhTargetDays = days.coerceIn(7, 365)) }
-    }
+    fun setSedekahSubuhTargetDays(days: Int) = updateSedekahSubuhTargetDays(days)
 
     fun setGoldPrice(
         price: Double,
@@ -1903,32 +1935,38 @@ class AmanahLedgerViewModel : ViewModel() {
         }
     }
 
-    fun setHijriOffset(offset: Int) {
-        _uiState.update { it.copy(selectedHijriOffset = offset.coerceIn(-3, 3)) }
-    }
+    fun setHijriOffset(offset: Int) = updateHijriOffset(offset)
 
-    fun setIsrafWarningThresholdPercent(percent: Int) {
-        _uiState.update { it.copy(israfWarningThresholdPercent = percent.coerceIn(50, 100)) }
-    }
+    fun setIsrafWarningThresholdPercent(percent: Int) = updateIsrafWarningThreshold(percent)
 
-    fun setStrictBudgetEnforced(enforced: Boolean) {
-        _uiState.update { it.copy(isStrictBudgetEnforced = enforced) }
-    }
+    fun setStrictBudgetEnforced(enforced: Boolean) = updateStrictBudgetEnforced(enforced)
 
     fun setAutoExecuteRecurringEnabled(enabled: Boolean) {
         _uiState.update { it.copy(autoExecuteRecurringEnabled = enabled) }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveAutoExecuteRecurring(enabled)
+        }
     }
 
     fun setNotifyOnRecurringDue(notify: Boolean) {
         _uiState.update { it.copy(notifyOnRecurringDue = notify) }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveNotifyOnRecurringDue(notify)
+        }
     }
 
     fun setShowDailyHadith(show: Boolean) {
         _uiState.update { it.copy(showDailyHadith = show) }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveShowDailyHadith(show)
+        }
     }
 
     fun setShowQuickTutorial(show: Boolean) {
         _uiState.update { it.copy(showQuickTutorial = show) }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveShowQuickTutorial(show)
+        }
     }
 
     // ==========================================
@@ -2132,18 +2170,30 @@ class AmanahLedgerViewModel : ViewModel() {
 
     fun updateZakatProfesi(calc: ZakatProfesiCalculation) {
         _uiState.update { it.copy(zakatProfesi = calc) }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveCustomSetting("zakat_hub_profesi", serializeZakatProfesi(calc))
+        }
     }
 
     fun updateZakatPerniagaan(calc: ZakatPerniagaanCalculation) {
         _uiState.update { it.copy(zakatPerniagaan = calc) }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveCustomSetting("zakat_hub_perniagaan", serializeZakatPerniagaan(calc))
+        }
     }
 
     fun updateZakatFitrah(calc: ZakatFitrahFamilyCalculation) {
         _uiState.update { it.copy(zakatFitrah = calc) }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveCustomSetting("zakat_hub_fitrah", serializeZakatFitrah(calc))
+        }
     }
 
     fun updateZakatMaal(calc: ZakatMaalCalculation) {
         _uiState.update { it.copy(zakatMaal = calc) }
+        viewModelScope.launch(Dispatchers.IO) {
+            repository?.saveCustomSetting("zakat_hub_maal", serializeZakatMaal(calc))
+        }
     }
 
     /**
@@ -2428,6 +2478,18 @@ class AmanahLedgerViewModel : ViewModel() {
         appStateNotifier.notify(
             title = "Akad Qardh Tercatat",
             message = "Pencatatan ${record.type.badge} sebesar Rp ${record.totalAmount.toLong()} bersama ${record.counterpartyName} berhasil disimpan.",
+            severity = NotificationSeverity.SUCCESS
+        )
+    }
+
+    fun updateQardhRecord(record: QardhRecord) {
+        _uiState.update { current ->
+            current.copy(qardhRecords = current.qardhRecords.map { if (it.id == record.id) record else it })
+        }
+        persistQardhAsync(record)
+        appStateNotifier.notify(
+            title = "Catatan Akad Diperbarui",
+            message = "Perubahan akad bersama ${record.counterpartyName} berhasil disimpan.",
             severity = NotificationSeverity.SUCCESS
         )
     }
@@ -2807,6 +2869,7 @@ class AmanahLedgerViewModel : ViewModel() {
                             selectedGoalMode = prefs.selectedGoalMode,
                             uiScaleMode = prefs.uiScaleMode,
                             uiScaleFactor = prefs.uiScaleFactor,
+                            isShakeFeedbackEnabled = prefs.isShakeFeedbackEnabled,
                             securityConfig = current.securityConfig.copy(
                                 isPinEnabled = prefs.securityConfig.isPinEnabled,
                                 pinHash = prefs.securityConfig.pinHash,
@@ -2931,6 +2994,21 @@ class AmanahLedgerViewModel : ViewModel() {
                         current.copy(
                             shariahConfig = loadedShariahConfig,
                             shariahRulings = loadedRulings
+                        )
+                    }
+
+                    // Muat Zakat Hub saved calculations
+                    val savedProfesiJson = repository?.getCustomSetting("zakat_hub_profesi")
+                    val savedPerniagaanJson = repository?.getCustomSetting("zakat_hub_perniagaan")
+                    val savedFitrahJson = repository?.getCustomSetting("zakat_hub_fitrah")
+                    val savedMaalJson = repository?.getCustomSetting("zakat_hub_maal")
+
+                    _uiState.update { current ->
+                        current.copy(
+                            zakatProfesi = if (!savedProfesiJson.isNullOrBlank()) deserializeZakatProfesi(savedProfesiJson) else current.zakatProfesi,
+                            zakatPerniagaan = if (!savedPerniagaanJson.isNullOrBlank()) deserializeZakatPerniagaan(savedPerniagaanJson) else current.zakatPerniagaan,
+                            zakatFitrah = if (!savedFitrahJson.isNullOrBlank()) deserializeZakatFitrah(savedFitrahJson) else current.zakatFitrah,
+                            zakatMaal = if (!savedMaalJson.isNullOrBlank()) deserializeZakatMaal(savedMaalJson, current.zakatMaal) else current.zakatMaal
                         )
                     }
                     AppDebugLogger.i("RoomDatabase", "Inisialisasi data Room selesai. Mode audit syariah siap.")
@@ -3529,6 +3607,108 @@ class AmanahLedgerViewModel : ViewModel() {
                 rate = 1.00
             )
         )
+    }
+
+    private fun serializeZakatProfesi(c: ZakatProfesiCalculation): String {
+        val o = org.json.JSONObject()
+        o.put("gross", c.monthlyGrossSalary)
+        o.put("allowance", c.monthlyAllowanceAndOther)
+        o.put("expenses", c.monthlyEssentialExpenses)
+        o.put("debt", c.monthlyDebtInstallment)
+        o.put("isNet", c.isNetMethod)
+        o.put("ricePrice", c.ricePricePerKg)
+        return o.toString()
+    }
+
+    private fun deserializeZakatProfesi(s: String): ZakatProfesiCalculation {
+        return try {
+            val o = org.json.JSONObject(s)
+            ZakatProfesiCalculation(
+                monthlyGrossSalary = o.optDouble("gross", 10000000.0),
+                monthlyAllowanceAndOther = o.optDouble("allowance", 2500000.0),
+                monthlyEssentialExpenses = o.optDouble("expenses", 4000000.0),
+                monthlyDebtInstallment = o.optDouble("debt", 1000000.0),
+                isNetMethod = o.optBoolean("isNet", true),
+                ricePricePerKg = o.optDouble("ricePrice", 15000.0)
+            )
+        } catch (_: Exception) {
+            ZakatProfesiCalculation()
+        }
+    }
+
+    private fun serializeZakatPerniagaan(c: ZakatPerniagaanCalculation): String {
+        val o = org.json.JSONObject()
+        o.put("cash", c.currentCashInBusiness)
+        o.put("inventory", c.inventoryValue)
+        o.put("receivable", c.receivableCollectible)
+        o.put("payable", c.shortTermPayable)
+        o.put("goldPrice", c.goldPricePerGram)
+        o.put("isLunar", c.isLunarCalendar)
+        return o.toString()
+    }
+
+    private fun deserializeZakatPerniagaan(s: String): ZakatPerniagaanCalculation {
+        return try {
+            val o = org.json.JSONObject(s)
+            ZakatPerniagaanCalculation(
+                currentCashInBusiness = o.optDouble("cash", 25000000.0),
+                inventoryValue = o.optDouble("inventory", 90000000.0),
+                receivableCollectible = o.optDouble("receivable", 15000000.0),
+                shortTermPayable = o.optDouble("payable", 10000000.0),
+                goldPricePerGram = o.optDouble("goldPrice", 1350000.0),
+                isLunarCalendar = o.optBoolean("isLunar", true)
+            )
+        } catch (_: Exception) {
+            ZakatPerniagaanCalculation()
+        }
+    }
+
+    private fun serializeZakatFitrah(c: ZakatFitrahFamilyCalculation): String {
+        val o = org.json.JSONObject()
+        o.put("members", c.familyMembersCount)
+        o.put("riceKg", c.riceAmountPerPersonKg)
+        o.put("ricePrice", c.ricePricePerKg)
+        o.put("cashRate", c.cashRatePerPerson)
+        o.put("isCash", c.isPaymentInCash)
+        return o.toString()
+    }
+
+    private fun deserializeZakatFitrah(s: String): ZakatFitrahFamilyCalculation {
+        return try {
+            val o = org.json.JSONObject(s)
+            ZakatFitrahFamilyCalculation(
+                familyMembersCount = o.optInt("members", 4),
+                riceAmountPerPersonKg = o.optDouble("riceKg", 2.5),
+                ricePricePerKg = o.optDouble("ricePrice", 15000.0),
+                cashRatePerPerson = o.optDouble("cashRate", 45000.0),
+                isPaymentInCash = o.optBoolean("isCash", true)
+            )
+        } catch (_: Exception) {
+            ZakatFitrahFamilyCalculation()
+        }
+    }
+
+    private fun serializeZakatMaal(c: ZakatMaalCalculation): String {
+        val o = org.json.JSONObject()
+        o.put("goldWeight", c.goldWeightGrams)
+        o.put("goldPrice", c.goldPricePerGram)
+        o.put("isLunar", c.isLunarCalendar)
+        o.put("isHaul", c.isHaulFulfilled)
+        return o.toString()
+    }
+
+    private fun deserializeZakatMaal(s: String, base: ZakatMaalCalculation): ZakatMaalCalculation {
+        return try {
+            val o = org.json.JSONObject(s)
+            base.copy(
+                goldWeightGrams = o.optDouble("goldWeight", base.goldWeightGrams),
+                goldPricePerGram = o.optDouble("goldPrice", base.goldPricePerGram),
+                isLunarCalendar = o.optBoolean("isLunar", base.isLunarCalendar),
+                isHaulFulfilled = o.optBoolean("isHaul", base.isHaulFulfilled)
+            )
+        } catch (_: Exception) {
+            base
+        }
     }
 }
 

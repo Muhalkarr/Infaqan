@@ -22,7 +22,9 @@ import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.School
@@ -1074,6 +1076,289 @@ fun TopicExportReportContent(onTryAction: () -> Unit) {
             Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Text("Buka Ekspor Laporan PDF/CSV", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+// TOPIC 19: FIQIH RIKAZ 20% & HARTA TEMUAN PURBAKALA
+// -------------------------------------------------------------------------------------------------
+@Composable
+fun TopicRikazFiqihContent(onTryAction: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "HR. Bukhari No. 1499 & Muslim No. 1710",
+            arabicText = "«... وَفِي الرِّكَازِ الْخُمُسُ»",
+            translation = "Dan pada rikaz (harta temuan purbakala jahiliyah yang terpendam), kewajiban zakatnya adalah seperlima (20%).",
+            fiqhNote = "Ijma' ulama 4 madzhab: Rikaz wajib dikeluarkan seketika 20% tanpa syarat genap 1 tahun (haul) dan tanpa batas minimal nisab. Sisa 80% adalah hak halal penuh bagi penemunya."
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Pembeda Tegas: Luqathah vs Rikaz Purbakala", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.Top) {
+                            Text("⚠️ ", fontSize = 13.sp)
+                            Column {
+                                Text("Barang Tercecer (Luqathah):", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                Text("Barang milik orang lain yang hilang atau tertinggal di masa kini. HARAM langsung dimiliki atau dizakati 20%. Wajib diumumkan selama 1 tahun penuh di tempat umum.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                        Row(verticalAlignment = Alignment.Top) {
+                            Text("🏺 ", fontSize = 13.sp)
+                            Column {
+                                Text("Harta Karun Terpendam (Rikaz):", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                Text("Harta berharga purbakala era pra-Islam (jahiliyah) yang terpendam di dalam tanah tak bertuan tanpa pemilik hidup. Hukumnya: Wajib keluar 20% khumus seketika ke asnaf zakat, sisa 80% halal bagi penemu.", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        IslamicHikmahBox(
+            title = "Rujukan Regulasi Resmi Nasional (PMA RI)",
+            points = listOf(
+                "Peraturan Menteri Agama (PMA) RI No. 52 Tahun 2014 Pasal 24: 'Zakat rikaz tidak mensyaratkan nisab dan haul, wajib dikeluarkan sebesar 20% pada saat diperoleh'.",
+                "Keputusan Komisi Fatwa MUI: Kewajiban 20% rikaz disalurkan melalui amil resmi (BAZNAS/LAZ) kepada para mustahiq fakir miskin demi kemaslahatan umat."
+            )
+        )
+
+        IslamicStepByStepCard(
+            title = "Cara Praktis Menghisab Rikaz di Aplikasi:",
+            steps = listOf(
+                "Buka menu 'Kalkulator Zakat' lalu pilih tab 'Rikaz 20%'.",
+                "Taksir nilai pasar wajar harta temuan purbakala yang didapatkan secara sah.",
+                "Sistem otomatis menghitung porsi Khumus 20% kewajiban zakat dan 80% hak bersih Anda.",
+                "Catat mutasi penyaluran 20% ke kas Zakat/Infaq pada jurnal akuntansi ganda Amanah.",
+                "Simpan sisa 80% ke dalam kantong Kas Simpanan sebagai harta yang telah suci."
+            )
+        )
+
+        IslamicQACard(
+            question = "Apakah rikaz harus menunggu haul 1 tahun Hijriah?",
+            answer = "Tidak. Berdasarkan nash shahih HR. Bukhari dan ijma' fuqaha, rikaz sama seperti hasil panen pertanian: wajib dikeluarkan saat itu juga ketika harta didapatkan, tanpa menunggu berlalunya waktu satu tahun.",
+            reference = "Kitab Al-Amwal Imam Abu Ubaid & PMA Kemenag RI No. 52/2014"
+        )
+
+        Button(
+            onClick = onTryAction,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.MonetizationOn, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Buka Kalkulator Zakat Rikaz 20%", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+// TOPIC 20: KALKULATOR ZAKAT OTOMATIS SALDO RIIL & HAUL
+// -------------------------------------------------------------------------------------------------
+@Composable
+fun TopicAutomaticZakatContent(onTryAction: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "QS. At-Taubah: 103 & HR. Abu Dawud No. 1573",
+            arabicText = "﴿خُذْ مِنْ أَمْوَالِهِمْ صَدَقَةً تُطَهِّرُهُمْ وَتُزَكِّيهِمْ بِهَا وَصَلِّ عَلَيْهِمْ إِنَّ صَلَاتَكَ سَكَنٌ لَهُمْ﴾",
+            translation = "Ambillah zakat dari sebagian harta mereka, dengan zakat itu kamu membersihkan dan mensucikan mereka dan berdoalah untuk mereka. Sesungguhnya doa kamu itu (menjadi) ketenteraman jiwa bagi mereka.",
+            fiqhNote = "Zakat Maal membersihkan harta dari hak mustahiq. Syarat utamanya adalah al-milkut taam (kepemilikan penuh), mencapai nisab 85 gram emas, dan bertahan selama 1 tahun Hijriah (al-hawl)."
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Calculate, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Otomatisasi Saldo Riil Dompet Kas Amanah", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                Text(
+                    text = "Amanah Ledger menyinkronkan saldo aktif di seluruh rekening/dompet kas Anda langsung ke mesin hisab zakat:",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 17.sp
+                )
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("⚡ ", fontSize = 14.sp)
+                            Text("Tombol Salin Saldo Riil: Satu ketukan untuk memasukkan total saldo kas & bank tanpa perlu hitung manual.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("⚖️ ", fontSize = 14.sp)
+                            Text("Evaluasi Nisab 85g Emas: Sistem membandingkan saldo riil terhadap harga emas BAZNAS teranyar.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🗓️ ", fontSize = 14.sp)
+                            Text("Pelacak Haul 354 Hari: Pantau kapan tanggal jatuh tempo zakat tahunan Anda tiba.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
+
+        IslamicHikmahBox(
+            title = "Zakat Profesi: Pendekatan Bruto vs Netto",
+            points = listOf(
+                "Fatwa MUI No. 3 Tahun 2003: Zakat penghasilan dikeluarkan saat menerima gaji (kadar 2.5%) jika setahun mencapai nisab 85 gram emas.",
+                "Metode Bruto: Dikeluarkan langsung 2.5% dari gaji pokok + tunjangan sebelum dipotong biaya hidup.",
+                "Metode Netto: Penghasilan dikurangi kebutuhan pokok primer keluarga & cicilan hutang mendesak terlebih dahulu, lalu sisanya dizakati 2.5%."
+            )
+        )
+
+        IslamicStepByStepCard(
+            title = "Langkah Menghitung Zakat Otomatis:",
+            steps = listOf(
+                "Buka tab 'Kalkulator Zakat' pada layar Fatwa & Zakat Grounding.",
+                "Ketuk tombol '⚡ Gunakan Saldo Riil Kas' untuk menarik saldo kas aktif seketika.",
+                "Pilih jenis zakat yang sesuai (Zakat Maal Simpanan, Zakat Profesi, atau Rikaz).",
+                "Periksa status apakah harta telah melampaui batas nisab 85 gram emas.",
+                "Keluarkan zakat 2.5% dan salurkan kepada amil resmi terpercaya."
+            )
+        )
+
+        IslamicQACard(
+            question = "Bagaimana jika saldo turun di bawah nisab sebelum genap 1 tahun?",
+            answer = "Jika di tengah tahun saldo simpanan anjlok hingga di bawah nilai 85 gram emas karena kebutuhan mubah, maka perhitungan haul terputus (gugur). Perhitungan haul baru akan dimulai kembali saat saldo kembali mencapai nisab.",
+            reference = "Al-Mughni Ibnu Qudamah & Standar Fiqih Zakat BAZNAS"
+        )
+
+        Button(
+            onClick = onTryAction,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Calculate, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Buka Kalkulator Zakat Saldo Riil", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+// TOPIC 21: KONSULTASI FATWA SYARIAH AI (RAG GROUNDING)
+// -------------------------------------------------------------------------------------------------
+@Composable
+fun TopicGeminiAiFatwaContent(onTryAction: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "QS. An-Nahl: 43 & Al-Anbiya: 7",
+            arabicText = "﴿فَاسْأَلُوا أَهْلَ الذِّكْرِ إِنْ كُنْتُمْ لَا تَعْلَمُونَ﴾",
+            translation = "Maka bertanyalah kepada orang yang mempunyai pengetahuan jika kamu tidak mengetahui.",
+            fiqhNote = "Bertanya tentang halal-haramnya akad muamalah sebelum bertransaksi adalah kewajiban syariat agar kita terhindar dari subhat dan riba yang membinasakan."
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Teknologi Grounding Fatwa AI Terverifikasi", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                Text(
+                    text = "Asisten AI Amanah ditenagai model Gemini 3.5 Flash dengan sistem RAG (Retrieval-Augmented Generation) yang ketat:",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 17.sp
+                )
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("📚 ", fontSize = 14.sp)
+                            Text("Database Fatwa DSN-MUI: Menjawab pertanyaan berdasarkan ketetapan fatwa resmi Dewan Syariah Nasional.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🕌 ", fontSize = 14.sp)
+                            Text("Takhrij Dalil Arab: Menyertakan teks nash Al-Qur'an dan Hadits berharakat beserta kitab rujukannya.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("✍️ ", fontSize = 14.sp)
+                            Text("Menyerap Sumber Kustom: Setiap ketentuan fatwa baru yang Anda tambahkan otomatis masuk ke dalam konteks AI!", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
+
+        IslamicHikmahBox(
+            title = "Etika Bertanya Fatwa & Muamalah Syariah",
+            points = listOf(
+                "Sampaikan kondisi akad secara jujur dan transparan tanpa menyembunyikan adanya denda atau bunga terselubung.",
+                "Gunakan jawaban AI sebagai panduan awal edukasi fiqih muamalah dan konfirmasikan kasus sengketa rumit kepada ulama/asâtidz terpercaya.",
+                "Periksa selalu lencana rujukan fatwa resmi (nomor fatwa DSN-MUI & PMA Kemenag) yang disertakan pada setiap jawaban."
+            )
+        )
+
+        IslamicStepByStepCard(
+            title = "Cara Berkonsultasi dengan Fatwa AI:",
+            steps = listOf(
+                "Buka tab 'Fatwa AI' pada layar Pencarian Fatwa & Grounding.",
+                "Pilih salah satu pertanyaan cepat atau ketikkan masalah transaksi muamalah Anda.",
+                "Ketuk tombol Kirim untuk meminta telaah dalil dan fatwa DSN-MUI.",
+                "Baca intisari hukum, syarat sah akad, dan kutipan dalil teks Arab yang ditampilkan.",
+                "Anda juga dapat mengonfigurasi Gemini API Key pribadi di ikon kunci jika diinginkan."
+            )
+        )
+
+        IslamicQACard(
+            question = "Apakah jawaban AI dapat menggantikan fatwa langsung para ulama?",
+            answer = "Jawaban AI bertindak sebagai mesin pencari dalil dan kompilasi rujukan (RAG Grounding) dari fatwa resmi yang telah disepakati oleh Dewan Syariah Nasional MUI dan fuqaha muamalah. Untuk kasus persengketaan riil antar pihak, tetap disyariatkan musyawarah atau konsultasi langsung dengan dewan syariah terkait.",
+            reference = "Adab Al-Mufti wal Mustafti Imam Nawawi & Kaidah DSN-MUI"
+        )
+
+        Button(
+            onClick = onTryAction,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Buka Konsultasi Fatwa Syariah AI", fontWeight = FontWeight.Bold)
         }
     }
 }

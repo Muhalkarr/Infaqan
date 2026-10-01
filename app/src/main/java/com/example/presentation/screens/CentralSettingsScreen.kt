@@ -338,7 +338,9 @@ fun CentralSettingsScreen(
                         onLoadDummyData = {
                             viewModel.loadDummyData()
                             Toast.makeText(context, "Data contoh/dummy berhasil dimuat kembali!", Toast.LENGTH_SHORT).show()
-                        }
+                        },
+                        onSetShakeFeedbackEnabled = { viewModel.setShakeFeedbackEnabled(it) },
+                        onOpenFeedbackSheet = { viewModel.openFeedbackSheet(it) }
                     )
                 }
 

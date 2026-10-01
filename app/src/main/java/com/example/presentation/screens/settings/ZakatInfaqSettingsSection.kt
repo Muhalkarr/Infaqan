@@ -28,13 +28,20 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.state.AmanahLedgerUiState
@@ -106,19 +113,31 @@ fun InfaqSettingsSection(
 
         // Target Bulanan Virtual Infaq Vault
         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-            Text(
-                text = "Target Saldo Infaq Bulanan",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                listOf(2500000.0, 5000000.0, 10000000.0).forEach { target ->
-                    val isSelected = state.vaultMonthlyTarget == target
+                Text(
+                    text = "Target Saldo Infaq Bulanan",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Rp ${nf.format(state.vaultMonthlyTarget.toLong())}",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                listOf(1000000.0 to "1 Jt", 2500000.0 to "2.5 Jt", 5000000.0 to "5 Jt", 10000000.0 to "10 Jt", 20000000.0 to "20 Jt").forEach { (target, label) ->
+                    val isSelected = Math.abs(state.vaultMonthlyTarget - target) < 1.0
                     Surface(
                         color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(8.dp),
@@ -127,11 +146,11 @@ fun InfaqSettingsSection(
                             .weight(1f)
                             .clip(RoundedCornerShape(8.dp))
                             .clickable { onSetVaultMonthlyTarget(target) }
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 6.dp)
                     ) {
                         Text(
-                            text = "Rp ${nf.format(target / 1000000)} Jt",
-                            fontSize = 12.sp,
+                            text = label,
+                            fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -140,6 +159,26 @@ fun InfaqSettingsSection(
                     }
                 }
             }
+
+            var customVaultInput by remember(state.vaultMonthlyTarget) {
+                mutableStateOf(state.vaultMonthlyTarget.toLong().toString())
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = customVaultInput,
+                onValueChange = { newVal ->
+                    val digits = newVal.filter { it.isDigit() }
+                    customVaultInput = digits
+                    digits.toDoubleOrNull()?.let { target ->
+                        if (target > 0) onSetVaultMonthlyTarget(target)
+                    }
+                },
+                label = { Text("Tentukan Target Sendiri (Rp)") },
+                placeholder = { Text("cth: 3500000") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("custom_vault_target_input")
+            )
         }
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -148,7 +187,8 @@ fun InfaqSettingsSection(
         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Target Tantangan Sedekah Subuh",
@@ -165,9 +205,9 @@ fun InfaqSettingsSection(
             }
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                listOf(7, 30, 40, 100).forEach { days ->
+                listOf(7, 21, 30, 40, 100, 365).forEach { days ->
                     val isSelected = state.sedekahSubuhTargetDays == days
                     Surface(
                         color = if (isSelected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
@@ -180,8 +220,8 @@ fun InfaqSettingsSection(
                             .padding(vertical = 6.dp)
                     ) {
                         Text(
-                            text = "$days Hari",
-                            fontSize = 12.sp,
+                            text = "$days H",
+                            fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -190,6 +230,26 @@ fun InfaqSettingsSection(
                     }
                 }
             }
+
+            var customDaysInput by remember(state.sedekahSubuhTargetDays) {
+                mutableStateOf(state.sedekahSubuhTargetDays.toString())
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = customDaysInput,
+                onValueChange = { newVal ->
+                    val digits = newVal.filter { it.isDigit() }
+                    customDaysInput = digits
+                    digits.toIntOrNull()?.let { days ->
+                        if (days in 1..365) onSetSedekahSubuhTargetDays(days)
+                    }
+                },
+                label = { Text("Tentukan Target Hari Bebas (1 - 365 Hari)") },
+                placeholder = { Text("cth: 60") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("custom_sedekah_days_input")
+            )
         }
     }
 }

@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Nightlight
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Savings
@@ -87,7 +88,8 @@ fun AppNavigationDrawerContent(
     onCloseDrawer: () -> Unit,
     onToggleTheme: () -> Unit,
     onTogglePrivacy: () -> Unit,
-    onLockAppNow: () -> Unit
+    onLockAppNow: () -> Unit,
+    onOpenFeedback: (() -> Unit)? = null
 ) {
     val hijriDate = HijriCalendarEngine.fromGregorian()
     val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
@@ -386,10 +388,10 @@ fun AppNavigationDrawerContent(
             SidebarCategoryHeader(title = "PERENCANAAN & LAPORAN")
 
             SidebarNavigationItem(
-                label = "Target Ibadah (Qurban / Haji)",
+                label = "Target Finansial dan Ibadah",
                 icon = Icons.Default.Savings,
                 selected = currentScreen == Screen.IBADAH_GOALS,
-                badgeText = "${uiState.ibadahGoals.size} Program",
+                badgeText = "${uiState.ibadahGoals.size} Target",
                 badgeColor = MaterialTheme.colorScheme.primary,
                 testTag = "sidebar_nav_ibadah_goals",
                 onClick = { onSelectScreen(Screen.IBADAH_GOALS) }
@@ -420,6 +422,16 @@ fun AppNavigationDrawerContent(
                 selected = currentScreen == Screen.MONTHLY_REPORT,
                 testTag = "sidebar_nav_monthly_report",
                 onClick = { onSelectScreen(Screen.MONTHLY_REPORT) }
+            )
+
+            SidebarNavigationItem(
+                label = "Arsip Bukti Struk Transaksi",
+                icon = Icons.Default.PhotoLibrary,
+                selected = currentScreen == Screen.RECEIPT_ARCHIVE,
+                badgeText = "${uiState.journalEntries.count { it.receiptAttachment != null }} Struk",
+                badgeColor = MaterialTheme.colorScheme.secondary,
+                testTag = "sidebar_nav_receipt_archive",
+                onClick = { onSelectScreen(Screen.RECEIPT_ARCHIVE) }
             )
 
             SidebarNavigationItem(
@@ -611,12 +623,25 @@ fun AppNavigationDrawerContent(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(
-                        text = "Amanah Ledger v2.4\n© 2026 Muhammad Abdul Kholik Arrasyid\n100% Syariah-Compliant", textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
-                    )
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                onCloseDrawer()
+                                onOpenFeedback?.invoke()
+                            }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .testTag("drawer_feedback_footer_button")
+                    ) {
+                        Text(
+                            text = "Amanah Ledger v2.5\n© 2026 Muhalkarr • Buka Masukan & Changelog",
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }

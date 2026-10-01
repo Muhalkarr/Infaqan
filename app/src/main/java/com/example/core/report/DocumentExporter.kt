@@ -14,6 +14,9 @@ import com.example.core.accounting.AccountCategory
 import com.example.core.accounting.JournalEntry
 import com.example.core.ibadah.IbadahGoal
 import com.example.core.qardh.QardhRecord
+import com.example.core.qardh.QardhType
+import com.example.core.qardh.QardhStatus
+import com.example.core.state.AmanahLedgerUiState
 import com.example.core.wallet.WalletAccount
 import java.io.File
 import java.io.FileOutputStream
@@ -81,6 +84,101 @@ object DocumentExporter {
         }
 
         return sb.toString()
+    }
+
+    /**
+     * Menghasilkan teks CSV Laporan Kondisi Finansial Komprehensif
+     * Mencakup Neraca Kekayaan Bersih, Rincian Seluruh Dompet, Buku Hutang, Buku Piutang,
+     * serta Status Kewajiban Zakat & Infaq.
+     */
+    fun generateComprehensiveFinancialCsv(state: AmanahLedgerUiState): String {
+        val sb = StringBuilder()
+        val totalWalletBalance = state.totalWalletBalance
+        val receivables = state.qardhRecords.filter { it.type == QardhType.PIUTANG_SAYA }
+        val payables = state.qardhRecords.filter { it.type == QardhType.HUTANG_SAYA }
+        val activeReceivables = receivables.filter { it.status == QardhStatus.AKTIF || it.status == QardhStatus.SEBAGIAN_LUNAS }
+        val activePayables = payables.filter { it.status == QardhStatus.AKTIF || it.status == QardhStatus.SEBAGIAN_LUNAS }
+        val totalPiutang = activeReceivables.sumOf { it.remainingAmount }
+        val totalHutang = activePayables.sumOf { it.remainingAmount }
+        val netWorth = totalWalletBalance + totalPiutang - totalHutang
+
+        sb.append("=== LAPORAN KONDISI FINANSIAL KOMPREHENSIF SYARIAH ===\n")
+        sb.append("Aplikasi;Amanah Ledger (Infaqan Syariah)\n")
+        sb.append("Nama Pemilik;${state.userNameKasMukmin}\n")
+        sb.append("Tanggal Ekspor;${dateFormat.format(Date())}\n\n")
+
+        // 1. Executive Summary / Neraca
+        sb.append("=== RINGKASAN NERACA KEKAYAAN BERSIH (NET WORTH) ===\n")
+        sb.append("Komponen Keuangan;Total Nominal (Rp);Keterangan\n")
+        sb.append("Total Saldo Seluruh Dompet / Bank;${totalWalletBalance.toLong()};Dana likuid tersedia\n")
+        sb.append("Total Piutang Kebajikan Aktif (Hak Tagih);${totalPiutang.toLong()};Dana dipinjamkan tanpa bunga\n")
+        sb.append("Total Hutang Kewajiban Aktif;${totalHutang.toLong()};Kewajiban bayar yang belum lunas\n")
+        sb.append("Kekayaan Bersih Hakiki (Net Worth);${netWorth.toLong()};Aset Bersih (Saldo + Piutang - Hutang)\n\n")
+
+        // 2. Wallets
+        sb.append("=== RINCIAN SALDO KANTONG KAS & REKENING BANK ===\n")
+        sb.append("Nama Kantong;Tipe Akun;Nomor Rekening;Saldo Saat Ini (Rp);Catatan\n")
+        for (w in state.wallets) {
+            val balance = state.getWalletBalance(w.id)
+            sb.append("${w.name};${w.type.displayName};'${w.accountNumber};${balance.toLong()};${w.notes.replace(";", ",")}\n")
+        }
+        sb.append("TOTAL SALDO KAS;;;${totalWalletBalance.toLong()};\n\n")
+
+        // 3. Receivables (Piutang Qardhul Hasan)
+        sb.append("=== BUKU PIUTANG KEBAJIKAN (QARDHUL HASAN DIBERIKAN) ===\n")
+        sb.append("Nama Peminjam;Kontak;Total Dipinjamkan (Rp);Sisa Piutang (Rp);Jatuh Tempo;Status Akad;Saksi;Keterangan\n")
+        if (receivables.isEmpty()) {
+            sb.append("Tidak ada piutang yang tercatat;;;;;;;\n")
+        } else {
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale("id", "ID"))
+            for (q in receivables) {
+                val due = q.dueDateMillis?.let { sdf.format(Date(it)) } ?: "Tanpa Batas"
+                sb.append("${q.counterpartyName};${q.contactInfo};${q.totalAmount.toLong()};${q.remainingAmount.toLong()};$due;${q.status.displayName};${q.witnessName};${q.notes.replace(";", ",")}\n")
+            }
+            sb.append("TOTAL PIUTANG AKTIF;;;${totalPiutang.toLong()};;;;\n")
+        }
+        sb.append("\n")
+
+        // 4. Payables (Hutang Kewajiban Pengguna)
+        sb.append("=== BUKU HUTANG KEWAJIBAN SYARIAH PENGGUNA ===\n")
+        sb.append("Nama Pemberi Pinjaman;Kontak;Total Pokok Hutang (Rp);Sisa Hutang (Rp);Jatuh Tempo;Status Kewajiban;Saksi;Keterangan\n")
+        if (payables.isEmpty()) {
+            sb.append("Alhamdulillah tidak ada hutang yang tercatat;;;;;;;\n")
+        } else {
+            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale("id", "ID"))
+            for (q in payables) {
+                val due = q.dueDateMillis?.let { sdf.format(Date(it)) } ?: "Tanpa Batas"
+                sb.append("${q.counterpartyName};${q.contactInfo};${q.totalAmount.toLong()};${q.remainingAmount.toLong()};$due;${q.status.displayName};${q.witnessName};${q.notes.replace(";", ",")}\n")
+            }
+            sb.append("TOTAL HUTANG KEWAJIBAN;;;${totalHutang.toLong()};;;;\n")
+        }
+        sb.append("\n")
+
+        // 5. Zakat & Infaq Status
+        sb.append("=== STATUS KEWAJIBAN ZAKAT & TABARRU' ===\n")
+        val nisabValue = state.goldPricePerGram * 85.0
+        val isZakatWajib = totalWalletBalance >= nisabValue
+        val zakatEstimation = if (isZakatWajib) totalWalletBalance * 0.025 else 0.0
+        sb.append("Parameter;Nilai;Satuan / Keterangan\n")
+        sb.append("Harga Emas Acuan (per gram);${state.goldPricePerGram.toLong()};Rupiah\n")
+        sb.append("Standar Nisab Emas (85 gram);${nisabValue.toLong()};Rupiah\n")
+        sb.append("Status Nisab Kas Pengguna;${if (isZakatWajib) "MENCAPAI NISAB" else "BELUM MENCAPAI NISAB"};Kewajiban zakat jika haul genap\n")
+        sb.append("Estimasi Zakat Maal (2.5%);${zakatEstimation.toLong()};Rupiah\n")
+        sb.append("Titipan Saldo Infaq Vault;${state.virtualInfaqVaultBalance.toLong()};Rupiah\n\n")
+
+        // 6. Catatan Syariah
+        sb.append("=== CATATAN INTEGRITAS SYARIAH ===\n")
+        sb.append("Dokumen ini dihasilkan secara otomatis oleh Amanah Ledger.\n")
+        sb.append("Sistem mengacu pada prinsip akuntansi berpasangan (double-entry) dan bebas bunga riba (QS. Al-Baqarah: 275-282).\n")
+
+        return sb.toString()
+    }
+
+    fun exportComprehensiveFinancialCsvFile(context: Context, state: AmanahLedgerUiState): File {
+        val outputDir = File(context.cacheDir, "reports").apply { mkdirs() }
+        val csvFile = File(outputDir, "Laporan_Finansial_Komprehensif_${System.currentTimeMillis()}.csv")
+        csvFile.writeText(generateComprehensiveFinancialCsv(state))
+        return csvFile
     }
 
     fun generatePdfReportFile(

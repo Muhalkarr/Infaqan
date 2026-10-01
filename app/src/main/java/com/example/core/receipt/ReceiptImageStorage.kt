@@ -281,4 +281,26 @@ object ReceiptImageStorage {
             0
         }
     }
+
+    /**
+     * Membuat URI FileProvider sementara untuk menampung hasil jepretan kamera perangkat.
+     */
+    fun createCameraTempUri(context: Context): Pair<Uri, File>? {
+        return try {
+            val cacheReceiptDir = File(context.cacheDir, RECEIPTS_DIR).apply {
+                if (!exists()) mkdirs()
+            }
+            val tempFile = File(cacheReceiptDir, "camera_raw_${System.currentTimeMillis()}.jpg")
+            val authority = "${context.packageName}.fileprovider"
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                authority,
+                tempFile
+            )
+            Pair(uri, tempFile)
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal membuat URI fileprovider kamera: ${e.message}", e)
+            null
+        }
+    }
 }

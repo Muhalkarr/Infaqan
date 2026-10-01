@@ -6,7 +6,8 @@ import java.util.UUID
 
 enum class WalletType(val displayName: String, val categoryTag: String) {
     CASH("Uang Tunai (Cash)", "Tunai"),
-    BANK_SYARIAH("Bank Syariah", "Perbankan"),
+    BANK_SYARIAH("Bank Syariah", "Perbankan Syariah"),
+    BANK_KONVENSIONAL("Bank Konvensional", "Perbankan"),
     E_WALLET("Dompet Digital / QRIS", "Fintech"),
     GOLD_ASSET("Simpanan Logam Mulia / Emas", "Komoditas"),
     SPECIAL_SAVINGS("Tabungan Khusus / Titipan", "Amanah"),

@@ -54,9 +54,10 @@ data class AppUserPreferences(
     val selectedGoalMode: FinancialGoalMode = FinancialGoalMode.BALANCED_50_30_20,
     val securityConfig: SecurityConfig = SecurityConfig(),
     val uiScaleMode: UiScaleMode = UiScaleMode.DEFAULT,
-    val uiScaleFactor: Float = 1.0f
-    , val completedGuides: Set<String> = emptySet(),
-    val hasCompletedOnboarding: Boolean = false
+    val uiScaleFactor: Float = 1.0f,
+    val completedGuides: Set<String> = emptySet(),
+    val hasCompletedOnboarding: Boolean = false,
+    val isShakeFeedbackEnabled: Boolean = true
 )
 
 class DataStoreManager(private val context: Context) {
@@ -102,6 +103,7 @@ class DataStoreManager(private val context: Context) {
         val SECURITY_QUESTION = stringPreferencesKey("security_question")
         val SECURITY_ANSWER_HASH = stringPreferencesKey("security_answer_hash")
         val AUTO_LOCK_INTERVAL = stringPreferencesKey("security_auto_lock_interval")
+        val IS_SHAKE_FEEDBACK_ENABLED = booleanPreferencesKey("is_shake_feedback_enabled")
     }
 
     val userPreferencesFlow: Flow<AppUserPreferences> = context.appDataStore.data
@@ -226,7 +228,8 @@ class DataStoreManager(private val context: Context) {
                 uiScaleFactor = scaleFactor,
                 completedGuides = completedGuides,
                 hasCompletedOnboarding = hasCompletedOnboarding,
-                themeMode = themeMode
+                themeMode = themeMode,
+                isShakeFeedbackEnabled = preferences[PreferencesKeys.IS_SHAKE_FEEDBACK_ENABLED] ?: true
             )
         }
 
@@ -442,6 +445,12 @@ class DataStoreManager(private val context: Context) {
         context.appDataStore.edit { preferences ->
             val currentGuides = preferences[PreferencesKeys.COMPLETED_GUIDES] ?: emptySet()
             preferences[PreferencesKeys.COMPLETED_GUIDES] = currentGuides + guideTitle
+        }
+    }
+
+    suspend fun saveShakeFeedbackEnabled(enabled: Boolean) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_SHAKE_FEEDBACK_ENABLED] = enabled
         }
     }
 }

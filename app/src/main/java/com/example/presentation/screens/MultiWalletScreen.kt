@@ -478,6 +478,7 @@ private fun WalletCardItem(
     val icon = when (wallet.type) {
         WalletType.CASH -> Icons.Default.MonetizationOn
         WalletType.BANK_SYARIAH -> Icons.Default.AccountBalance
+        WalletType.BANK_KONVENSIONAL -> Icons.Default.AccountBalance
         WalletType.E_WALLET -> Icons.Default.QrCode
         WalletType.GOLD_ASSET -> Icons.Default.Savings
         WalletType.SPECIAL_SAVINGS -> Icons.Default.CreditCard
@@ -613,6 +614,7 @@ private fun WalletFormDialog(
     val colorHex = when (selectedType) {
         WalletType.CASH -> 0xFF10B981
         WalletType.BANK_SYARIAH -> 0xFF059669
+        WalletType.BANK_KONVENSIONAL -> 0xFF2563EB
         WalletType.E_WALLET -> 0xFF0284C7
         WalletType.GOLD_ASSET -> 0xFFF59E0B
         WalletType.SPECIAL_SAVINGS -> 0xFF8B5CF6
@@ -666,7 +668,7 @@ private fun WalletFormDialog(
                                     selectedType = type
                                     linkedAccountId = when (type) {
                                         WalletType.CASH, WalletType.E_WALLET -> "acc_cash"
-                                        WalletType.BANK_SYARIAH, WalletType.SPECIAL_SAVINGS -> "acc_bank"
+                                        WalletType.BANK_SYARIAH, WalletType.BANK_KONVENSIONAL, WalletType.SPECIAL_SAVINGS -> "acc_bank"
                                         WalletType.GOLD_ASSET -> "acc_gold"
                                         WalletType.OTHER -> "acc_cash"
                                     }

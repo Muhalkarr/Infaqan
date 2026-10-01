@@ -5,6 +5,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import com.example.presentation.components.AmanahNumpad
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.Surface
 
 
 import android.app.DatePickerDialog
@@ -45,6 +46,8 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.AlertDialog
@@ -120,7 +123,8 @@ fun AddTransactionScreen(
     viewModel: AmanahLedgerViewModel,
     editEntryId: String? = null,
     onNavigateBack: () -> Unit,
-    onOpenDrawer: () -> Unit = {}
+    onOpenDrawer: () -> Unit = {},
+    onNavigateToFatwa: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -218,6 +222,7 @@ fun AddTransactionScreen(
 
     // Infaq options for income
     var infaqRate by remember(initialRate) { mutableDoubleStateOf(initialRate) } // 5%
+    var showRikazDalilDialog by remember { mutableStateOf(false) }
 
     // Round-up options for expense
     var enableRoundUp by remember(initialEnableRoundUp) { mutableStateOf(initialEnableRoundUp) }
@@ -882,11 +887,64 @@ fun AddTransactionScreen(
                                 color = MaterialTheme.colorScheme.secondary
                             )
                             if (selectedCategoryAccountId == "acc_rikaz") {
-                                Text("Wajib 20% (Rikaz)", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Wajib 20% (Rikaz)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    IconButton(
+                                        onClick = { showRikazDalilDialog = true },
+                                        modifier = Modifier.size(22.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Info,
+                                            contentDescription = "Dalil Hukum Rikaz 20%",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
                             } else if (selectedCategoryAccountId == "acc_syubhat") {
                                 Text("Wajib 100% (Syubhat)", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
                             } else {
                                 Text("${String.format(Locale.US, "%.1f", infaqRate * 100).removeSuffix(".0")}%", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+
+                        if (selectedCategoryAccountId == "acc_rikaz") {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            androidx.compose.material3.Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showRikazDalilDialog = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Bookmark,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "Landasan Fiqih: HR. Bukhari No. 1499 & PMA No. 52/2014",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = "Kewajiban zakat harta temuan purbakala (rikaz) adalah 20% (Al-Khumus) seketika tanpa haul. Ketuk untuk membaca dalil & ketentuan lengkap.",
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            lineHeight = 14.sp
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -1129,6 +1187,76 @@ fun AddTransactionScreen(
                             )
                         }
 
+                        if (enableRoundUp) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Pilih / Tentukan Kelipatan Pembulatan (Round-up):",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                listOf(100.0, 500.0, 1000.0, 5000.0, 10000.0).forEach { stepVal ->
+                                    val isSelected = roundUpStep == stepVal
+                                    Surface(
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            1.dp,
+                                            if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable { roundUpStep = stepVal }
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.padding(vertical = 6.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = if (stepVal >= 1000.0) "${(stepVal / 1000).toInt()}k" else "${stepVal.toInt()}",
+                                                fontSize = 11.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+                            var customStepText by remember { mutableStateOf("") }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = customStepText,
+                                    onValueChange = { input ->
+                                        val filtered = input.filter { it.isDigit() }
+                                        customStepText = filtered
+                                        filtered.toDoubleOrNull()?.let { customVal ->
+                                            if (customVal > 0) roundUpStep = customVal
+                                        }
+                                    },
+                                    placeholder = { Text("Kustom kelipatan (cth: 2000, 2500)", fontSize = 11.sp) },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                )
+                            }
+                        }
+
                         if (enableRoundUp && calculatedInfaqPreview > 0.0) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -1285,7 +1413,51 @@ fun AddTransactionScreen(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        // Physical Receipt Photo Preview & Picker Section
+                        // Physical Receipt Photo Preview & Dual Pickers (Camera & Gallery)
+                        var tempCameraFile by remember { mutableStateOf<File?>(null) }
+                        val cameraLauncher = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.TakePicture()
+                        ) { success ->
+                            if (success && tempCameraFile != null && tempCameraFile!!.exists()) {
+                                val savedPath = ReceiptImageStorage.saveImageFile(context, tempCameraFile!!)
+                                if (savedPath != null) {
+                                    receiptImagePath = savedPath
+                                }
+                                tempCameraFile?.delete()
+                            }
+                        }
+
+                        val cameraPermissionLauncher = rememberLauncherForActivityResult(
+                            contract = ActivityResultContracts.RequestPermission()
+                        ) { isGranted ->
+                            if (isGranted) {
+                                val pair = ReceiptImageStorage.createCameraTempUri(context)
+                                if (pair != null) {
+                                    tempCameraFile = pair.second
+                                    cameraLauncher.launch(pair.first)
+                                }
+                            } else {
+                                android.widget.Toast.makeText(context, "Izin kamera diperlukan untuk memotret struk belanja", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+
+                        val onLaunchCamera: () -> Unit = {
+                            val hasCameraPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                                context,
+                                android.Manifest.permission.CAMERA
+                            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                            if (hasCameraPermission) {
+                                val pair = ReceiptImageStorage.createCameraTempUri(context)
+                                if (pair != null) {
+                                    tempCameraFile = pair.second
+                                    cameraLauncher.launch(pair.first)
+                                }
+                            } else {
+                                cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+                            }
+                        }
+
                         val directImagePicker = rememberLauncherForActivityResult(
                             contract = ActivityResultContracts.PickVisualMedia()
                         ) { uri: Uri? ->
@@ -1315,14 +1487,32 @@ fun AddTransactionScreen(
                                             Spacer(modifier = Modifier.width(4.dp))
                                             Text("Foto Fisik Tersimpan", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                         }
-                                        IconButton(
-                                            onClick = {
-                                                ReceiptImageStorage.deleteImageFile(receiptImagePath)
-                                                receiptImagePath = null
-                                            },
-                                            modifier = Modifier.size(28.dp)
-                                        ) {
-                                            Icon(Icons.Default.Delete, contentDescription = "Hapus Foto", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            IconButton(
+                                                onClick = onLaunchCamera,
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(Icons.Default.CameraAlt, contentDescription = "Foto Ulang Kamera", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                            }
+                                            IconButton(
+                                                onClick = {
+                                                    directImagePicker.launch(
+                                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                                    )
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(Icons.Default.PhotoLibrary, contentDescription = "Ganti dari Galeri", tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(16.dp))
+                                            }
+                                            IconButton(
+                                                onClick = {
+                                                    ReceiptImageStorage.deleteImageFile(receiptImagePath)
+                                                    receiptImagePath = null
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = "Hapus Foto", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                                            }
                                         }
                                     }
                                     Spacer(modifier = Modifier.height(6.dp))
@@ -1338,21 +1528,39 @@ fun AddTransactionScreen(
                                 }
                             }
                         } else {
-                            OutlinedButton(
-                                onClick = {
-                                    directImagePicker.launch(
-                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                    )
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .testTag("attach_receipt_photo_button"),
-                                shape = RoundedCornerShape(10.dp),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Pilih / Ganti Foto Fisik Struk", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                Button(
+                                    onClick = onLaunchCamera,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .testTag("take_receipt_photo_camera_button"),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                ) {
+                                    Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Foto Kamera", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                }
+
+                                OutlinedButton(
+                                    onClick = {
+                                        directImagePicker.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .testTag("attach_receipt_photo_button"),
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                                ) {
+                                    Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Pilih Galeri", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                }
                             }
                         }
                     }
@@ -1761,6 +1969,122 @@ fun AddTransactionScreen(
         )
     }
 
+    if (showRikazDalilDialog) {
+        AlertDialog(
+            onDismissRequest = { showRikazDalilDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp),
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Verified,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Dasar Hukum: Kewajiban 20% Harta Rikaz",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    androidx.compose.material3.Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Hadits Shahih Bukhari & Muslim",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "«... وَفِي الرِّكَازِ الْخُمُسُ»",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                text = "\"Dan pada rikaz (harta temuan/karun purbakala), kewajiban zakatnya adalah seperlima (20%).\"\n— HR. Bukhari No. 1499 & HR. Muslim No. 1710",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Kaidah Fiqih & Regulasi Resmi:",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            Text(
+                                text = "1. Sesuai Peraturan Menteri Agama (PMA) No. 52/2014 Pasal 24 & Kesepakatan 4 Mazhab, zakat rikaz adalah 20% (Al-Khumus).\n2. Wajib ditunaikan seketika saat harta ditemukan tanpa mensyaratkan berlalunya waktu satu tahun (Haul).\n3. Sisa 80% adalah hak halal penemu setelah 20% disalurkan kepada mustahiq/fakir miskin.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+
+                    androidx.compose.material3.Surface(
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                text = "Catatan Penting: Rikaz vs Luqathah",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            Text(
+                                text = "Ketentuan 20% ini khusus untuk harta karun kuno tak bertuan (Rikaz). Adapun barang hilang/tercecer milik orang lain di masa sekarang disebut Luqathah dan wajib diumumkan selama 1 tahun, bukan dipotong 20%.",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 15.sp
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showRikazDalilDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("Saya Paham")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.OutlinedButton(
+                    onClick = {
+                        showRikazDalilDialog = false
+                        onNavigateToFatwa()
+                    }
+                ) {
+                    Text("Buka Ensiklopedia Fiqih")
+                }
+            }
+        )
+    }
+
 
 if (showNumpadBottomSheet) {
         // Local state for the calculator
@@ -1834,6 +2158,19 @@ if (showNumpadBottomSheet) {
                                 expression += num.toString()
                             }
                         }
+                    },
+                    onZeroZeroZeroClick = {
+                        if (expression == "0" || expression.isEmpty()) {
+                            expression = "0"
+                        } else {
+                            val lastChar = expression.lastOrNull()
+                            if (lastChar != null && lastChar.isDigit() && expression.length < 22) {
+                                expression += "000"
+                            }
+                        }
+                    },
+                    onClearClick = {
+                        expression = "0"
                     },
                     onBackspaceClick = {
                         if (expression.isNotEmpty()) {
