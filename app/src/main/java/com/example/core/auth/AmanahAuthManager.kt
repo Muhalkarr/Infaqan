@@ -236,10 +236,21 @@ class AmanahAuthManager(private val context: Context) {
         )
 
         try {
+            val resolvedClientId = if (webClientId.isNotBlank()) {
+                webClientId
+            } else {
+                try {
+                    val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+                    if (resId != 0) context.getString(resId) else "998346721387-ajt4c4tidqklt9ef1l0q6k184487prjb.apps.googleusercontent.com"
+                } catch (_: Exception) {
+                    "998346721387-ajt4c4tidqklt9ef1l0q6k184487prjb.apps.googleusercontent.com"
+                }
+            }
+
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setAutoSelectEnabled(false)
-                .setServerClientId(if (webClientId.isNotBlank()) webClientId else "1028308803138-amanah.apps.googleusercontent.com")
+                .setServerClientId(resolvedClientId)
                 .build()
 
             val request = GetCredentialRequest.Builder()
@@ -270,6 +281,13 @@ class AmanahAuthManager(private val context: Context) {
             } else {
                 throw Exception("Jenis kredensial tidak didukung")
             }
+        } catch (c: androidx.credentials.exceptions.GetCredentialCancellationException) {
+            Log.w(TAG, "Google Sign-In cancelled by user: ${c.message}")
+            _authState.value = _authState.value.copy(
+                status = AuthStatus.UNAUTHENTICATED,
+                errorMessage = null
+            )
+            Result.failure(c)
         } catch (e: Exception) {
             Log.w(TAG, "Google Sign In via CredentialManager skipped/failed: ${e.message}")
             val fallbackMsg = e.localizedMessage ?: "Google Sign-In dibatalkan atau belum dikonfigurasi."

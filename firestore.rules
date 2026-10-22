@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidUser(data) {
+      return data.updatedAt is number
+        && (!('sedekahStreak' in data) || data.sedekahStreak is number)
+        && (!('sedekahLongest' in data) || data.sedekahLongest is number)
+        && (!('sedekahTotal' in data) || data.sedekahTotal is number)
+        && (!('sedekahDays' in data) || data.sedekahDays is number);
+    }
+
+    function isValidWallet(data) {
+      return data.id is string && data.id.size() > 0
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.type is string
+        && (!('institutionName' in data) || data.institutionName is string)
+        && (!('accountNumber' in data) || data.accountNumber is string)
+        && (!('linkedAccountId' in data) || data.linkedAccountId is string)
+        && (!('colorHex' in data) || data.colorHex is number)
+        && (!('isDefault' in data) || data.isDefault is bool)
+        && (!('notes' in data) || data.notes is string)
+        && data.updatedAt is number;
+    }
+
+    function isValidJournalEntry(data) {
+      return data.id is string && data.id.size() > 0
+        && data.dateMillis is number
+        && data.hijriYear is number
+        && data.hijriMonth is number
+        && data.hijriDay is number
+        && data.description is string && data.description.size() <= 500
+        && data.transactionType is string
+        && data.linesJson is string
+        && (!('receiptJson' in data) || data.receiptJson is string)
+        && data.updatedAt is number;
+    }
+
+    function isValidIbadahGoal(data) {
+      return data.id is string && data.id.size() > 0
+        && data.type is string
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 100
+        && data.targetAmount is number
+        && data.currentAccumulated is number
+        && (!('targetHijri' in data) || data.targetHijri is string)
+        && (!('monthsRemaining' in data) || data.monthsRemaining is number)
+        && (!('linkedWalletId' in data) || data.linkedWalletId is string)
+        && (!('notes' in data) || data.notes is string)
+        && (!('isCompleted' in data) || data.isCompleted is bool)
+        && data.updatedAt is number;
+    }
+
+    function isValidQardhRecord(data) {
+      return data.id is string && data.id.size() > 0
+        && data.type is string
+        && data.counterpartyName is string && data.counterpartyName.size() > 0 && data.counterpartyName.size() <= 100
+        && data.totalAmount is number
+        && data.remainingAmount is number
+        && data.agreementDateMillis is number
+        && (!('dueDateMillis' in data) || data.dueDateMillis is number)
+        && (!('witnessName' in data) || data.witnessName is string)
+        && (!('notes' in data) || data.notes is string)
+        && data.status is string
+        && (!('installmentsJson' in data) || data.installmentsJson is string)
+        && data.updatedAt is number;
+    }
+
+    match /amanah_users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUser(request.resource.data);
+      allow delete: if isOwner(userId);
+
+      match /wallets/{walletId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidWallet(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /journal_entries/{entryId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidJournalEntry(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /ibadah_goals/{goalId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidIbadahGoal(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /qardh_records/{recordId} {
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidQardhRecord(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

@@ -24,8 +24,11 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.AutoFixHigh
+import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Handshake
@@ -317,6 +320,36 @@ fun AppNavigationDrawerContent(
                 badgeColor = if (uiState.isNisabReached) MaterialTheme.colorScheme.secondary else null,
                 testTag = "sidebar_nav_haul_nisab",
                 onClick = { onSelectScreen(Screen.HAUL_NISAB) }
+            )
+
+            SidebarNavigationItem(
+                label = "Pelacak Emas & Nisab BAZNAS",
+                icon = Icons.Default.MonetizationOn,
+                selected = currentScreen == Screen.GOLD_NISAB_TRACKER,
+                badgeText = "SK BAZNAS",
+                badgeColor = MaterialTheme.colorScheme.secondary,
+                testTag = "sidebar_nav_gold_nisab",
+                onClick = { onSelectScreen(Screen.GOLD_NISAB_TRACKER) }
+            )
+
+            SidebarNavigationItem(
+                label = "Zakat Perniagaan & Saham",
+                icon = Icons.Default.BusinessCenter,
+                selected = currentScreen == Screen.BUSINESS_ZAKAT,
+                badgeText = "Bisnis & DES",
+                badgeColor = MaterialTheme.colorScheme.primary,
+                testTag = "sidebar_nav_business_zakat",
+                onClick = { onSelectScreen(Screen.BUSINESS_ZAKAT) }
+            )
+
+            SidebarNavigationItem(
+                label = "Audit Kepatuhan Syariah",
+                icon = Icons.Default.VerifiedUser,
+                selected = currentScreen == Screen.SHARIAH_AUDIT,
+                badgeText = "Health Check",
+                badgeColor = MaterialTheme.colorScheme.secondary,
+                testTag = "sidebar_nav_shariah_audit",
+                onClick = { onSelectScreen(Screen.SHARIAH_AUDIT) }
             )
 
             SidebarNavigationItem(

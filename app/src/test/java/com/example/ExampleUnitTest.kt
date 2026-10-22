@@ -74,7 +74,7 @@ class ExampleUnitTest {
     @Test
     fun user_feedback_draft_and_revision_state() {
         val draftFeedback = UserFeedback(
-            type = FeedbackType.CRITICISM_AND_SUGGESTION,
+            type = FeedbackType.APPRECIATION,
             rating = 4,
             message = "Draf masukan perbaikan tata kelola kas",
             status = com.example.core.feedback.FeedbackStatus.DRAFT,

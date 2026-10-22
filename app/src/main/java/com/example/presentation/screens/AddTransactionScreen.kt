@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.net.Uri
 import com.example.core.debug.AppDebugLogger
 import androidx.compose.foundation.background
@@ -43,6 +44,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Warning
@@ -64,6 +66,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -154,7 +157,7 @@ fun AddTransactionScreen(
         else if (existingEntry == null) ""
         else {
             if (existingEntry.transactionType == "INFLOW") {
-                val gross = existingEntry.lines.firstOrNull { it.accountId in listOf("acc_cash", "acc_bank", "acc_gold") }?.debit
+                val gross = existingEntry.lines.firstOrNull { state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_gold", "acc_ewallet", "acc_other_asset") }?.debit
                     ?: existingEntry.lines.firstOrNull { it.accountId in listOf("acc_salary", "acc_trade", "acc_gift", "acc_rikaz", "acc_syubhat") }?.credit
                     ?: 0.0
                 if (gross > 0) {
@@ -188,16 +191,16 @@ fun AddTransactionScreen(
         else if (existingEntry == null) "acc_bank"
         else {
             if (existingEntry.transactionType == "INFLOW") {
-                existingEntry.lines.firstOrNull { it.debit > 0 && it.accountId in listOf("acc_cash", "acc_bank", "acc_gold") }?.accountId ?: "acc_bank"
+                existingEntry.lines.firstOrNull { it.debit > 0 && (state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_gold", "acc_ewallet", "acc_other_asset")) }?.accountId ?: "acc_bank"
             } else {
-                existingEntry.lines.firstOrNull { it.credit > 0 && it.accountId in listOf("acc_cash", "acc_bank", "acc_gold") }?.accountId ?: "acc_cash"
+                existingEntry.lines.firstOrNull { it.credit > 0 && (state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_gold", "acc_ewallet", "acc_other_asset")) }?.accountId ?: "acc_cash"
             }
         }
     }
     val initialRate = remember(existingEntry, hasActiveDraft) {
         if (hasActiveDraft) draft.infaqRate
         else if (existingEntry != null && existingEntry.transactionType == "INFLOW") {
-            val gross = existingEntry.lines.firstOrNull { it.accountId in listOf("acc_cash", "acc_bank", "acc_gold") }?.debit ?: 0.0
+            val gross = existingEntry.lines.firstOrNull { state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_gold", "acc_ewallet", "acc_other_asset") }?.debit ?: 0.0
             val infaq = existingEntry.lines.firstOrNull { it.accountId == "acc_vault" }?.credit ?: 0.0
             if (gross > 0) (infaq / gross) else 0.05
         } else 0.05
@@ -312,6 +315,7 @@ fun AddTransactionScreen(
     }
 
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")) }
+    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale("id", "ID")) }
 
     val budgetForCategory = if (!isIncome) state.budgets.firstOrNull { it.accountId == selectedCategoryAccountId } else null
     val currentSpent = if (!isIncome) state.getMonthlySpentForAccount(selectedCategoryAccountId) else 0.0
@@ -549,62 +553,239 @@ fun AddTransactionScreen(
             }
 
 
-            // 2. Dual-Calendar Temporal Card
+            // 2. Dual-Calendar & Time Temporal Card (Tanggal & Waktu Transaksi)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        val cal = Calendar.getInstance().apply { time = selectedDate }
-                        DatePickerDialog(
-                            context,
-                            { _, y, m, d ->
-                                val newCal = Calendar.getInstance().apply {
-                                    set(y, m, d)
-                                }
-                                selectedDate = newCal.time
-                            },
-                            cal.get(Calendar.YEAR),
-                            cal.get(Calendar.MONTH),
-                            cal.get(Calendar.DAY_OF_MONTH)
-                        ).show()
-                    },
+                    .testTag("temporal_datetime_card"),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(12.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = "Pilih Tanggal",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Masehi: ${dateFormat.format(selectedDate)}",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = "Hijriah: $hijriDate (Batas Maghrib 18:00)",
-                            color = MaterialTheme.colorScheme.secondary,
-                            fontSize = 11.sp
-                        )
+                    // Row 1: Tanggal (Masehi & Hijriah)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val cal = Calendar.getInstance().apply { time = selectedDate }
+                                DatePickerDialog(
+                                    context,
+                                    { _, y, m, d ->
+                                        val newCal = Calendar.getInstance().apply {
+                                            time = selectedDate
+                                            set(Calendar.YEAR, y)
+                                            set(Calendar.MONTH, m)
+                                            set(Calendar.DAY_OF_MONTH, d)
+                                        }
+                                        selectedDate = newCal.time
+                                    },
+                                    cal.get(Calendar.YEAR),
+                                    cal.get(Calendar.MONTH),
+                                    cal.get(Calendar.DAY_OF_MONTH)
+                                ).show()
+                            }
+                            .testTag("pick_date_row"),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Pilih Tanggal",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = dateFormat.format(selectedDate),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "(Ketuk ubah tanggal)",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            Text(
+                                text = "Hijriah: $hijriDate",
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontSize = 11.sp
+                            )
+                        }
+                        if (isFriday) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = "Jumat Berkah",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                     }
-                    if (isFriday) {
-                        Text(
-                            text = "Jumat Berkah",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    // Row 2: Waktu / Jam Transaksi (TimePicker Trigger & Info)
+                    val calCurrent = Calendar.getInstance().apply { time = selectedDate }
+                    val currentHour = calCurrent.get(Calendar.HOUR_OF_DAY)
+                    val isAfterMaghrib = currentHour >= 18
+                    val isSubuhTime = currentHour in 4..5
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                val cal = Calendar.getInstance().apply { time = selectedDate }
+                                TimePickerDialog(
+                                    context,
+                                    { _, hourOfDay, minute ->
+                                        val newCal = Calendar.getInstance().apply {
+                                            time = selectedDate
+                                            set(Calendar.HOUR_OF_DAY, hourOfDay)
+                                            set(Calendar.MINUTE, minute)
+                                            set(Calendar.SECOND, 0)
+                                        }
+                                        selectedDate = newCal.time
+                                    },
+                                    cal.get(Calendar.HOUR_OF_DAY),
+                                    cal.get(Calendar.MINUTE),
+                                    true
+                                ).show()
+                            }
+                            .testTag("pick_time_row"),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = "Pilih Waktu",
+                                    tint = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Waktu: ",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "${timeFormat.format(selectedDate)} WIB",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                Text(
+                                    text = if (isSubuhTime) {
+                                        "🌅 Waktu Subuh (Tercatat sebagai Sedekah Subuh)"
+                                    } else if (isAfterMaghrib) {
+                                        "🌙 Setelah Maghrib (Batas Masuk Hari Hijriah Baru)"
+                                    } else {
+                                        "Ketuk untuk menyesuaikan jam transaksi riil"
+                                    },
+                                    fontSize = 10.sp,
+                                    color = if (isSubuhTime) MaterialTheme.colorScheme.primary else if (isAfterMaghrib) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            Text(
+                                text = "Ubah Jam",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    // Row 3: Preset Pintasan Jam Cepat (Quick Time Chips)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        val quickTimePresets = listOf(
+                            Triple("Sekarang", -1, -1),
+                            Triple("Subuh (05:15)", 5, 15),
+                            Triple("Dzuhur (12:30)", 12, 30),
+                            Triple("Sore (16:45)", 16, 45),
+                            Triple("Malam (20:00)", 20, 0)
                         )
+
+                        quickTimePresets.forEach { (label, hr, min) ->
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        val newCal = Calendar.getInstance().apply {
+                                            if (hr == -1) {
+                                                val now = Calendar.getInstance()
+                                                time = selectedDate
+                                                set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
+                                                set(Calendar.MINUTE, now.get(Calendar.MINUTE))
+                                                set(Calendar.SECOND, now.get(Calendar.SECOND))
+                                            } else {
+                                                time = selectedDate
+                                                set(Calendar.HOUR_OF_DAY, hr)
+                                                set(Calendar.MINUTE, min)
+                                                set(Calendar.SECOND, 0)
+                                            }
+                                        }
+                                        selectedDate = newCal.time
+                                    },
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = 5.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    maxLines = 1
+                                )
+                            }
+                        }
                     }
                 }
             }

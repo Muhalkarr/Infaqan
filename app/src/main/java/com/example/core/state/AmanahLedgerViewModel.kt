@@ -157,6 +157,8 @@ data class AmanahLedgerUiState(
     val initialLedgerBalance: Double = 0.0,
     val fiscalYearStartMonth: Int = 1,
     val primaryCurrencySymbol: String = "Rp",
+    val primaryCurrencyCode: String = "IDR",
+    val haulStartDate: Long? = null,
     val defaultInfaqRate: Double = 0.05,
     val isAutoDeductInfaqEnabled: Boolean = true,
     val vaultMonthlyTarget: Double = 5000000.0,
@@ -233,7 +235,7 @@ data class AmanahLedgerUiState(
     }
 
     val totalWalletBalance: Double
-        get() = wallets.sumOf { getWalletBalance(it.id) }
+        get() = wallets.map { it.linkedAccountId }.distinct().sumOf { getAccountBalance(it) }
 
     fun getAccountBalance(accountId: String): Double {
         return accountBalances[accountId] ?: 0.0
@@ -353,7 +355,7 @@ data class AmanahLedgerUiState(
         get() = journalEntries
             .filter { it.transactionType == "INFAQ_PAYOUT" }
             .flatMap { it.lines }
-            .filter { it.accountId == "acc_vault" }
+            .filter { it.accountId == "acc_vault" || it.accountId == "acc_disbursed" || it.accountId == "acc_sedekah_extra" }
             .sumOf { it.debit }
 
     /**
@@ -439,9 +441,13 @@ class AmanahLedgerViewModel : ViewModel() {
 
     private fun initDefaultData() {
         val defaultAccounts = listOf(
-            Account("acc_cash", "101", "Kas Utama / Dompet Tunai", AccountCategory.ASSET, "Uang kas fisik di dompet"),
+            Account("acc_cash", "101", "Kas Fisik / Dompet Tunai", AccountCategory.ASSET, "Uang kas fisik di dompet"),
             Account("acc_bank", "102", "Rekening Bank Syariah (BSI/Muamalat)", AccountCategory.ASSET, "Tabungan mudharabah/wadiah"),
+            Account("acc_bank_konven", "102.1", "Rekening Bank Konvensional", AccountCategory.ASSET, "Rekening perbankan umum / konvensional"),
+            Account("acc_bank_special", "102.2", "Tabungan Khusus (Haji/Pendidikan)", AccountCategory.ASSET, "Tabungan khusus amanah & ibadah haji"),
+            Account("acc_ewallet", "105", "Saldo Dompet Digital (GoPay/OVO/ShopeePay)", AccountCategory.ASSET, "Saldo uang elektronik / dompet digital"),
             Account("acc_gold", "103", "Tabungan Emas Fisik", AccountCategory.ASSET, "Logam mulia batangan"),
+            Account("acc_other_asset", "106", "Aset & Kantong Khusus Lainnya", AccountCategory.ASSET, "Saldo simpanan kantong khusus / lainnya"),
             Account("acc_receivable", "104", "Piutang Qardh Hasan Diberikan", AccountCategory.ASSET, "Dana pinjaman kebajikan tanpa riba yang belum kembali"),
             Account("acc_vault", "201", "Virtual Infaq Vault (Titipan Amanah)", AccountCategory.LIABILITY, "Hak Mustahiq yang wajib disalurkan"),
             Account("acc_debt", "202", "Hutang Qardh / Cicilan", AccountCategory.LIABILITY, "Kewajiban pihak ketiga"),
@@ -458,7 +464,8 @@ class AmanahLedgerViewModel : ViewModel() {
             Account("acc_health", "505", "Kesehatan & Pengobatan", AccountCategory.EXPENSE, "Obat, vitamin & medis keluarga"),
             Account("acc_entertainment", "507", "Hiburan & Rekreasi Halal", AccountCategory.EXPENSE, "Kebutuhan rekreasi dan hiburan keluarga"),
             Account("acc_other_exp", "506", "Pengeluaran Rutin Lainnya", AccountCategory.EXPENSE, "Kebutuhan operasional rumah tangga"),
-            Account("acc_disbursed", "599", "Penyaluran Infaq Terbayar", AccountCategory.EXPENSE, "Realisasi distribusi ke mustahiq")
+            Account("acc_disbursed", "599", "Penyaluran Infaq Terbayar", AccountCategory.EXPENSE, "Realisasi distribusi ke mustahiq"),
+            Account("acc_sedekah_extra", "598", "Sedekah Ekstra & Sukarela", AccountCategory.EXPENSE, "Sedekah sukarela melebihi kewajiban atau hasil round-up")
         )
 
         val defaultRules = DEFAULT_INFAQ_RULES
@@ -867,16 +874,10 @@ class AmanahLedgerViewModel : ViewModel() {
         }
 
         val currentVaultBalance = _uiState.value.virtualInfaqVaultBalance
-        if (cleanAmount > currentVaultBalance) {
-            appStateNotifier.notify(
-                title = "Saldo Vault Tidak Mencukupi",
-                message = "Saldo Brankas Infaq (Rp ${currentVaultBalance.toLong()}) tidak mencukupi untuk penyaluran Rp ${cleanAmount.toLong()}.",
-                severity = NotificationSeverity.WARNING
-            )
-            return
-        }
+        val vaultPortion = minOf(cleanAmount, maxOf(0.0, currentVaultBalance))
+        val extraSedekah = maxOf(0.0, cleanAmount - vaultPortion)
 
-        // Resolusi dompet riil: pastikan akun kas/bank riil yang dipotong
+        // Resolusi dompet riil: pastikan akun kas/bank/dompet digital riil yang dipotong
         val realWallet = _uiState.value.getWallet(fromAccountId)
         val resolvedAssetAccountId = realWallet?.linkedAccountId ?: fromAccountId
 
@@ -885,12 +886,21 @@ class AmanahLedgerViewModel : ViewModel() {
         val distId = "dist_${UUID.randomUUID().toString().take(8)}"
         val receiptNo = "INV-VAULT-${SimpleDateFormat("yyyyMMdd", Locale.US).format(date)}-${(1000..9999).random()}"
 
-        val lines = listOf(
+        val lines = mutableListOf<JournalLine>()
+        if (vaultPortion > 0.0) {
             // 1. Debit Virtual Vault (Kewajiban amanah terlaksana & lunas)
-            JournalLine(accountId = "acc_vault", debit = cleanAmount, credit = 0.0),
-            // 2. Kredit Kas/Bank riil (Uang fisik benar-benar keluar dari rekening dompet riil pengguna)
-            JournalLine(accountId = resolvedAssetAccountId, debit = 0.0, credit = cleanAmount)
-        )
+            lines.add(JournalLine(accountId = "acc_vault", debit = vaultPortion, credit = 0.0))
+        }
+        if (extraSedekah > 0.0) {
+            // 2. Debit Penyaluran Sedekah Ekstra (Tabarru' sukarela melebihi kewajiban vault)
+            lines.add(JournalLine(accountId = "acc_disbursed", debit = extraSedekah, credit = 0.0))
+        }
+        // 3. Kredit Kas/Bank/Dompet Digital riil (Uang fisik benar-benar keluar dari rekening dompet riil pengguna)
+        lines.add(JournalLine(accountId = resolvedAssetAccountId, debit = 0.0, credit = cleanAmount))
+
+        val descExtraTag = if (extraSedekah > 0.0) {
+            " [Sedekah Ekstra: Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(extraSedekah.toLong())}]"
+        } else ""
 
         val entry = JournalEntry(
             id = journalId,
@@ -898,10 +908,17 @@ class AmanahLedgerViewModel : ViewModel() {
             hijriYear = hijri.year,
             hijriMonth = hijri.month,
             hijriDay = hijri.day,
-            description = "Penyaluran Infaq: $recipientName (${asnafCategory.displayName})",
+            description = "Penyaluran Infaq: $recipientName (${asnafCategory.displayName})$descExtraTag",
             transactionType = "INFAQ_PAYOUT",
             lines = lines
         )
+
+        val updatedNotes = if (extraSedekah > 0.0) {
+            val tag = "[Sedekah Ekstra: Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(extraSedekah.toLong())}]"
+            if (notes.isNotBlank()) "$notes $tag" else tag
+        } else {
+            notes
+        }
 
         val distRecord = InfaqDistributionRecord(
             id = distId,
@@ -913,7 +930,7 @@ class AmanahLedgerViewModel : ViewModel() {
             sourceAccountId = resolvedAssetAccountId,
             programName = programName.ifBlank { "Penyaluran Tabarru'" },
             receiptNumber = receiptNo,
-            notes = notes,
+            notes = updatedNotes,
             isVerified = true
         )
 
@@ -927,11 +944,18 @@ class AmanahLedgerViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             repository?.saveInfaqDistribution(distRecord)
         }
-        AppDebugLogger.i("AmanahInfaq", "Penyaluran Infaq: Rp ${cleanAmount.toLong()} ke $recipientName (${asnafCategory.displayName}) via $resolvedAssetAccountId")
+        AppDebugLogger.i("AmanahInfaq", "Penyaluran Infaq: Rp ${cleanAmount.toLong()} (Vault: ${vaultPortion.toLong()}, Sedekah Ekstra: ${extraSedekah.toLong()}) ke $recipientName via $resolvedAssetAccountId")
+
+        val nf = java.text.NumberFormat.getNumberInstance(Locale("id", "ID"))
+        val notifyMsg = if (extraSedekah > 0.0) {
+            "Dana Rp ${nf.format(cleanAmount)} disalurkan ke $recipientName (Vault: Rp ${nf.format(vaultPortion.toLong())} + Sedekah Ekstra: Rp ${nf.format(extraSedekah.toLong())})"
+        } else {
+            "Dana Rp ${nf.format(cleanAmount)} disalurkan ke $recipientName (${asnafCategory.displayName})"
+        }
 
         appStateNotifier.notify(
             title = "Penyaluran Infaq Berhasil",
-            message = "Dana Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(cleanAmount)} disalurkan ke $recipientName (${asnafCategory.displayName})",
+            message = notifyMsg,
             severity = NotificationSeverity.SUCCESS
         )
     }
@@ -1997,6 +2021,110 @@ class AmanahLedgerViewModel : ViewModel() {
         )
     }
 
+    fun saveWalletWithBalance(wallet: WalletAccount, targetBalance: Double, isEdit: Boolean) {
+        if (!isEdit) {
+            addWallet(wallet)
+            if (targetBalance > 0.0) {
+                val cal = Calendar.getInstance()
+                val hijri = HijriCalendarEngine.fromGregorian(cal.time)
+                val journalId = "j_init_w_${UUID.randomUUID().toString().take(8)}"
+                val entry = JournalEntry(
+                    id = journalId,
+                    gregorianDate = cal.time,
+                    hijriYear = hijri.year,
+                    hijriMonth = hijri.month,
+                    hijriDay = hijri.day,
+                    description = "Saldo Awal Kantong: ${wallet.name}",
+                    transactionType = "INFLOW",
+                    lines = listOf(
+                        JournalLine(accountId = wallet.linkedAccountId, debit = targetBalance, credit = 0.0),
+                        JournalLine(accountId = "acc_equity", debit = 0.0, credit = targetBalance)
+                    )
+                )
+                _uiState.update { state ->
+                    state.copy(journalEntries = listOf(entry) + state.journalEntries)
+                }
+                persistEntryAsync(entry)
+                AppDebugLogger.i("AmanahWallet", "Mencatat saldo awal untuk kantong '${wallet.name}': Rp $targetBalance")
+            }
+        } else {
+            val currentBal = _uiState.value.getWalletBalance(wallet.id)
+            updateWallet(wallet)
+            val diff = targetBalance - currentBal
+            if (kotlin.math.abs(diff) >= 1.0) {
+                val cal = Calendar.getInstance()
+                val hijri = HijriCalendarEngine.fromGregorian(cal.time)
+                val journalId = "j_adj_w_${UUID.randomUUID().toString().take(8)}"
+                val lines = if (diff > 0.0) {
+                    listOf(
+                        JournalLine(accountId = wallet.linkedAccountId, debit = diff, credit = 0.0),
+                        JournalLine(accountId = "acc_equity", debit = 0.0, credit = diff)
+                    )
+                } else {
+                    val absDiff = kotlin.math.abs(diff)
+                    listOf(
+                        JournalLine(accountId = "acc_equity", debit = absDiff, credit = 0.0),
+                        JournalLine(accountId = wallet.linkedAccountId, debit = 0.0, credit = absDiff)
+                    )
+                }
+                val entry = JournalEntry(
+                    id = journalId,
+                    gregorianDate = cal.time,
+                    hijriYear = hijri.year,
+                    hijriMonth = hijri.month,
+                    hijriDay = hijri.day,
+                    description = "Penyesuaian Saldo Kantong: ${wallet.name} (${if (diff > 0) "+" else "-"}Rp ${kotlin.math.abs(diff).toLong()})",
+                    transactionType = if (diff > 0) "INFLOW" else "EXPENSE",
+                    lines = lines
+                )
+                _uiState.update { state ->
+                    state.copy(journalEntries = listOf(entry) + state.journalEntries)
+                }
+                persistEntryAsync(entry)
+                AppDebugLogger.i("AmanahWallet", "Menyesuaikan saldo kantong '${wallet.name}': diff = $diff")
+            }
+        }
+    }
+
+    fun addNewAssetAccount(name: String, code: String = "", description: String = ""): String {
+        val sanitizedId = "acc_custom_" + UUID.randomUUID().toString().take(8)
+        val generatedCode = if (code.isNotBlank()) code.trim() else "109.${System.currentTimeMillis() % 1000}"
+        val newAccount = Account(
+            id = sanitizedId,
+            code = generatedCode,
+            name = name.trim(),
+            category = AccountCategory.ASSET,
+            description = if (description.isNotBlank()) description.trim() else "Akun buku besar aset mandiri"
+        )
+        _uiState.update { state ->
+            if (state.accounts.any { it.id == sanitizedId }) state
+            else state.copy(accounts = state.accounts + newAccount)
+        }
+        persistCustomAccountsAsync()
+        return sanitizedId
+    }
+
+    private fun persistCustomAccountsAsync() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val db = roomDatabase ?: return@launch
+                val customAccounts = _uiState.value.accounts.filter { it.id.startsWith("acc_custom_") }
+                val jsonArr = org.json.JSONArray()
+                for (acc in customAccounts) {
+                    val obj = org.json.JSONObject()
+                    obj.put("id", acc.id)
+                    obj.put("code", acc.code)
+                    obj.put("name", acc.name)
+                    obj.put("description", acc.description)
+                    jsonArr.put(obj)
+                }
+                db.settingsDao().insertOrUpdate(SettingsEntity("custom_asset_accounts", jsonArr.toString()))
+            } catch (e: Exception) {
+                AppDebugLogger.w("AmanahWallet", "Gagal menyimpan akun kustom: ${e.message}")
+            }
+        }
+    }
+
     fun deleteWallet(walletId: String) {
         val target = _uiState.value.wallets.firstOrNull { it.id == walletId }
         _uiState.update { state ->
@@ -2893,17 +3021,20 @@ class AmanahLedgerViewModel : ViewModel() {
                     val isCleared = db.settingsDao().getSettingByKey("user_has_cleared_dummy_data")?.value == "true"
                     val dummyVersion = db.settingsDao().getSettingByKey("dummy_data_version")?.value
 
-                    if (!isCleared && dummyVersion != "v2_proportional") {
-                        // Refresh dummy data to ensure proportional Sharia Maqashid budget 50/30/10/10
+                    if (!isCleared && dummyVersion != "v4_multi_wallet_isolated") {
+                        // Refresh dummy data to ensure isolated wallets (acc_cash vs acc_ewallet vs acc_other_asset)
                         db.budgetDao().clearAll()
                         db.journalDao().clearAll()
+                        db.walletDao().clearAll()
                         val freshEntries = AmanahDummyDataGenerator.getSampleJournalEntries()
                         val freshBudgets = AmanahDummyDataGenerator.getSampleBudgets()
+                        val freshWallets = AmanahDummyDataGenerator.getSampleWallets()
                         db.journalDao().insertAll(freshEntries.map { EntityMappers.toEntity(it) })
                         db.budgetDao().insertAll(freshBudgets.map { EntityMappers.toEntity(it) })
-                        db.settingsDao().insertOrUpdate(SettingsEntity("dummy_data_version", "v2_proportional"))
+                        db.walletDao().insertAll(freshWallets.map { EntityMappers.toEntity(it) })
+                        db.settingsDao().insertOrUpdate(SettingsEntity("dummy_data_version", "v4_multi_wallet_isolated"))
 
-                        val localWallets = db.walletDao().getAllWallets().map { EntityMappers.toDomain(it) }
+                        val localWallets = freshWallets
                         val localGoals = db.ibadahGoalDao().getAllGoals().map { EntityMappers.toDomain(it) }
                         val localQardh = db.qardhDao().getAllRecords().map { EntityMappers.toDomain(it) }
                         val localSedekah = repository?.getSedekahSubuh()
@@ -2930,7 +3061,18 @@ class AmanahLedgerViewModel : ViewModel() {
                         }
                     } else {
                         val localEntries = db.journalDao().getAllEntries().map { EntityMappers.toDomain(it) }
-                        val localWallets = db.walletDao().getAllWallets().map { EntityMappers.toDomain(it) }
+                        val rawLocalWallets = db.walletDao().getAllWallets().map { EntityMappers.toDomain(it) }
+                        val localWallets = rawLocalWallets.map { w ->
+                            if (w.type == com.example.core.wallet.WalletType.E_WALLET && (w.linkedAccountId == "acc_cash" || w.linkedAccountId == "acc_bank")) {
+                                val fixed = w.copy(linkedAccountId = "acc_ewallet")
+                                persistWalletAsync(fixed)
+                                fixed
+                            } else if (w.type == com.example.core.wallet.WalletType.OTHER && w.linkedAccountId == "acc_cash") {
+                                val fixed = w.copy(linkedAccountId = "acc_other_asset")
+                                persistWalletAsync(fixed)
+                                fixed
+                            } else w
+                        }
                         val localGoals = db.ibadahGoalDao().getAllGoals().map { EntityMappers.toDomain(it) }
                         val localQardh = db.qardhDao().getAllRecords().map { EntityMappers.toDomain(it) }
                         val localBudgets = db.budgetDao().getAllBudgets().map { EntityMappers.toDomain(it) }
@@ -3011,6 +3153,35 @@ class AmanahLedgerViewModel : ViewModel() {
                             zakatMaal = if (!savedMaalJson.isNullOrBlank()) deserializeZakatMaal(savedMaalJson, current.zakatMaal) else current.zakatMaal
                         )
                     }
+
+                    val customAccJson = db.settingsDao().getSettingByKey("custom_asset_accounts")?.value
+                    if (!customAccJson.isNullOrBlank()) {
+                        try {
+                            val jsonArr = org.json.JSONArray(customAccJson)
+                            val loaded = mutableListOf<Account>()
+                            for (i in 0 until jsonArr.length()) {
+                                val obj = jsonArr.getJSONObject(i)
+                                loaded.add(
+                                    Account(
+                                        id = obj.getString("id"),
+                                        code = obj.getString("code"),
+                                        name = obj.getString("name"),
+                                        category = AccountCategory.ASSET,
+                                        description = obj.optString("description", "")
+                                    )
+                                )
+                            }
+                            if (loaded.isNotEmpty()) {
+                                _uiState.update { current ->
+                                    val existingIds = current.accounts.map { it.id }.toSet()
+                                    current.copy(accounts = current.accounts + loaded.filterNot { it.id in existingIds })
+                                }
+                            }
+                        } catch (e: Exception) {
+                            AppDebugLogger.w("AmanahWallet", "Gagal membaca akun kustom: ${e.message}")
+                        }
+                    }
+
                     AppDebugLogger.i("RoomDatabase", "Inisialisasi data Room selesai. Mode audit syariah siap.")
 
                     // Background cleanup cache gambar struk yatim / sementara

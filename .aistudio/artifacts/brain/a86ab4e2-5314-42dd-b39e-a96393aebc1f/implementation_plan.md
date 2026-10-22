@@ -1,120 +1,126 @@
-# Rencana Implementasi Terpadu: Integrasi Emas BAZNAS, Hisab Saham & Perniagaan, Audit Syariah, & Laporan Zakat Tahunan Resmi
+# Peninjauan Multi-Kantong Rekening, Penghapusan Duplikasi Harta, & Fitur Saldo Awal Kantong
 
-Dokumen arsitektur komprehensif untuk peningkatan fitur Amanah Ledger tahap berikutnya berdasarkan preferensi yang telah dikonfirmasi oleh pengguna:
+Memperbaiki pemetaan akun buku besar pada fitur Multi-Kantong Rekening agar tidak ada lagi duplikasi saldo harta antara kantong bertipe Lainnya/Khusus dengan Uang Tunai (Cash), menggabungkan kantong perbankan ke kelompok buku besar bersama sesuai preferensi pengguna, menyediakan opsi pemilihan dan pembuatan akun buku besar tertaut secara mandiri, serta **menambahkan fitur untuk menentukan dan mengedit nominal saldo awal saat menambah/mengedit kantong baru**.
 
-1. **Integrasi Harga Emas Real-time & Nisab SK BAZNAS Terkini**:
-   - Pelacak harga emas dinamis dengan **grafik tren harga historis interaktif**.
-   - **Tabel konversi moneter syariah klasik**: Dinar Emas (4.25 gram emas 24k) dan Dirham Perak (2.975 gram perak murni).
-   - **Peringatan cerdas (*Nisab Alert Banner*)**: Indikator otomatis saat total likuiditas kas pengguna menyentuh atau melampaui batas ambang nisab 85 gram emas.
-2. **Kalkulator Zakat Perniagaan (*'Urudh At-Tijarah*) & Portofolio Saham Syariah**:
-   - **Zakat Perniagaan**: Formulir hisab standar DSN-MUI (Aktiva Lancar: Kas + Piutang Lancar + Nilai Persediaan Dagang - Hutang Jangka Pendek Jatuh Tempo) x 2.5%.
-   - **Zakat Saham Syariah**: Skrining emiten syariah (DES OJK / ISSI), hisab porsi *market value* atau laba dividen, serta fitur pembersihan dividen non-halal (*cleansing to infaq*).
-3. **Audit Kepatuhan Syariah Mutasi Transaksi & Pengingat Ibadah Keuangan**:
-   - **Audit Kepatuhan Otomatis (*Shariah Transaction Health Check*)**: Pemeriksaan otomatis terhadap transaksi harian untuk mendeteksi transaksi terindikasi syubhat, denda bunga (*riba nasi'ah*), atau pos belanja yang melampaui batas wajar (*israf/tabdzir*).
-   - **Pengingat Siklus Haul Hijriah & Jadwal Sedekah Subuh**: Notifikasi terjadwal saat masa haul 354 hari mendekati jatuh tempo dan pengingat harian sedekah subuh di waktu fajar.
-4. **Laporan Hisab Zakat Tahunan Resmi PDF & Analisis Rasio Kedermawanan**:
-   - **Cetak Laporan Zakat Format Resmi Standar BAZNAS**: Dokumen PDF komprehensif memuat ringkasan neraca hisab, rincian per kantong kas, status haul, dan tanda tangan pernyataan muzakki.
-   - **Grafik Analisis Rasio Kedermawanan & Tren Infaq Bulanan**: Visualisasi metrik *Spiritual Liquidity Index* (SLI) dan rasio kedermawanan terhadap pendapatan kasab.
-   - **Pemisahan Zakat per Kantong Kas**: Rincian porsi zakat yang dibebankan pada masing-masing rekening/kantong kas aktif secara proporsional.
-
----
-
-## User Review & Critical Decisions
+### User Review & Critical Decisions
 
 > [!IMPORTANT]
-> Keputusan dan preferensi pengguna yang telah dikonfirmasi:
-> - **Cakupan Fitur Prioritas**: Integrasi harga emas real-time BAZNAS, simulasi zakat perniagaan & saham syariah, pengingat haul & sedekah subuh, serta audit kepatuhan syariah mutasi kas.
-> - **Penyajian Data Emas**: Menggunakan grafik tren harga emas, tabel konversi Dinar-Dirham klasik, dan kartu pengingat status nisab otomatis.
-> - **Format Pelaporan**: Ekspor PDF resmi format hisab BAZNAS, grafik tren kedermawanan bulanan, dan hisab zakat yang dipisah per masing-masing kantong kas.
+> Berdasarkan konfirmasi dan permintaan revisi pengguna:
+> - **Fitur Menentukan & Mengedit Nominal Saldo Awal (Added/Revised)**: Pada formulir tambah atau edit kantong (`WalletFormDialog`), ditambahkan kolom input nominal saldo awal (lengkap dengan format mata uang Rupiah dinamis dan chip nominal cepat). Saat kantong baru disimpan dengan saldo awal > 0, sistem otomatis mencatat jurnal pembukuan seimbang (Debit: Akun Aset Kantong, Kredit: `acc_equity` / Modal Awal Harta Bersih).
+> - **Pemilihan Akun Buku Besar Mandiri (Confirmed)**: Pengguna dapat memilih akun buku besar aset yang ditautkan ke kantong atau membuat akun aset baru langsung dari formulir kantong.
+> - **Kelompok Rekening Perbankan (Confirmed)**: Kantong bertipe Bank Syariah, Bank Konvensional, dan Tabungan Khusus disatukan dalam kelompok buku besar perbankan (`acc_bank`), namun pengguna tetap dapat mengarahkan ke akun buku besar lain bila dikehendaki.
+> - **Isolasi Penuh Kantong Lainnya/Khusus (Confirmed)**: Kantong bertipe Lainnya/Khusus (`WalletType.OTHER`) tidak lagi ditautkan ke `acc_cash`, melainkan dialokasikan ke akun aset terisolasi `acc_other_asset` (Kode 106: "Aset & Kantong Khusus Lainnya"), sehingga saldo kas fisik tidak terduplikasi.
 
 ---
 
-## 1. Arsitektur Komponen & Alur Data
+### 1. Overview & Core Concept
+
+- **Problem Statement**:
+  1. *Duplikasi Saldo*: Kantong bertipe **Lainnya / Khusus** (`WalletType.OTHER`) sebelumnya ditautkan ke `acc_cash`, menyebabkan nilai saldo uang tunai fisik terduplikasi.
+  2. *Ketiadaan Pengisian Saldo Awal Langsung*: Saat pengguna membuat kantong baru (misalnya membuka rekening bank baru atau memasukkan saldo e-wallet yang baru dibuat), pengguna tidak memiliki cara langsung untuk memasukkan saldo awal kantong tersebut dari dialog kantong, melainkan harus berpindah ke formulir transaksi manual.
+- **Key Value**:
+  1. *Bebas Duplikasi*: Nilai kas fisik dan kantong lainnya terisolasi 100%.
+  2. *Pengalaman Onboarding Kantong Mulus*: Pengguna dapat langsung memasukkan saldo yang sudah ada di kantong barunya (misal: Rp 500.000) dan saldo tersebut seketika tampil di kartu kantong.
+  3. *Kepatuhan Pembukuan Berpasangan (Double-Entry)*: Saldo awal dicatat sah secara akuntansi syariah ke akun ekuitas awal (`acc_equity`), menjaga persamaan dasar akuntansi `Aktiva = Pasiva (Kewajiban + Ekuitas)`.
+
+---
+
+### 2. User Experience & Visual Design
+
+#### Key User Flows
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                          Amanah Application                            │
-├───────────────────────────────────┬────────────────────────────────────┤
-│   Modul Emas & Nisab BAZNAS       │  Kalkulator Zakat Bisnis & Saham   │
-│   (GoldNisabTrackerScreen)        │   (BusinessZakatCalculatorScreen)  │
-├───────────────────────────────────┼────────────────────────────────────┤
-│ • Harga Emas Live & Input Manual  │ • Zakat Perniagaan ('Urudh Tijarah)│
-│ • Grafik Tren Harga Emas (Canvas) │   - Kas + Piutang + Stok - Hutang  │
-│ • Tabel Konversi Dinar & Dirham   │ • Zakat Saham Syariah & Reksadana  │
-│ • Indikator Melampaui Nisab       │   - Skrining DES OJK & Cleansing   │
-├───────────────────────────────────┴────────────────────────────────────┤
-│              Audit Kepatuhan Syariah & Pengingat Ibadah                │
-│                   (ShariahComplianceAuditEngine)                       │
-├───────────────────────────────────┬────────────────────────────────────┤
-│ • Audit Mutasi Harian Otomatis    │ • Pengingat Haul Kalender Hijriah  │
-│ • Deteksi Potensi Riba & Israf    │ • Pengingat Sedekah Subuh Harian   │
-├───────────────────────────────────┴────────────────────────────────────┤
-│            Laporan Zakat Tahunan Resmi & Multi-Pocket Kas              │
-│                (AnnualZakatReportPdfGenerator)                         │
-├────────────────────────────────────────────────────────────────────────┤
-│ • Laporan PDF Resmi Standar BAZNAS (Kop Surat, Neraca, Tanda Tangan)   │
-│ • Grafik Spiritual Liquidity Index (SLI) & Tren Kedermawanan          │
-│ • Alokasi Kewajiban Zakat Proporsional per Kantong Kas                 │
-└────────────────────────────────────────────────────────────────────────┘
+[Formulir Tambah / Edit Kantong]
+  ├── Nama Kantong, Lembaga/Bank, Nomor Rekening
+  ├── Pilih Tipe Kantong (Tunai, Bank Syariah, Bank Konven, E-Wallet, Emas, Tabungan Khusus, Lainnya)
+  │     └── Pemetaan otomatis default aman:
+  │           ├── Tunai -> acc_cash
+  │           ├── Bank Syariah / Konven / Tabungan Khusus -> acc_bank (Kelompok Perbankan)
+  │           ├── E-Wallet -> acc_ewallet
+  │           ├── Emas -> acc_gold
+  │           └── Lainnya / Khusus -> acc_other_asset [TERISOLASI]
+  ├── Dropdown "Tautkan Akun Buku Besar (Ledger Account)":
+  │     ├── Menampilkan daftar akun aset yang ada beserta preview saldo
+  │     └── Opsi "+ Buat Akun Aset Baru" (Nama Akun & Kode)
+  ├── [BARU] Input "Saldo Awal / Nominal Saldo Kantong":
+  │     ├── Text field nominal dengan awalan "Rp" dan pemformatan ribuan otomatis
+  │     ├── Quick chips penambah nominal: [+100 rb] [+500 rb] [+1 jt] [+5 jt] [Reset 0]
+  │     └── Keterangan edukatif: "Saldo awal akan dicatat otomatis ke pembukuan modal awal (Ekuitas)"
+  └── Simpan:
+        ├── Menyimpan data entitas kantong
+        └── Jika nominal saldo awal > 0: Menghasilkan jurnal pembukuan saldo awal otomatis
 ```
 
----
-
-## 2. Rincian Teknis & Tahapan Implementasi
-
-### 2.1 Modul Pelacak Emas, Nisab BAZNAS & Konversi Dinar-Dirham
-1. **Model Data Emas & Log Harga**:
-   - `GoldPriceRecord`: Mencatat riwayat harga emas harian (tanggal Masehi/Hijriah, harga per gram, sumber rujukan SK BAZNAS).
-   - Sinkronisasi otomatis ke state global `AmanahLedgerState.goldPricePerGram`.
-2. **Grafik Tren Harga Emas Interaktif (Canvas)**:
-   - Visualisasi kurva fluktuasi harga emas 7 hari / 30 hari terakhir dengan indikator harga tertinggi, terendah, dan rata-rata.
-3. **Tabel Konversi Moneter Syariah Klasik**:
-   - 1 Dinar = 4.25 gram emas 24k (Nisab Zakat Maal = 20 Dinar = 85 gram emas).
-   - 1 Dirham = 2.975 gram perak murni (Nisab Perak = 200 Dirham = 595 gram perak).
-   - Kalkulator timbangan emas fisik (batangan, dinar, perhiasan) ke mata uang rupiah.
-4. **Smart Nisab Status Banner**:
-   - Mengevaluasi saldo riil seluruh kantong kas aktif terhadap ambang batas Rp (85 x harga emas).
-   - Menampilkan status *"Alhamdulillah, Saldo Melewati Nisab"* atau *"Menuju Batas Nisab (X% Tercapai)"*.
-
-### 2.2 Modul Zakat Perniagaan & Portofolio Saham Syariah
-1. **Kalkulator Zakat Perniagaan (*'Urudh At-Tijarah*)**:
-   - Mengikuti kaidah Fiqih DSN-MUI No. 3/2003 & Muktamar Tarjih:
-   - Rumus: `[Uang Kas Lancar Bisnis + Piutang Lancar Tagih + Nilai Pasar Persediaan Barang] - [Hutang Usaha Jatuh Tempo] x 2.5%`.
-   - Mengambil saldo kantong kas bisnis secara otomatis.
-2. **Kalkulator Zakat Saham & Investasi Syariah**:
-   - Mode Trading Aktif: Dihitung dari total nilai pasar portofolio akhir tahun + dividen x 2.5%.
-   - Mode Investasi Jangka Panjang: Dihitung dari dividen bersih yang diterima.
-   - Fitur *Pembersihan Dividen Non-Halal* (*Tathhirul Amwal*): Menghitung persentase pendapatan non-halal emiten untuk disalurkan ke pos Infaq/Kebajikan.
-
-### 2.3 Mesin Audit Kepatuhan Syariah (*Shariah Compliance Audit Engine*)
-1. **Audit Mutasi Transaksi Kas Harian**:
-   - Mendeteksi transaksi dengan kata kunci mencurigakan atau deskripsi yang berpotensi memuat bunga/denda (seperti denda keterlambatan paylater, bunga pinjaman konvensional).
-   - Mendeteksi transaksi pengeluaran konsumtif yang melonjak melebihi alokasi anggaran bulanan (*israf/tabdzir*).
-   - Memberikan lencana peringatan: `Kepatuhan Penuh (Syariah Compliant)`, `Perlu Ditinjau (Syubhat)`, atau `Harus Disucikan (Non-Halal)`.
-2. **Pengingat Siklus Haul & Jadwal Sedekah Subuh**:
-   - Penghitung mundur hari menuju genapnya 1 tahun Hijriah (354 hari) sejak saldo pertama kali mencapai nisab.
-   - Jadwal pengingat harian sedekah subuh berbasis kalender lokal.
-
-### 2.4 Generator Dokumen PDF Laporan Zakat Tahunan BAZNAS & Analisis SLI
-1. **Laporan Hisab Zakat Resmi (PDF)**:
-   - Header resmi berorientasi syariah dengan kop dokumen hisab.
-   - Rincian identitas muzakki, tahun buku Hijriah dan Masehi.
-   - Tabel neraca harta simpanan, emas, kas usaha, piutang, dan pengurang hutang.
-   - Rincian pemisahan porsi zakat per masing-masing kantong kas (*Dompet Utama, Kas Simpanan, Bank Syariah, Kas Bisnis*).
-   - Lembar pernyataan ikhlas berzakat dan kolom tanda tangan penyerahan amil BAZNAS.
-2. **Grafik Analisis Rasio Kedermawanan & Tren Infaq**:
-   - Visualisasi persentase pengeluaran sosial (*Spiritual Liquidity Index*) per bulan.
-   - Metrik komparasi: Pertumbuhan harta kasab vs Pertumbuhan infaq/sedekah.
+#### Visual Identity & UI Components
+- **Input Field Saldo Awal**: OutlinedTextField bernuansa Emerald dengan ikon `AccountBalanceWallet`, format ribuan rapi, dan tombol clear.
+- **Row Chip Nominal Cepat**: Chip responsif dengan elevasi lembut untuk input instan.
+- **Badge Akun Tertaut**: Indikator kode dan nama akun pada setiap kartu kantong di `MultiWalletScreen` agar pengguna langsung memahami ke mana kantong tersebut terhubung.
 
 ---
 
-## 3. Rencana Pengujian & Verifikasi
+### 3. Key Product Decisions & Trade-Offs
 
-1. **Pengujian Unit (`gradle :app:testDebugUnitTest`)**:
-   - Validasi rumus konversi Dinar/Dirham dan ambang nisab emas 85 gram.
-   - Validasi rumus zakat perniagaan dan pemisahan per kantong kas.
-   - Validasi logika audit kepatuhan syariah transaksi.
-2. **Verifikasi Kompilasi (`compile_applet`)**:
-   - Memastikan seluruh modul UI Jetpack Compose, Canvas charting, dan PDF generator lulus kompilasi tanpa error.
-3. **Pengujian Antarmuka Pengguna**:
-   - Memeriksa kelancaran navigasi layar emas & nisab, kalkulator saham/perniagaan, audit mutasi harian, dan ekspor laporan PDF BAZNAS.
+- **Keputusan 1: Penjurnalan Saldo Awal via Ekuitas (`acc_equity`)**
+  - *Pendekatan*: Saldo awal kantong yang diinput dicatat sebagai jurnal `INFLOW` dengan Debit akun aset kantong dan Kredit `acc_equity` ("Modal Awal / Harta Bersih").
+  - *Alasan*: Menjamin neraca tetap seimbang tanpa memicu perhitungan zakat/infaq sebagai kasab aktif baru (karena ini merupakan modal awal, bukan pemasukan gaji berjalan).
+- **Keputusan 2: Penyesuaian Saldo pada Mode Edit Kantong**
+  - *Pendekatan*: Saat mengedit kantong yang sudah memiliki saldo, form menampilkan saldo saat ini dan memungkinkan pengguna memperbaruinya dengan mencatat penyesuaian selisih ke `acc_equity`.
+  - *Alasan*: Memberikan kendali penuh kepada pengguna bila terdapat rekonsiliasi saldo riil tanpa kerumitan teknis.
+- **Keputusan 3: Isolasi Penuh Bawaan `acc_other_asset` (Kode 106)**
+  - *Pendekatan*: Akun bawaan `acc_other_asset` disediakan secara permanen di daftar akun standar dan basis data.
+  - *Alasan*: Mengeliminasi akar masalah duplikasi saldo pada kantong bertipe Lainnya/Khusus.
+
+---
+
+### 4. Technical Architecture & Data Strategy
+
+#### Architecture & Component Diagram
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│                    MultiWalletScreen                          │
+│  ┌───────────────────────┐       ┌─────────────────────────┐  │
+│  │ WalletCard (List)     │       │ WalletFormDialog        │  │
+│  │ - Saldo Terkini       │       │ - Pilih Tipe Kantong    │  │
+│  │ - Badge Akun Tertaut  │       │ - Dropdown Akun Aset    │  │
+│  └───────────┬───────────┘       │ - [BARU] Input Saldo    │  │
+│              │                   │ - + Buat Akun Baru      │  │
+│              │                   └────────────┬────────────┘  │
+└──────────────┼────────────────────────────────┼───────────────┘
+               │                                │
+               ▼                                ▼
+┌───────────────────────────────────────────────────────────────┐
+│                   AmanahLedgerViewModel                       │
+│  - getWalletBalance(walletId): Double                         │
+│  - addWalletWithInitialBalance(wallet, initialBalance)        │
+│  - adjustWalletBalance(walletId, targetBalance)               │
+│  - addNewAssetAccount(name, code, desc)                       │
+│  - migrateLegacyOtherWallets()                                │
+└──────────────────────────────┬────────────────────────────────┘
+                               │
+                               ▼
+┌───────────────────────────────────────────────────────────────┐
+│              Room Database & Persistence                      │
+│  - AccountEntity (Menyimpan acc_other_asset & custom)         │
+│  - WalletAccountEntity (Menyimpan linkedAccountId)            │
+│  - JournalEntryEntity (Mencatat jurnal saldo awal ke equity)  │
+└───────────────────────────────────────────────────────────────┘
+```
+
+#### Detailed Changes Planned
+1. **`AmanahLedgerViewModel.kt`**:
+   - Daftarkan akun standar `Account("acc_other_asset", "106", "Aset & Kantong Khusus Lainnya", AccountCategory.ASSET, ...)` pada `defaultAccounts`.
+   - Tambahkan fungsi `saveWalletWithInitialBalance(wallet: WalletAccount, initialBalance: Double, isEdit: Boolean)`:
+     - Jika kantong baru dan `initialBalance > 0`: tambahkan jurnal `INFLOW` saldo awal debit ke `wallet.linkedAccountId` dan kredit ke `acc_equity`.
+     - Jika edit kantong dan saldo disesuaikan: hitung selisih nominal dan catat jurnal penyesuaian ke `acc_equity`.
+   - Tambahkan fungsi `addNewAssetAccount(name: String, code: String, desc: String): String` untuk membuat akun aset custom bila pengguna memilih opsi membuat akun baru.
+   - Tambahkan migrasi otomatis di startup untuk memeriksa kantong `WalletType.OTHER` lama yang tertaut ke `acc_cash` dan mengarahkannya ke `acc_other_asset`.
+2. **`MultiWalletScreen.kt`**:
+   - Di `WalletFormDialog`, tambahkan field input nominal `initialBalance` dengan parser angka bersih dan chip penambah nominal cepat (+100rb, +500rb, +1jt, +5jt).
+   - Saat tipe kantong diubah, tautkan `WalletType.OTHER` ke `"acc_other_asset"`, bukan `"acc_cash"`.
+   - Tambahkan pemilih akun buku besar tertaut (`ExposedDropdownMenu`) yang menampilkan seluruh akun aset beserta saldo real-time-nya, serta tombol opsi `+ Buat Akun Aset Baru`.
+   - Kirim `initialBalance` ke ViewModel saat tombol Simpan ditekan.
+3. **`AddTransactionScreen.kt`**:
+   - Pastikan akun aset `acc_other_asset` dan akun custom baru dapat dipilih dalam dropdown akun tujuan/sumber dana.
+4. **Verifikasi & Kompilasi**:
+   - Jalankan `compile_applet` dan unit test untuk memverifikasi keakuratan pembukuan, ketiadaan duplikasi nilai harta, dan kelancaran alur pembuatan kantong.

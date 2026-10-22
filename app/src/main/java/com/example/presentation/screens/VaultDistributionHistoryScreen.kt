@@ -589,6 +589,22 @@ fun InfaqDistributionCard(record: InfaqDistributionRecord) {
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
+
+                    if (record.notes.contains("Sedekah Ekstra") || record.programName.contains("Sedekah Ekstra")) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "⭐ Sedekah Ekstra",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
             }
 

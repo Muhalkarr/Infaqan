@@ -88,7 +88,7 @@ object FinancialPdfGenerator {
      * Pengelola halaman PDF interaktif (PdfPageSession) untuk mendukung multi-halaman dinamis.
      * Mencegah pemotongan teks atau konten karena kehabisan ruang vertikal (out of bounds).
      */
-    private class PdfPageSession(
+    class PdfPageSession(
         val document: PdfDocument,
         val documentTitle: String,
         val subtitle: String,

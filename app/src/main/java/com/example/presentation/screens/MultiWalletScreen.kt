@@ -1,6 +1,7 @@
 package com.example.presentation.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,12 +10,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -29,6 +35,7 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -39,6 +46,7 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -47,11 +55,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -62,6 +73,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -78,6 +90,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.core.accounting.Account
+import com.example.core.accounting.AccountCategory
 import com.example.core.receipt.ReceiptAttachment
 import com.example.core.receipt.ReceiptType
 import com.example.core.state.AmanahLedgerViewModel
@@ -154,14 +168,17 @@ fun MultiWalletScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
+            ExtendedFloatingActionButton(
                 onClick = { showAddWalletDialog = true },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
-                modifier = Modifier.testTag("add_wallet_fab")
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Tambah Kantong")
-            }
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Tambah Kantong", fontWeight = FontWeight.Bold) },
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                modifier = Modifier
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .testTag("add_wallet_fab")
+            )
         }
     ) { paddingValues ->
         Column(
@@ -272,9 +289,11 @@ fun MultiWalletScreen(
                 ) {
                     items(state.wallets, key = { it.id }) { wallet ->
                         val balance = state.getWalletBalance(wallet.id)
+                        val linkedAcc = state.getAccount(wallet.linkedAccountId)
                         WalletCardItem(
                             wallet = wallet,
                             balance = balance,
+                            linkedAccount = linkedAcc,
                             isMasked = state.securityConfig.isMaskBalance,
                             onEdit = { editingWallet = wallet },
                             onDelete = { viewModel.deleteWallet(wallet.id) },
@@ -421,29 +440,32 @@ fun MultiWalletScreen(
         }
     }
 
-    // Add / Edit Wallet Dialog
+    // Add / Edit Wallet Modal Bottom Sheet
     if (showAddWalletDialog || editingWallet != null) {
-        WalletFormDialog(
+        val curBal = if (editingWallet != null) state.getWalletBalance(editingWallet!!.id) else 0.0
+        val assetAccounts = state.accounts.filter { it.category == AccountCategory.ASSET }
+        WalletFormBottomSheet(
             initialWallet = editingWallet,
+            initialBalance = curBal,
+            assetAccounts = assetAccounts,
+            onCreateAccount = { name, code ->
+                viewModel.addNewAssetAccount(name, code)
+            },
             onDismiss = {
                 showAddWalletDialog = false
                 editingWallet = null
             },
-            onSave = { wallet ->
-                if (editingWallet != null) {
-                    viewModel.updateWallet(wallet)
-                } else {
-                    viewModel.addWallet(wallet)
-                }
+            onSave = { wallet, targetBalance ->
+                viewModel.saveWalletWithBalance(wallet, targetBalance, isEdit = editingWallet != null)
                 showAddWalletDialog = false
                 editingWallet = null
             }
         )
     }
 
-    // Transfer Modal Dialog
+    // Transfer Modal Bottom Sheet
     if (showTransferDialog) {
-        WalletTransferDialog(
+        WalletTransferBottomSheet(
             wallets = state.wallets,
             getWalletBalance = { state.getWalletBalance(it) },
             isDeficitProtectionEnabled = state.isDeficitProtectionEnabled,
@@ -467,6 +489,7 @@ fun MultiWalletScreen(
 private fun WalletCardItem(
     wallet: WalletAccount,
     balance: Double,
+    linkedAccount: Account? = null,
     isMasked: Boolean,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
@@ -547,6 +570,23 @@ private fun WalletCardItem(
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (linkedAccount != null) {
+                            Surface(
+                                color = walletColor.copy(alpha = 0.12f),
+                                shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Text(
+                                    text = "Akun: [${linkedAccount.code}] ${linkedAccount.name}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = walletColor,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -596,20 +636,51 @@ private fun WalletCardItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WalletFormDialog(
+private fun WalletFormBottomSheet(
     initialWallet: WalletAccount?,
+    initialBalance: Double,
+    assetAccounts: List<Account>,
+    onCreateAccount: (name: String, code: String) -> String,
     onDismiss: () -> Unit,
-    onSave: (WalletAccount) -> Unit
+    onSave: (WalletAccount, Double) -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    val defaultAccountForType: (WalletType) -> String = { type ->
+        when (type) {
+            WalletType.CASH -> "acc_cash"
+            WalletType.E_WALLET -> "acc_ewallet"
+            WalletType.BANK_SYARIAH -> "acc_bank"
+            WalletType.BANK_KONVENSIONAL -> assetAccounts.firstOrNull { it.id == "acc_bank_konven" }?.id ?: "acc_bank"
+            WalletType.SPECIAL_SAVINGS -> assetAccounts.firstOrNull { it.id == "acc_bank_special" }?.id ?: "acc_bank"
+            WalletType.GOLD_ASSET -> "acc_gold"
+            WalletType.OTHER -> assetAccounts.firstOrNull { it.id == "acc_other_asset" }?.id ?: "acc_other_asset"
+        }
+    }
+
     var name by remember { mutableStateOf(initialWallet?.name ?: "") }
     var institutionName by remember { mutableStateOf(initialWallet?.institutionName ?: "") }
     var accountNumber by remember { mutableStateOf(initialWallet?.accountNumber ?: "") }
     var selectedType by remember { mutableStateOf(initialWallet?.type ?: WalletType.CASH) }
-    var linkedAccountId by remember { mutableStateOf(initialWallet?.linkedAccountId ?: "acc_cash") }
+    var linkedAccountId by remember {
+        mutableStateOf(initialWallet?.linkedAccountId ?: defaultAccountForType(selectedType))
+    }
+    var balanceText by remember {
+        mutableStateOf(
+            if (initialWallet != null) {
+                if (initialBalance > 0.0) initialBalance.toLong().toString() else "0"
+            } else ""
+        )
+    }
     var notes by remember { mutableStateOf(initialWallet?.notes ?: "") }
     var isDefault by remember { mutableStateOf(initialWallet?.isDefault ?: false) }
 
     var typeExpanded by remember { mutableStateOf(false) }
+    var accountExpanded by remember { mutableStateOf(false) }
+
+    var showCreateAccountDialog by remember { mutableStateOf(false) }
+    var newAccountName by remember { mutableStateOf("") }
+    var newAccountCode by remember { mutableStateOf("") }
 
     val colorHex = when (selectedType) {
         WalletType.CASH -> 0xFF10B981
@@ -621,15 +692,122 @@ private fun WalletFormDialog(
         WalletType.OTHER -> 0xFF64748B
     }
 
-    AlertDialog(
+    val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
+    val currentNumericBalance = balanceText.toDoubleOrNull() ?: 0.0
+
+    if (showCreateAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showCreateAccountDialog = false },
+            title = { Text("Buat Akun Buku Besar Aset Baru", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Tambahkan akun buku besar mandiri untuk mengisolasi saldo kantong ini secara penuh.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = newAccountName,
+                        onValueChange = { newAccountName = it },
+                        label = { Text("Nama Akun Buku Besar") },
+                        placeholder = { Text("cth: Bank Mandiri Tabungan") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newAccountCode,
+                        onValueChange = { newAccountCode = it },
+                        label = { Text("Kode Akun (Opsional)") },
+                        placeholder = { Text("cth: 102.3 atau kosongkan") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (newAccountName.isNotBlank()) {
+                            val createdId = onCreateAccount(newAccountName.trim(), newAccountCode.trim())
+                            linkedAccountId = createdId
+                            showCreateAccountDialog = false
+                            newAccountName = ""
+                            newAccountCode = ""
+                        }
+                    },
+                    enabled = newAccountName.isNotBlank()
+                ) {
+                    Text("Buat & Tautkan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCreateAccountDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
+    }
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = {
-            Text(if (initialWallet != null) "Edit Kantong Rekening" else "Tambah Kantong Baru", fontWeight = FontWeight.Bold)
-        },
-        text = {
+        sheetState = sheetState,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 16.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(Color(colorHex).copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (initialWallet != null) Icons.Default.Edit else Icons.Default.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = Color(colorHex),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = if (initialWallet != null) "Edit Kantong Rekening" else "Tambah Kantong Baru",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Kelola rekening fisik & isolasi saldo buku besar",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Tutup")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Form Inputs Scrollable Container
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -643,6 +821,7 @@ private fun WalletFormDialog(
                         .testTag("wallet_form_name_input")
                 )
 
+                // 1. Tipe Kantong
                 ExposedDropdownMenuBox(
                     expanded = typeExpanded,
                     onExpandedChange = { typeExpanded = it }
@@ -666,12 +845,7 @@ private fun WalletFormDialog(
                                 text = { Text(type.displayName) },
                                 onClick = {
                                     selectedType = type
-                                    linkedAccountId = when (type) {
-                                        WalletType.CASH, WalletType.E_WALLET -> "acc_cash"
-                                        WalletType.BANK_SYARIAH, WalletType.BANK_KONVENSIONAL, WalletType.SPECIAL_SAVINGS -> "acc_bank"
-                                        WalletType.GOLD_ASSET -> "acc_gold"
-                                        WalletType.OTHER -> "acc_cash"
-                                    }
+                                    linkedAccountId = defaultAccountForType(type)
                                     typeExpanded = false
                                 }
                             )
@@ -679,6 +853,168 @@ private fun WalletFormDialog(
                     }
                 }
 
+                // 2. Akun Buku Besar Tertaut (Ledger Account)
+                val curLinkedAcc = assetAccounts.firstOrNull { it.id == linkedAccountId }
+                ExposedDropdownMenuBox(
+                    expanded = accountExpanded,
+                    onExpandedChange = { accountExpanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = if (curLinkedAcc != null) "[${curLinkedAcc.code}] ${curLinkedAcc.name}" else linkedAccountId,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Akun Buku Besar Tertaut (Ledger)") },
+                        supportingText = {
+                            Text(
+                                text = "Akun aset buku besar berpasangan untuk isolasi saldo riil",
+                                fontSize = 11.sp
+                            )
+                        },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accountExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = accountExpanded,
+                        onDismissRequest = { accountExpanded = false }
+                    ) {
+                        assetAccounts.forEach { acc ->
+                            val isSelected = acc.id == linkedAccountId
+                            DropdownMenuItem(
+                                text = {
+                                    Column {
+                                        Text(
+                                            text = "[${acc.code}] ${acc.name}",
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (acc.description.isNotBlank()) {
+                                            Text(
+                                                text = acc.description,
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    linkedAccountId = acc.id
+                                    accountExpanded = false
+                                }
+                            )
+                        }
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.AddCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "+ Buat Akun Buku Besar Baru",
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            },
+                            onClick = {
+                                accountExpanded = false
+                                showCreateAccountDialog = true
+                            }
+                        )
+                    }
+                }
+
+                // 3. Menentukan / Mengedit Nominal Saldo Kantong
+                Column {
+                    OutlinedTextField(
+                        value = balanceText,
+                        onValueChange = { input ->
+                            balanceText = input.filter { it.isDigit() }
+                        },
+                        label = {
+                            Text(if (initialWallet != null) "Nominal Saldo Kantong (Rp)" else "Saldo Awal Kantong (Rp)")
+                        },
+                        placeholder = { Text("0") },
+                        prefix = { Text("Rp ", fontWeight = FontWeight.Bold) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        supportingText = {
+                            if (currentNumericBalance > 0.0) {
+                                Text(
+                                    text = "Terbaca: Rp ${nf.format(currentNumericBalance)} (Dicatat seimbang ke Modal Awal/Ekuitas)",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Text(
+                                    text = "Isi nominal saldo bila kantong ini sudah memiliki dana saat didaftarkan",
+                                    fontSize = 11.sp
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                    // Quick Chips Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        val quickAmounts = listOf(
+                            100_000L to "+100rb",
+                            500_000L to "+500rb",
+                            1_000_000L to "+1jt",
+                            5_000_000L to "+5jt"
+                        )
+                        quickAmounts.forEach { (amt, label) ->
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        val cur = balanceText.toLongOrNull() ?: 0L
+                                        balanceText = (cur + amt).toString()
+                                    },
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Text(
+                                    text = label,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(vertical = 6.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { balanceText = "0" },
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            Text(
+                                text = "Reset",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(vertical = 6.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                // 4. Institusi / Bank
                 OutlinedTextField(
                     value = institutionName,
                     onValueChange = { institutionName = it },
@@ -687,6 +1023,7 @@ private fun WalletFormDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // 5. Nomor Rekening
                 OutlinedTextField(
                     value = accountNumber,
                     onValueChange = { accountNumber = it },
@@ -695,6 +1032,7 @@ private fun WalletFormDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // 6. Catatan
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
@@ -703,93 +1041,170 @@ private fun WalletFormDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-        },
-        confirmButton = {
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Primary Bottom Action Buttons
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
                         val wallet = WalletAccount(
                             id = initialWallet?.id ?: "w_${UUID.randomUUID().toString().take(8)}",
-                            name = name,
+                            name = name.trim(),
                             type = selectedType,
-                            institutionName = if (institutionName.isNotBlank()) institutionName else selectedType.displayName,
-                            accountNumber = accountNumber,
+                            institutionName = if (institutionName.isNotBlank()) institutionName.trim() else selectedType.displayName,
+                            accountNumber = accountNumber.trim(),
                             linkedAccountId = linkedAccountId,
                             colorHex = colorHex,
                             isDefault = isDefault,
-                            notes = notes
+                            notes = notes.trim()
                         )
-                        onSave(wallet)
+                        val targetBal = balanceText.toDoubleOrNull() ?: 0.0
+                        onSave(wallet, targetBal)
                     }
                 },
                 enabled = name.isNotBlank(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("save_wallet_button"),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Simpan")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal")
+                Text(
+                    text = if (initialWallet != null) "Simpan Perubahan" else "Simpan Kantong",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
             }
         }
-    )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WalletTransferDialog(
+private fun WalletTransferBottomSheet(
     wallets: List<WalletAccount>,
     getWalletBalance: (String) -> Double,
     isDeficitProtectionEnabled: Boolean,
     onDismiss: () -> Unit,
     onTransfer: (fromId: String, toId: String, amount: Double, adminFee: Double, note: String, receipt: ReceiptAttachment?) -> Unit
 ) {
-    if (wallets.size < 2) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text("Kantong Tidak Mencukupi") },
-            text = { Text("Anda membutuhkan minimal 2 kantong rekening untuk melakukan transfer/mutasi saldo.") },
-            confirmButton = { Button(onClick = onDismiss) { Text("Mengerti") } }
-        )
-        return
-    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    var fromWalletId by remember { mutableStateOf(wallets[0].id) }
-    var toWalletId by remember { mutableStateOf(wallets.getOrNull(1)?.id ?: wallets[0].id) }
-    var amountText by remember { mutableStateOf("") }
-    var adminFeeText by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-
-    var fromExpanded by remember { mutableStateOf(false) }
-    var toExpanded by remember { mutableStateOf(false) }
-
-    // Receipt Attachment fields
-    var attachReceipt by remember { mutableStateOf(false) }
-    var receiptRefNumber by remember { mutableStateOf("") }
-
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Mutasi Antar-Kantong", fontWeight = FontWeight.Bold)
-            }
-        },
-        text = {
+        sheetState = sheetState,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        if (wallets.size < 2) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountBalanceWallet,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("Kantong Tidak Mencukupi", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "Anda membutuhkan minimal 2 kantong rekening untuk melakukan transfer/mutasi saldo antar-kantong.",
+                    fontSize = 13.sp,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Mengerti")
+                }
+            }
+            return@ModalBottomSheet
+        }
+
+        var fromWalletId by remember { mutableStateOf(wallets[0].id) }
+        var toWalletId by remember { mutableStateOf(wallets.getOrNull(1)?.id ?: wallets[0].id) }
+        var amountText by remember { mutableStateOf("") }
+        var adminFeeText by remember { mutableStateOf("") }
+        var note by remember { mutableStateOf("") }
+
+        var fromExpanded by remember { mutableStateOf(false) }
+        var toExpanded by remember { mutableStateOf(false) }
+
+        // Receipt Attachment fields
+        var attachReceipt by remember { mutableStateOf(false) }
+        var receiptRefNumber by remember { mutableStateOf("") }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .imePadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 16.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SwapHoriz,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "Mutasi Antar-Kantong",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Pindahkan saldo fisik tanpa membebani pos belanja riil",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Tutup")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Form Content Scrollable
+            Column(
+                modifier = Modifier
+                    .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    text = "Mutasi saldo memindahkan dana antar rekening fisik tanpa dianggap sebagai pengeluaran konsumsi.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
                 // From Wallet Selector
                 ExposedDropdownMenuBox(
                     expanded = fromExpanded,
@@ -969,8 +1384,9 @@ private fun WalletTransferDialog(
                     )
                 }
             }
-        },
-        confirmButton = {
+
+            Spacer(modifier = Modifier.height(14.dp))
+
             val amount = amountText.toDoubleOrNull() ?: 0.0
             val adminFee = adminFeeText.toDoubleOrNull() ?: 0.0
             val totalDeduction = amount + adminFee
@@ -995,15 +1411,19 @@ private fun WalletTransferDialog(
                     }
                 },
                 enabled = isValid,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag("execute_transfer_button"),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
             ) {
-                Text("Eksekusi Mutasi")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal")
+                Text(
+                    text = "Eksekusi Mutasi Saldo",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp
+                )
             }
         }
-    )
+    }
 }

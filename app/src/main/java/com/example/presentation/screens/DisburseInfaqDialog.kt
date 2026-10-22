@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -187,6 +188,185 @@ fun DisburseInfaqDialog(
                     modifier = Modifier.fillMaxWidth().testTag("disburse_amount_input")
                 )
 
+                // Fitur Pembulatan (Round-up) & Sedekah Ekstra Fleksibel
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "Pembulatan (Round-up) & Sedekah Ekstra",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Quick additions (+100 hingga +10.000)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val additions = listOf(100L, 500L, 1000L, 5000L, 10000L)
+                        items(additions) { addVal ->
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 36.dp)
+                                    .clickable {
+                                        val cur = amountText.toDoubleOrNull() ?: (if (vaultBalance > 0) vaultBalance else 0.0)
+                                        val updated = (cur + addVal).toLong()
+                                        amountText = updated.toString()
+                                        errorMessage = null
+                                    }
+                            ) {
+                                Text(
+                                    text = "+Rp ${formatRupiah(addVal.toDouble())}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Round-up to nearest (1.000, 5.000, 10.000)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val roundSteps = listOf(1000L to "Ke 1.000", 5000L to "Ke 5.000", 10000L to "Ke 10.000")
+                        items(roundSteps) { (step, label) ->
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
+                                modifier = Modifier
+                                    .defaultMinSize(minHeight = 36.dp)
+                                    .clickable {
+                                        val cur = amountText.toDoubleOrNull() ?: (if (vaultBalance > 0) vaultBalance else 0.0)
+                                        val nextMultiple = if (cur <= 0.0) step.toDouble() else {
+                                            val rem = cur % step
+                                            if (rem == 0.0) cur + step else cur + (step - rem)
+                                        }
+                                        amountText = nextMultiple.toLong().toString()
+                                        errorMessage = null
+                                    }
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.VolunteerActivism,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Bulatkan $label",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Kalkulasi Pemisahan Saldo Vault vs Sedekah Ekstra Dinamis
+                val enteredAmt = amountText.toDoubleOrNull() ?: 0.0
+                val vaultPortion = minOf(enteredAmt, maxOf(0.0, vaultBalance))
+                val extraSedekah = maxOf(0.0, enteredAmt - vaultPortion)
+
+                if (extraSedekah > 0.0) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f)),
+                        modifier = Modifier.fillMaxWidth().testTag("extra_sedekah_banner")
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.VolunteerActivism,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Penyaluran Melebihi Saldo Vault",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "Sedekah Ekstra",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Kewajiban Vault Terlunasi:",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Rp ${formatRupiah(vaultPortion)}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Sedekah Ekstra (Tabarru' Sukarela):",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = "+Rp ${formatRupiah(extraSedekah)}",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Kelebihan Rp ${formatRupiah(extraSedekah)} otomatis dibukukan sebagai Sedekah Ekstra Sukarela pada buku besar & riwayat penyaluran.",
+                                fontSize = 9.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
                 // 2. Recipient Name Field
                 OutlinedTextField(
                     value = recipientName,
@@ -317,7 +497,8 @@ fun DisburseInfaqDialog(
                     ) {
                         val sources = listOf(
                             "acc_bank" to ("Bank Syariah" to Icons.Default.AccountBalance),
-                            "acc_cash" to ("Kas Tunai" to Icons.Default.AccountBalanceWallet)
+                            "acc_cash" to ("Kas Tunai" to Icons.Default.AccountBalanceWallet),
+                            "acc_ewallet" to ("Dompet Digital" to Icons.Default.QrCode)
                         )
                         sources.forEach { (accId, pair) ->
                             val isSelected = selectedSourceAccount == accId
@@ -394,8 +575,6 @@ fun DisburseInfaqDialog(
 
                     if (roundedAmt <= 0.0) {
                         errorMessage = "Masukkan nominal penyaluran yang valid"
-                    } else if (roundedAmt > vaultBalance) {
-                        errorMessage = "Nominal melebihi saldo vault amanah (${formatRupiah(vaultBalance)})"
                     } else if (walletBal != null && roundedAmt > walletBal) {
                         errorMessage = "Saldo dompet '${selectedWallet?.name}' tidak mencukupi (Tersedia: Rp ${formatRupiah(walletBal)})"
                     } else if (recipientName.isBlank()) {

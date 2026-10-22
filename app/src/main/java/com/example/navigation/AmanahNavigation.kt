@@ -1,5 +1,7 @@
 package com.example.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -108,10 +110,30 @@ fun AmanahNavHost(
         navController = navController,
         startDestination = AmanahRoutes.DASHBOARD,
         modifier = modifier.fillMaxSize(),
-        enterTransition = { fadeIn(animationSpec = tween(220)) },
-        exitTransition = { fadeOut(animationSpec = tween(180)) },
-        popEnterTransition = { fadeIn(animationSpec = tween(220)) },
-        popExitTransition = { fadeOut(animationSpec = tween(180)) }
+        enterTransition = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = tween(280, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(280))
+        },
+        exitTransition = {
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.Start,
+                animationSpec = tween(280, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(200))
+        },
+        popEnterTransition = {
+            slideIntoContainer(
+                AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = tween(280, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(280))
+        },
+        popExitTransition = {
+            slideOutOfContainer(
+                AnimatedContentTransitionScope.SlideDirection.End,
+                animationSpec = tween(280, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(200))
+        }
     ) {
         // 1. Dashboard (Main Hub)
         composable(AmanahRoutes.DASHBOARD) {

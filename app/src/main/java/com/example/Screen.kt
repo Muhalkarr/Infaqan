@@ -25,7 +25,10 @@ enum class Screen(val title: String) {
     ISLAMIC_GROUNDING("Fatwa & Fiqih Muamalah"),
     SHARIAH_RULES_CUSTOMIZATION("Kustomisasi Logika Syariah"),
     RECEIPT_ARCHIVE("Arsip Bukti Struk"),
-    DEBUG_TERMINAL("Terminal Log & Diagnostik");
+    DEBUG_TERMINAL("Terminal Log & Diagnostik"),
+    GOLD_NISAB_TRACKER("Pelacak Emas & Nisab BAZNAS"),
+    BUSINESS_ZAKAT("Zakat Bisnis & Saham Syariah"),
+    SHARIAH_AUDIT("Audit Kepatuhan Syariah");
 
     fun toRoute(): String = when (this) {
         DASHBOARD -> com.example.navigation.AmanahRoutes.DASHBOARD
@@ -53,6 +56,9 @@ enum class Screen(val title: String) {
         SHARIAH_RULES_CUSTOMIZATION -> com.example.navigation.AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION
         RECEIPT_ARCHIVE -> com.example.navigation.AmanahRoutes.RECEIPT_ARCHIVE
         DEBUG_TERMINAL -> com.example.navigation.AmanahRoutes.DEBUG_TERMINAL
+        GOLD_NISAB_TRACKER -> com.example.navigation.AmanahRoutes.GOLD_NISAB_TRACKER
+        BUSINESS_ZAKAT -> com.example.navigation.AmanahRoutes.BUSINESS_ZAKAT
+        SHARIAH_AUDIT -> com.example.navigation.AmanahRoutes.SHARIAH_AUDIT
     }
 
     companion object {
@@ -82,6 +88,9 @@ enum class Screen(val title: String) {
             com.example.navigation.AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION -> SHARIAH_RULES_CUSTOMIZATION
             com.example.navigation.AmanahRoutes.RECEIPT_ARCHIVE -> RECEIPT_ARCHIVE
             com.example.navigation.AmanahRoutes.DEBUG_TERMINAL -> DEBUG_TERMINAL
+            com.example.navigation.AmanahRoutes.GOLD_NISAB_TRACKER -> GOLD_NISAB_TRACKER
+            com.example.navigation.AmanahRoutes.BUSINESS_ZAKAT -> BUSINESS_ZAKAT
+            com.example.navigation.AmanahRoutes.SHARIAH_AUDIT -> SHARIAH_AUDIT
             else -> DASHBOARD
         }
     }

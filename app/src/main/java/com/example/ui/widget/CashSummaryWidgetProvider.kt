@@ -56,14 +56,14 @@ class CashSummaryWidgetProvider : AppWidgetProvider() {
                 val db = AmanahDatabase.getDatabase(context)
                 val entries = db.journalDao().getAllEntries()
                 var totalBalance = 0.0
-                val assetPrefixes = setOf("acc_cash", "acc_bank", "acc_ewallet", "acc_gold", "acc_savings")
+                val assetPrefixes = setOf("acc_cash", "acc_bank", "acc_ewallet", "acc_gold", "acc_savings", "acc_other_asset", "acc_bank_konven", "acc_bank_special")
                 for (entry in entries) {
                     try {
                         val arr = org.json.JSONArray(entry.linesJson)
                         for (i in 0 until arr.length()) {
                             val obj = arr.getJSONObject(i)
                             val accId = obj.optString("accountId")
-                            if (assetPrefixes.contains(accId) || accId.startsWith("acc_wallet_")) {
+                            if (assetPrefixes.contains(accId) || accId.startsWith("acc_wallet_") || accId.startsWith("acc_custom_")) {
                                 val debit = obj.optDouble("debit", 0.0)
                                 val credit = obj.optDouble("credit", 0.0)
                                 totalBalance += (debit - credit)

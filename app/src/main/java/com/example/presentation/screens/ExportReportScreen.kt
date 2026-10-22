@@ -33,12 +33,14 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VolunteerActivism
 import com.example.core.qardh.QardhType
 import com.example.core.qardh.QardhStatus
 import com.example.core.report.DocumentExporter
 import com.example.core.report.FinancialPdfGenerator
+import com.example.core.report.AnnualBaznasZakatPdfGenerator
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -51,6 +53,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -91,6 +94,7 @@ fun ExportReportScreen(
 
     var isGeneratingLedgerPdf by remember { mutableStateOf(false) }
     var isGeneratingZakatPdf by remember { mutableStateOf(false) }
+    var isGeneratingBaznasZakatPdf by remember { mutableStateOf(false) }
     var isGeneratingMonthlyPdf by remember { mutableStateOf(false) }
     var isGeneratingComprehensivePdf by remember { mutableStateOf(false) }
     var isGeneratingComprehensiveCsv by remember { mutableStateOf(false) }
@@ -541,6 +545,129 @@ fun ExportReportScreen(
                                 shape = RoundedCornerShape(10.dp)
                             ) {
                                 if (isGeneratingZakatPdf) {
+                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
+                                } else {
+                                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Bagikan PDF")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3b. Official BAZNAS Zakat Maal & Multi-Wallet PDF Export Card
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.VerifiedUser,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "Lembar Penetapan Zakat BAZNAS",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            "Format Resmi",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    "Hisab Tahunan, Multi-Kantong & Lembar Amil",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            "Dokumen resmi hisab tahunan standar BAZNAS lengkap dengan pemisahan beban zakat per kantong kas, status haul, dan kolom tanda tangan muzakki & amil.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    try {
+                                        val file = AnnualBaznasZakatPdfGenerator.generateAnnualBaznasZakatReportPdf(
+                                            context = context,
+                                            state = uiState,
+                                            muzakkiName = uiState.userNameKasMukmin
+                                        )
+                                        FinancialPdfGenerator.viewPdfReport(context, file)
+                                        AppDebugLogger.logUserAction("Ekspor PDF", "Membuka pratinjau Lembar Penetapan Zakat BAZNAS")
+                                    } catch (e: Exception) {
+                                        AppDebugLogger.logHandledError("Ekspor PDF", "Gagal membuka PDF Zakat BAZNAS: ${e.message}", e)
+                                        Toast.makeText(context, "Gagal membuka PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                modifier = Modifier.weight(1f).testTag("preview_baznas_pdf_btn"),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Buka PDF")
+                            }
+
+                            Button(
+                                onClick = {
+                                    isGeneratingBaznasZakatPdf = true
+                                    try {
+                                        val file = AnnualBaznasZakatPdfGenerator.generateAnnualBaznasZakatReportPdf(
+                                            context = context,
+                                            state = uiState,
+                                            muzakkiName = uiState.userNameKasMukmin
+                                        )
+                                        FinancialPdfGenerator.sharePdfReport(context, file)
+                                        AppDebugLogger.logUserAction("Ekspor PDF", "Membagikan PDF Lembar Penetapan Zakat BAZNAS")
+                                    } catch (e: Exception) {
+                                        AppDebugLogger.logHandledError("Ekspor PDF", "Gagal mengekspor PDF BAZNAS: ${e.message}", e)
+                                        Toast.makeText(context, "Gagal mengekspor PDF: ${e.message}", Toast.LENGTH_LONG).show()
+                                    } finally {
+                                        isGeneratingBaznasZakatPdf = false
+                                    }
+                                },
+                                modifier = Modifier.weight(1.2f).testTag("export_baznas_pdf_btn"),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                if (isGeneratingBaznasZakatPdf) {
                                     CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
                                 } else {
                                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))

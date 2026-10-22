@@ -52,10 +52,23 @@ class FirestoreSyncEngine(
     private val firestore: FirebaseFirestore? by lazy {
         try {
             com.example.core.auth.FirebaseSafeInitializer.init(context)
-            FirebaseFirestore.getInstance()
+            val dbId = try {
+                context.getString(com.example.R.string.firestore_database_id)
+            } catch (_: Exception) {
+                ""
+            }
+            if (dbId.isNotBlank()) {
+                FirebaseFirestore.getInstance(com.google.firebase.FirebaseApp.getInstance(), dbId)
+            } else {
+                FirebaseFirestore.getInstance()
+            }
         } catch (e: Throwable) {
             Log.w(TAG, "Firestore initialization fallback: ${e.message}")
-            null
+            try {
+                FirebaseFirestore.getInstance()
+            } catch (_: Throwable) {
+                null
+            }
         }
     }
 

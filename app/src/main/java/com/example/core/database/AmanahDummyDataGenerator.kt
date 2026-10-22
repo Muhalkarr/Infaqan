@@ -73,7 +73,7 @@ object AmanahDummyDataGenerator {
             type = WalletType.SPECIAL_SAVINGS,
             institutionName = "BSI Haji Indonesia",
             accountNumber = "7988-1122-33",
-            linkedAccountId = "acc_bank",
+            linkedAccountId = "acc_bank_special",
             colorHex = 0xFF3B82F6, // Blue
             isDefault = false,
             notes = "Dana khusus persiapan ibadah ke Baitullah"
@@ -84,7 +84,7 @@ object AmanahDummyDataGenerator {
             type = WalletType.E_WALLET,
             institutionName = "LinkAja Syariah",
             accountNumber = "0812-8877-6655",
-            linkedAccountId = "acc_bank",
+            linkedAccountId = "acc_ewallet",
             colorHex = 0xFFEC4899, // Pink
             isDefault = false,
             notes = "QRIS syariah untuk sedekah subuh dan transaksi cepat"
@@ -477,8 +477,10 @@ object AmanahDummyDataGenerator {
                 desc = "Saldo Pembukuan Kas Awal & Simpanan Emas Mukmin",
                 type = "INFLOW",
                 lines = listOf(
-                    JournalLine("acc_bank", 82500000.0, 0.0),
+                    JournalLine("acc_bank", 56500000.0, 0.0),
+                    JournalLine("acc_bank_special", 25000000.0, 0.0),
                     JournalLine("acc_cash", 2500000.0, 0.0),
+                    JournalLine("acc_ewallet", 1000000.0, 0.0),
                     JournalLine("acc_gold", 33750000.0, 0.0),
                     JournalLine("acc_equity", 0.0, 118750000.0)
                 )

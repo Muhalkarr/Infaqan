@@ -226,7 +226,16 @@ fun AmanahMainApp(
         )
     )
 
-    val showBottomBar = true
+    val topLevelRoutes = remember {
+        setOf(
+            AmanahRoutes.DASHBOARD,
+            AmanahRoutes.LEDGER,
+            AmanahRoutes.INFAQ_VAULT,
+            AmanahRoutes.MULTI_WALLET,
+            AmanahRoutes.CENTRAL_SETTINGS
+        )
+    }
+    val showBottomBar = currentRoute in topLevelRoutes
 
     ModalNavigationDrawer(
         drawerState = drawerState,

@@ -1,6 +1,6 @@
 {
-  "summary":  "Rencana implementasi komprehensif untuk pengembangan lanjutan ekosistem keuangan syariah Amanah Ledger:\n1. Integrasi harga emas real-time BAZNAS, grafik tren historis, tabel konversi Dinar-Dirham, dan peringatan nisab otomatis.\n2. Modul hisab Zakat Perniagaan (urudh at-tijarah) & Portofolio Saham Syariah (skrining rasio utang & pendapatan non-halal).\n3. Audit kepatuhan syariah harian (deteksi syubhat, denda, & israf) dan pengingat siklus haul Hijriah serta sedekah subuh.\n4. Laporan hisab zakat tahunan format PDF resmi standar BAZNAS, grafik rasio kedermawanan, dan pemisahan zakat per kantong kas.",
-  "updatedAt":  "2026-10-01T10:04:14.432931127Z",
-  "requestFeedback":  true,
-  "userFacing":  true
+  "summary": "Rencana revisi komprehensif peninjauan multi-kantong rekening: mengeliminasi duplikasi nilai harta antara kantong Lainnya/Khusus dengan Uang Tunai, mendukung pengelompokan akun perbankan, memungkinkan pemilihan dan pembuatan akun buku besar tertaut mandiri, serta menambahkan fitur penentuan dan pengeditan nominal saldo awal kantong dengan penjurnalan otomatis seimbang ke modal/ekuitas awal.",
+  "updatedAt": "2026-10-13T21:29:38.486528060Z",
+  "requestFeedback": true,
+  "userFacing": true
 }

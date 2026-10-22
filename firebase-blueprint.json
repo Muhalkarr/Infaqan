@@ -1,0 +1,258 @@
+{
+  "entities": {
+    "AmanahUser": {
+      "title": "AmanahUser",
+      "description": "User profile metadata, Sedekah Subuh streaks, and aggregate statistics",
+      "type": "object",
+      "properties": {
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp in milliseconds when user stats were last synced"
+        },
+        "sedekahStreak": {
+          "type": "number",
+          "description": "Current active consecutive daily Sedekah Subuh streak"
+        },
+        "sedekahLongest": {
+          "type": "number",
+          "description": "Longest consecutive daily Sedekah Subuh streak achieved"
+        },
+        "sedekahTotal": {
+          "type": "number",
+          "description": "Total cumulative amount donated in Sedekah Subuh"
+        },
+        "sedekahDays": {
+          "type": "number",
+          "description": "Total number of distinct days Sedekah Subuh was fulfilled"
+        }
+      },
+      "required": ["updatedAt"]
+    },
+    "WalletAccount": {
+      "title": "WalletAccount",
+      "description": "Financial wallet or bank account in Sharia double-entry ledger",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of wallet"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of wallet (e.g. Dompet Tunai, Bank Syariah)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of wallet account (CASH, BANK_SYARIAH, E_WALLET, GOLD_EMAS, INVESTMENT_DEPOSITO)"
+        },
+        "institutionName": {
+          "type": "string",
+          "description": "Name of Islamic bank or financial institution"
+        },
+        "accountNumber": {
+          "type": "string",
+          "description": "Account number or identifier"
+        },
+        "linkedAccountId": {
+          "type": "string",
+          "description": "Linked chart of account ID"
+        },
+        "colorHex": {
+          "type": "number",
+          "description": "Visual color representation in ARGB hex"
+        },
+        "isDefault": {
+          "type": "boolean",
+          "description": "Whether this is the default operational wallet"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes about this wallet"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp in milliseconds when record was updated"
+        }
+      },
+      "required": ["id", "name", "type", "updatedAt"]
+    },
+    "JournalEntry": {
+      "title": "JournalEntry",
+      "description": "Double-entry Sharia ledger transaction entry with Hijri date metadata",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique transaction ID"
+        },
+        "dateMillis": {
+          "type": "number",
+          "description": "Transaction Gregorian timestamp in milliseconds"
+        },
+        "hijriYear": {
+          "type": "number",
+          "description": "Hijri calendar year"
+        },
+        "hijriMonth": {
+          "type": "number",
+          "description": "Hijri calendar month (1-12)"
+        },
+        "hijriDay": {
+          "type": "number",
+          "description": "Hijri calendar day (1-30)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Transaction description or narasi"
+        },
+        "transactionType": {
+          "type": "string",
+          "description": "Transaction category (INCOME, EXPENSE, TRANSFER, INFAQ_SEDEKAH, ZAKAT, QARDH)"
+        },
+        "linesJson": {
+          "type": "string",
+          "description": "JSON serialized debit/credit journal posting lines"
+        },
+        "receiptJson": {
+          "type": "string",
+          "description": "JSON metadata for receipt proof attachment"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp in milliseconds when entry was updated"
+        }
+      },
+      "required": ["id", "dateMillis", "hijriYear", "hijriMonth", "hijriDay", "description", "transactionType", "linesJson", "updatedAt"]
+    },
+    "IbadahGoal": {
+      "title": "IbadahGoal",
+      "description": "Target Islamic spiritual financial accumulation goal",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique goal ID"
+        },
+        "type": {
+          "type": "string",
+          "description": "Goal type (QURBAN_KAMBING, QURBAN_SAPI, UMRAH_MANDIRI, HAJI_REGULER, WAKAF_PRODUKTIF, AQIQAH, DANA_DARURAT_SYARIAH)"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the ibadah target"
+        },
+        "targetAmount": {
+          "type": "number",
+          "description": "Target funding requirement in IDR"
+        },
+        "currentAccumulated": {
+          "type": "number",
+          "description": "Current funds accumulated in IDR"
+        },
+        "targetHijri": {
+          "type": "string",
+          "description": "Target date in Hijri calendar representation"
+        },
+        "monthsRemaining": {
+          "type": "number",
+          "description": "Estimated months remaining until target deadline"
+        },
+        "linkedWalletId": {
+          "type": "string",
+          "description": "Wallet where goal funds are allocated"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Spiritual notes or intentions (niyyah)"
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Whether goal target has been achieved"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp in milliseconds when goal was updated"
+        }
+      },
+      "required": ["id", "type", "title", "targetAmount", "currentAccumulated", "updatedAt"]
+    },
+    "QardhRecord": {
+      "title": "QardhRecord",
+      "description": "Benevolent interest-free Islamic debt/loan (Qardh Hasan)",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique qardh record ID"
+        },
+        "type": {
+          "type": "string",
+          "description": "Loan type (PAYABLE_HUTANG, RECEIVABLE_PIUTANG)"
+        },
+        "counterpartyName": {
+          "type": "string",
+          "description": "Name of the borrower or lender"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total principal amount of the loan"
+        },
+        "remainingAmount": {
+          "type": "number",
+          "description": "Remaining outstanding balance to be settled"
+        },
+        "agreementDateMillis": {
+          "type": "number",
+          "description": "Timestamp when loan agreement was made"
+        },
+        "dueDateMillis": {
+          "type": "number",
+          "description": "Timestamp when loan is expected to be repaid"
+        },
+        "witnessName": {
+          "type": "string",
+          "description": "Names of witnesses (Saksi akad syariah)"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Terms or conditions of the benevolent loan"
+        },
+        "status": {
+          "type": "string",
+          "description": "Loan status (ACTIVE, FULLY_PAID, FORGIVEN_INFAQ)"
+        },
+        "installmentsJson": {
+          "type": "string",
+          "description": "JSON history of repayment installments"
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp in milliseconds when record was updated"
+        }
+      },
+      "required": ["id", "type", "counterpartyName", "totalAmount", "remainingAmount", "agreementDateMillis", "status", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/amanah_users/{userId}": {
+      "schema": "AmanahUser",
+      "description": "User profile metadata, Sedekah Subuh streaks, and statistics"
+    },
+    "/amanah_users/{userId}/wallets/{walletId}": {
+      "schema": "WalletAccount",
+      "description": "User wallets and bank accounts in Sharia double-entry ledger"
+    },
+    "/amanah_users/{userId}/journal_entries/{entryId}": {
+      "schema": "JournalEntry",
+      "description": "Sharia accounting double-entry journal transactions"
+    },
+    "/amanah_users/{userId}/ibadah_goals/{goalId}": {
+      "schema": "IbadahGoal",
+      "description": "Islamic financial worship goals like Qurban, Umrah, and Hajj"
+    },
+    "/amanah_users/{userId}/qardh_records/{recordId}": {
+      "schema": "QardhRecord",
+      "description": "Benevolent interest-free loans tracking (Qardh Hasan)"
+    }
+  }
+}

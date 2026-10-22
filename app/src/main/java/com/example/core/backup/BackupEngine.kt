@@ -393,7 +393,14 @@ object BackupEngine {
                     val w = wallets.optJSONObject(i) ?: continue
                     if (!w.has("linkedAccountId")) {
                         val type = w.optString("type", "CASH")
-                        w.put("linkedAccountId", if (type.contains("BANK")) "acc_bank" else "acc_cash")
+                        val defaultAccount = when {
+                            type.contains("BANK") -> "acc_bank"
+                            type.contains("E_WALLET") -> "acc_ewallet"
+                            type.contains("GOLD") -> "acc_gold"
+                            type.contains("OTHER") -> "acc_other_asset"
+                            else -> "acc_cash"
+                        }
+                        w.put("linkedAccountId", defaultAccount)
                     }
                 }
             }
