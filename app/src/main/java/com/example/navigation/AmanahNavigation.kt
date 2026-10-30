@@ -23,6 +23,7 @@ import com.example.presentation.screens.BudgetAllocationScreen
 import com.example.presentation.screens.CentralSettingsScreen
 import com.example.presentation.screens.DashboardScreen
 import com.example.presentation.screens.DebugTerminalScreen
+import com.example.presentation.screens.DualCalendarScreen
 import com.example.presentation.screens.ExportReportScreen
 import com.example.presentation.screens.FaraidhScreen
 import com.example.presentation.screens.HaulNisabScreen
@@ -77,6 +78,7 @@ object AmanahRoutes {
     const val GOLD_NISAB_TRACKER = "gold_nisab_tracker"
     const val BUSINESS_ZAKAT = "business_zakat"
     const val SHARIAH_AUDIT = "shariah_audit"
+    const val DUAL_CALENDAR = "dual_calendar"
 }
 
 @Composable
@@ -143,6 +145,21 @@ fun AmanahNavHost(
                 onNavigateToAddTransaction = {
                     viewModel.deactivateGuideMode()
                     navController.navigate(AmanahRoutes.ADD_TRANSACTION)
+                },
+                onNavigateToAddExpense = {
+                    viewModel.deactivateGuideMode()
+                    viewModel.clearTransactionDraft()
+                    navController.navigate("${AmanahRoutes.ADD_TRANSACTION}?type=EXPENSE")
+                },
+                onNavigateToAddIncome = {
+                    viewModel.deactivateGuideMode()
+                    viewModel.clearTransactionDraft()
+                    navController.navigate("${AmanahRoutes.ADD_TRANSACTION}?type=INFLOW")
+                },
+                onNavigateToRezeki = {
+                    viewModel.deactivateGuideMode()
+                    viewModel.clearTransactionDraft()
+                    navController.navigate("${AmanahRoutes.ADD_TRANSACTION}?type=REZEKI")
                 },
                 onEditTransaction = { entryId ->
                     viewModel.deactivateGuideMode()
@@ -226,6 +243,10 @@ fun AmanahNavHost(
                 onNavigateToIslamicGrounding = {
                     viewModel.deactivateGuideMode()
                     navController.navigate(AmanahRoutes.ISLAMIC_GROUNDING)
+                },
+                onNavigateToDualCalendar = {
+                    viewModel.deactivateGuideMode()
+                    navController.navigate(AmanahRoutes.DUAL_CALENDAR)
                 }
             )
         }
@@ -251,9 +272,14 @@ fun AmanahNavHost(
 
         // 4. Add / Edit Transaction
         composable(
-            route = "${AmanahRoutes.ADD_TRANSACTION}?editEntryId={editEntryId}",
+            route = "${AmanahRoutes.ADD_TRANSACTION}?editEntryId={editEntryId}&type={type}",
             arguments = listOf(
                 navArgument("editEntryId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                navArgument("type") {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
@@ -261,9 +287,11 @@ fun AmanahNavHost(
             )
         ) { backStackEntry ->
             val editEntryId = backStackEntry.arguments?.getString("editEntryId")
+            val defaultType = backStackEntry.arguments?.getString("type")
             AddTransactionScreen(
                 viewModel = viewModel,
                 editEntryId = editEntryId,
+                defaultType = defaultType,
                 onNavigateBack = handleSmartBack,
                 onOpenDrawer = onOpenDrawer,
                 onNavigateToFatwa = {
@@ -455,6 +483,7 @@ fun AmanahNavHost(
                 onNavigateToIbadahGoals = { navController.navigate(AmanahRoutes.IBADAH_GOALS) },
                 onNavigateToIslamicGrounding = { navController.navigate(AmanahRoutes.ISLAMIC_GROUNDING) },
                 onNavigateToExportReport = { navController.navigate(AmanahRoutes.EXPORT_REPORT) },
+                onNavigateToDualCalendar = { navController.navigate(AmanahRoutes.DUAL_CALENDAR) },
                 onOpenDrawer = onOpenDrawer
             )
         }
@@ -552,6 +581,17 @@ fun AmanahNavHost(
                 onNavigateToSedekahSubuh = { navController.navigate(AmanahRoutes.SEDEKAH_SUBUH) },
                 onNavigateToInfaqVault = { navController.navigate(AmanahRoutes.INFAQ_VAULT) },
                 onOpenDrawer = onOpenDrawer
+            )
+        }
+
+        // 30. Kalender Ganda Hijriyah & Masehi
+        composable(AmanahRoutes.DUAL_CALENDAR) {
+            DualCalendarScreen(
+                viewModel = viewModel,
+                onNavigateBack = handleSmartBack,
+                onNavigateToAddTransactionWithDate = { _ ->
+                    navController.navigate(AmanahRoutes.ADD_TRANSACTION)
+                }
             )
         }
     }

@@ -197,10 +197,12 @@ object AppDebugLogger {
         val snapshot = logQueue.toList()
         _logsState.update { snapshot }
 
-        // Append to file in background
-        appContext?.let { ctx ->
-            ioScope.launch {
-                appendToFile(ctx, entry)
+        // Append to file only for warnings, errors, or crashes to prevent disk I/O thrashing on UI interactions
+        if (level == DebugLogLevel.WARN || level == DebugLogLevel.ERROR || level == DebugLogLevel.CRASH) {
+            appContext?.let { ctx ->
+                ioScope.launch {
+                    appendToFile(ctx, entry)
+                }
             }
         }
     }

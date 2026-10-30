@@ -6,10 +6,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.fragment.app.FragmentActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Settings
@@ -31,7 +36,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -167,7 +175,9 @@ fun AmanahMainApp(
     LaunchedEffect(initialDestination) {
         if (!initialDestination.isNullOrBlank()) {
             val route = when (initialDestination) {
-                "ADD_TRANSACTION_EXPENSE", "ADD_TRANSACTION_INCOME", "ADD_TRANSACTION" -> AmanahRoutes.ADD_TRANSACTION
+                "ADD_TRANSACTION_EXPENSE" -> "${AmanahRoutes.ADD_TRANSACTION}?type=EXPENSE"
+                "ADD_TRANSACTION_INCOME" -> "${AmanahRoutes.ADD_TRANSACTION}?type=INFLOW"
+                "ADD_TRANSACTION" -> AmanahRoutes.ADD_TRANSACTION
                 "SEDEKAH_SUBUH" -> AmanahRoutes.SEDEKAH_SUBUH
                 "IBADAH_GOALS" -> AmanahRoutes.IBADAH_GOALS
                 "ZAKAT_HUB" -> AmanahRoutes.ZAKAT_HUB
@@ -193,7 +203,7 @@ fun AmanahMainApp(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
 
-    val bottomNavItems = listOf(
+    val leftNavItems = listOf(
         BottomNavItem(
             route = AmanahRoutes.DASHBOARD,
             title = "Beranda",
@@ -205,13 +215,10 @@ fun AmanahMainApp(
             title = "Buku Kas",
             icon = Icons.Default.MenuBook,
             testTag = "nav_ledger"
-        ),
-        BottomNavItem(
-            route = AmanahRoutes.INFAQ_VAULT,
-            title = "Brankas Infaq",
-            icon = Icons.Default.VolunteerActivism,
-            testTag = "nav_infaq_vault"
-        ),
+        )
+    )
+
+    val rightNavItems = listOf(
         BottomNavItem(
             route = AmanahRoutes.MULTI_WALLET,
             title = "Kantong",
@@ -287,6 +294,9 @@ fun AmanahMainApp(
                 },
                 onOpenFeedback = {
                     viewModel.openFeedbackSheet(0)
+                },
+                onToggleDisplayMode = {
+                    viewModel.toggleAppDisplayMode()
                 }
             )
         }
@@ -298,7 +308,8 @@ fun AmanahMainApp(
                         containerColor = MaterialTheme.colorScheme.surface,
                         tonalElevation = 8.dp
                     ) {
-                        bottomNavItems.forEach { item ->
+                        // 1 & 2: Sisi Kiri (Beranda, Buku Kas)
+                        leftNavItems.forEach { item ->
                             val isSelected = currentRoute == item.route
                             NavigationBarItem(
                                 selected = isSelected,
@@ -318,6 +329,96 @@ fun AmanahMainApp(
                                             viewModel.triggerDashboardScrollToTop()
                                         }
                                     } else if (currentRoute != item.route) {
+                                        navController.navigate(item.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = item.icon,
+                                        contentDescription = item.title
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = item.title,
+                                        fontSize = 10.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                colors = NavigationBarItemDefaults.colors(
+                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                ),
+                                modifier = Modifier.testTag(item.testTag)
+                            )
+                        }
+
+                        // 3: TOMBOL UTAMA TENGAH (CENTER DOCKED ACTION BUTTON) - CATAT TRANSAKSI
+                        NavigationBarItem(
+                            selected = false,
+                            onClick = {
+                                AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tombol utama tengah (+) Catat Transaksi")
+                                coroutineScope.launch { drawerState.close() }
+                                viewModel.clearTransactionDraft()
+                                navController.navigate("${AmanahRoutes.ADD_TRANSACTION}?type=EXPENSE") {
+                                    launchSingleTop = true
+                                }
+                            },
+                            icon = {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            Brush.verticalGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.primary,
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
+                                                )
+                                            )
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Catat Transaksi",
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = "Catat",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                indicatorColor = Color.Transparent
+                            ),
+                            modifier = Modifier.testTag("nav_center_add_transaction")
+                        )
+
+                        // 4 & 5: Sisi Kanan (Kantong, Pengaturan)
+                        rightNavItems.forEach { item ->
+                            val isSelected = currentRoute == item.route
+                            NavigationBarItem(
+                                selected = isSelected,
+                                onClick = {
+                                    AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tab '${item.title}' (${item.route})")
+                                    coroutineScope.launch { drawerState.close() }
+                                    if (currentRoute != item.route) {
                                         navController.navigate(item.route) {
                                             popUpTo(navController.graph.findStartDestination().id) {
                                                 saveState = true

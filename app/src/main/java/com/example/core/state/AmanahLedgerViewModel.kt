@@ -63,6 +63,8 @@ import com.example.core.directory.AmilDirectoryRepository
 import com.example.core.shariah.ShariahRulesConfig
 import com.example.core.shariah.ShariahRuling
 import com.example.core.shariah.ShariahDefaultRulings
+import com.example.core.rezeki.RezekiCategory
+import com.example.core.rezeki.RezekiNonTunaiRecord
 import com.example.core.auth.AmanahAuthManager
 import com.example.core.auth.AmanahAuthState
 import com.example.core.auth.AmanahUserProfile
@@ -136,6 +138,7 @@ data class AmanahLedgerUiState(
     val ibadahGoals: List<IbadahGoal> = emptyList(),
     val ibadahDeposits: List<IbadahDepositRecord> = emptyList(),
     val qardhRecords: List<QardhRecord> = emptyList(),
+    val rezekiNonTunaiList: List<RezekiNonTunaiRecord> = emptyList(),
     val zakatProfesi: ZakatProfesiCalculation = ZakatProfesiCalculation(),
     val zakatPerniagaan: ZakatPerniagaanCalculation = ZakatPerniagaanCalculation(),
     val zakatFitrah: ZakatFitrahFamilyCalculation = ZakatFitrahFamilyCalculation(),
@@ -178,6 +181,9 @@ data class AmanahLedgerUiState(
     val completedGuides: Set<String> = emptySet(),
     val hasCompletedOnboarding: Boolean = false,
     val isShakeFeedbackEnabled: Boolean = true,
+    val lastBackupTimeMillis: Long = 0L,
+    val isBackupNudgeDismissed: Boolean = false,
+    val appDisplayMode: com.example.core.datastore.AppDisplayMode = com.example.core.datastore.AppDisplayMode.SIMPLE,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false
 ) {
@@ -1089,6 +1095,142 @@ class AmanahLedgerViewModel : ViewModel() {
         appStateNotifier.notify(
             title = "Sedekah Subuh Tercatat",
             message = "Alhamdulillah, sedekah Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount)} tercatat. Streak hari ke-${updatedStreakState.currentStreak}!",
+            severity = NotificationSeverity.SUCCESS
+        )
+    }
+
+    /**
+     * Pencatatan Rezeki Non-Tunai (Hadiah, Traktiran, Bingkisan, Manfaat)
+     * Tanpa memengaruhi saldo uang riil, dengan saran infaq syukur
+     */
+    fun recordRezekiNonTunai(
+        title: String,
+        giverName: String = "",
+        category: RezekiCategory = RezekiCategory.FOOD_BEVERAGE,
+        estimatedValue: Double,
+        suggestedInfaqRate: Double = 0.05,
+        notes: String = "",
+        dateMillis: Long = System.currentTimeMillis(),
+        onSuccess: ((RezekiNonTunaiRecord) -> Unit)? = null
+    ) {
+        val hijriStr = HijriCalendarEngine.fromGregorian(Date(dateMillis)).toString()
+        val record = RezekiNonTunaiRecord(
+            title = title.ifBlank { "Rezeki Pemberian" },
+            giverName = giverName,
+            category = category,
+            estimatedValue = estimatedValue,
+            suggestedInfaqRate = suggestedInfaqRate,
+            suggestedInfaqAmount = estimatedValue * suggestedInfaqRate,
+            dateMillis = dateMillis,
+            hijriDateString = hijriStr,
+            notes = notes
+        )
+
+        val db = roomDatabase
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                db?.rezekiNonTunaiDao()?.insertOrUpdate(EntityMappers.toEntity(record))
+            } catch (e: Exception) {
+                android.util.Log.e("AmanahLedgerVM", "Gagal menyimpan rezeki non-tunai", e)
+            }
+            _uiState.update { current ->
+                current.copy(
+                    rezekiNonTunaiList = listOf(record) + current.rezekiNonTunaiList.filter { it.id != record.id }
+                )
+            }
+            withContext(Dispatchers.Main) {
+                onSuccess?.invoke(record)
+            }
+        }
+
+        appStateNotifier.notify(
+            title = "Rezeki Dicatat",
+            message = "Alhamdulillah, rezeki '${record.title}' (nilai Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(estimatedValue)}) tercatat.",
+            severity = NotificationSeverity.SUCCESS
+        )
+    }
+
+    fun deleteRezekiNonTunai(id: String) {
+        val db = roomDatabase
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                db?.rezekiNonTunaiDao()?.deleteById(id)
+            } catch (e: Exception) {
+                android.util.Log.e("AmanahLedgerVM", "Gagal menghapus rezeki non-tunai", e)
+            }
+            _uiState.update { current ->
+                current.copy(
+                    rezekiNonTunaiList = current.rezekiNonTunaiList.filter { it.id != id }
+                )
+            }
+        }
+    }
+
+    fun tunaikanInfaqSyukur(
+        rezekiId: String,
+        walletId: String,
+        infaqAmount: Double,
+        note: String = ""
+    ) {
+        val rezeki = _uiState.value.rezekiNonTunaiList.find { it.id == rezekiId } ?: return
+        val targetWallet = _uiState.value.wallets.find { it.id == walletId }
+            ?: _uiState.value.wallets.firstOrNull()
+            ?: return
+
+        val actualInfaq = if (infaqAmount > 0) infaqAmount else rezeki.suggestedInfaqAmount
+        if (actualInfaq <= 0) return
+
+        val desc = if (note.isNotBlank()) note else "Infaq Syukur atas ${rezeki.title}"
+        val entryId = UUID.randomUUID().toString()
+        val now = Date()
+        val hijriDate = HijriCalendarEngine.fromGregorian(now)
+
+        val lines = listOf(
+            JournalLine(
+                accountId = "acc_infaq_expense",
+                debit = actualInfaq,
+                credit = 0.0
+            ),
+            JournalLine(
+                accountId = targetWallet.linkedAccountId,
+                debit = 0.0,
+                credit = actualInfaq
+            )
+        )
+
+        val entry = JournalEntry(
+            id = entryId,
+            gregorianDate = now,
+            hijriYear = hijriDate.year,
+            hijriMonth = hijriDate.month,
+            hijriDay = hijriDate.day,
+            description = desc,
+            transactionType = "INFAQ_PAYOUT",
+            lines = lines
+        )
+
+        persistEntryAsync(entry)
+        val db = roomDatabase
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                db?.rezekiNonTunaiDao()?.markInfaqPaid(rezekiId, entryId)
+            } catch (e: Exception) {
+                android.util.Log.e("AmanahLedgerVM", "Gagal menandai infaq rezeki", e)
+            }
+        }
+
+        _uiState.update { current ->
+            current.copy(
+                journalEntries = listOf(entry) + current.journalEntries,
+                rezekiNonTunaiList = current.rezekiNonTunaiList.map {
+                    if (it.id == rezekiId) it.copy(isPaidInfaq = true, paidJournalEntryId = entryId) else it
+                }
+            )
+        }
+
+        appStateNotifier.notify(
+            title = "Infaq Syukur Berhasil",
+            message = "Infaq syukur Rp ${java.text.NumberFormat.getNumberInstance(Locale("id", "ID")).format(actualInfaq)} dari ${targetWallet.name} berhasil disalurkan.",
             severity = NotificationSeverity.SUCCESS
         )
     }
@@ -2422,7 +2564,45 @@ class AmanahLedgerViewModel : ViewModel() {
     // BACKUP & RESTORE TERENKRIPSI (LOCAL EXPORT/IMPORT)
     // ==========================================
 
+    fun recordBackupCompleted(timestamp: Long = System.currentTimeMillis()) {
+        _uiState.update { it.copy(lastBackupTimeMillis = timestamp) }
+        viewModelScope.launch {
+            repository?.saveLastBackupTime(timestamp)
+        }
+    }
+
+    fun dismissBackupNudgePermanently() {
+        _uiState.update { it.copy(isBackupNudgeDismissed = true) }
+        viewModelScope.launch {
+            repository?.saveBackupNudgeDismissed(true)
+        }
+    }
+
+    fun setAppDisplayMode(mode: com.example.core.datastore.AppDisplayMode) {
+        _uiState.update { it.copy(appDisplayMode = mode) }
+        viewModelScope.launch {
+            repository?.saveAppDisplayMode(mode)
+        }
+        val modeLabel = if (mode == com.example.core.datastore.AppDisplayMode.SIMPLE) "Mode Sederhana (Ramah Pemula)" else "Mode Lengkap Syariah"
+        appStateNotifier.notify(
+            title = "Mode Tampilan Diperbarui",
+            message = "Beralih ke $modeLabel",
+            severity = NotificationSeverity.INFO
+        )
+    }
+
+    fun toggleAppDisplayMode() {
+        val current = _uiState.value.appDisplayMode
+        val nextMode = if (current == com.example.core.datastore.AppDisplayMode.SIMPLE) {
+            com.example.core.datastore.AppDisplayMode.COMPREHENSIVE
+        } else {
+            com.example.core.datastore.AppDisplayMode.SIMPLE
+        }
+        setAppDisplayMode(nextMode)
+    }
+
     fun generateBackupPackage(password: String = ""): String {
+        recordBackupCompleted()
         val state = _uiState.value
         AppDebugLogger.i("AmanahBackup", "Membuat paket pencadangan terenkripsi (${state.journalEntries.size} transaksi jurnal, ${state.wallets.size} kantong)")
         return BackupEngine.createBackupPackage(
@@ -2442,6 +2622,7 @@ class AmanahLedgerViewModel : ViewModel() {
     fun restoreBackupPackage(backupPackage: String, password: String = ""): RestoreResult {
         val result = BackupEngine.parseAndRestore(backupPackage, password)
         if (result is RestoreResult.Success) {
+            recordBackupCompleted()
             _uiState.update { state ->
                 state.copy(
                     journalEntries = result.restoredEntries,
@@ -2958,7 +3139,12 @@ class AmanahLedgerViewModel : ViewModel() {
             repository = repo
 
             viewModelScope.launch {
-                se.syncState.collect { s -> _syncState.value = s }
+                se.syncState.collect { s ->
+                    _syncState.value = s
+                    if (s.status == SyncStateStatus.SUCCESS && s.lastSyncedTimeMillis > 0L) {
+                        recordBackupCompleted(s.lastSyncedTimeMillis)
+                    }
+                }
             }
             viewModelScope.launch {
                 am.authState.collect { a -> _authState.value = a }
@@ -2997,6 +3183,9 @@ class AmanahLedgerViewModel : ViewModel() {
                             selectedGoalMode = prefs.selectedGoalMode,
                             uiScaleMode = prefs.uiScaleMode,
                             uiScaleFactor = prefs.uiScaleFactor,
+                            lastBackupTimeMillis = prefs.lastBackupTimeMillis,
+                            isBackupNudgeDismissed = prefs.isBackupNudgeDismissed,
+                            appDisplayMode = prefs.appDisplayMode,
                             isShakeFeedbackEnabled = prefs.isShakeFeedbackEnabled,
                             securityConfig = current.securityConfig.copy(
                                 isPinEnabled = prefs.securityConfig.isPinEnabled,
@@ -3011,6 +3200,15 @@ class AmanahLedgerViewModel : ViewModel() {
                                 isAppLocked = shouldLock
                             )
                         )
+                    }
+                }
+            }
+
+            viewModelScope.launch {
+                db.rezekiNonTunaiDao().getAllRezekiFlow().collect { entities ->
+                    val domainList = entities.map { EntityMappers.toDomain(it) }
+                    _uiState.update { current ->
+                        current.copy(rezekiNonTunaiList = domainList)
                     }
                 }
             }

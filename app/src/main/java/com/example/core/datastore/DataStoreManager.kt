@@ -26,7 +26,13 @@ import java.io.IOException
 
 val Context.appDataStore: DataStore<Preferences> by preferencesDataStore(name = "amanah_user_preferences")
 
+enum class AppDisplayMode {
+    SIMPLE,         // Mode Sederhana / Ramah Pemula
+    COMPREHENSIVE   // Mode Lengkap Syariah
+}
+
 data class AppUserPreferences(
+    val appDisplayMode: AppDisplayMode = AppDisplayMode.SIMPLE,
     val themeMode: AppThemeMode = AppThemeMode.FOLLOW_SYSTEM,
     val isDarkMode: Boolean = true,
     val isHighContrast: Boolean = false,
@@ -57,7 +63,9 @@ data class AppUserPreferences(
     val uiScaleFactor: Float = 1.0f,
     val completedGuides: Set<String> = emptySet(),
     val hasCompletedOnboarding: Boolean = false,
-    val isShakeFeedbackEnabled: Boolean = true
+    val isShakeFeedbackEnabled: Boolean = true,
+    val lastBackupTimeMillis: Long = 0L,
+    val isBackupNudgeDismissed: Boolean = false
 )
 
 class DataStoreManager(private val context: Context) {
@@ -92,6 +100,9 @@ class DataStoreManager(private val context: Context) {
         val UI_SCALE_FACTOR = floatPreferencesKey("ui_scale_factor")
         val COMPLETED_GUIDES = stringSetPreferencesKey("completed_guides")
         val HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
+        val LAST_BACKUP_TIME_MILLIS = longPreferencesKey("last_backup_time_millis")
+        val IS_BACKUP_NUDGE_DISMISSED = booleanPreferencesKey("is_backup_nudge_dismissed")
+        val APP_DISPLAY_MODE = stringPreferencesKey("app_display_mode")
 
         // Security Preferences
         val PIN_HASH = stringPreferencesKey("security_pin_hash")
@@ -115,6 +126,16 @@ class DataStoreManager(private val context: Context) {
             }
         }
         .map { preferences ->
+            val displayModeStr = preferences[PreferencesKeys.APP_DISPLAY_MODE]
+            val appDisplayMode = if (displayModeStr != null) {
+                try {
+                    AppDisplayMode.valueOf(displayModeStr)
+                } catch (_: Exception) {
+                    AppDisplayMode.SIMPLE
+                }
+            } else {
+                AppDisplayMode.SIMPLE
+            }
             val themeModeStr = preferences[PreferencesKeys.THEME_MODE]
             val themeMode = if (themeModeStr != null) {
                 try {
@@ -229,9 +250,18 @@ class DataStoreManager(private val context: Context) {
                 completedGuides = completedGuides,
                 hasCompletedOnboarding = hasCompletedOnboarding,
                 themeMode = themeMode,
-                isShakeFeedbackEnabled = preferences[PreferencesKeys.IS_SHAKE_FEEDBACK_ENABLED] ?: true
+                appDisplayMode = appDisplayMode,
+                isShakeFeedbackEnabled = preferences[PreferencesKeys.IS_SHAKE_FEEDBACK_ENABLED] ?: true,
+                lastBackupTimeMillis = preferences[PreferencesKeys.LAST_BACKUP_TIME_MILLIS] ?: 0L,
+                isBackupNudgeDismissed = preferences[PreferencesKeys.IS_BACKUP_NUDGE_DISMISSED] ?: false
             )
         }
+
+    suspend fun saveAppDisplayMode(mode: AppDisplayMode) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.APP_DISPLAY_MODE] = mode.name
+        }
+    }
 
     suspend fun saveThemeMode(mode: AppThemeMode) {
         context.appDataStore.edit { preferences ->
@@ -451,6 +481,18 @@ class DataStoreManager(private val context: Context) {
     suspend fun saveShakeFeedbackEnabled(enabled: Boolean) {
         context.appDataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_SHAKE_FEEDBACK_ENABLED] = enabled
+        }
+    }
+
+    suspend fun saveLastBackupTime(timestampMillis: Long) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_BACKUP_TIME_MILLIS] = timestampMillis
+        }
+    }
+
+    suspend fun saveBackupNudgeDismissed(dismissed: Boolean) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_BACKUP_NUDGE_DISMISSED] = dismissed
         }
     }
 }

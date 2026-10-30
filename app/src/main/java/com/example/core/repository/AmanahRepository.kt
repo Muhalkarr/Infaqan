@@ -155,6 +155,9 @@ interface AmanahRepository {
     suspend fun clearAllInfaqDistributions()
     suspend fun markGuideCompleted(guideTitle: String)
     suspend fun setOnboardingCompleted()
+    suspend fun saveLastBackupTime(timestampMillis: Long)
+    suspend fun saveBackupNudgeDismissed(dismissed: Boolean)
+    suspend fun saveAppDisplayMode(mode: com.example.core.datastore.AppDisplayMode)
 }
 
 
@@ -742,6 +745,21 @@ class AmanahRepositoryImpl(
 
     override suspend fun clearAllInfaqDistributions() = withContext(ioDispatcher) {
         database.infaqDistributionDao().clearAll()
+    }
+
+    override suspend fun saveLastBackupTime(timestampMillis: Long) = withContext(ioDispatcher) {
+        dataStoreManager.saveLastBackupTime(timestampMillis)
+        database.settingsDao().insertOrUpdate(SettingsEntity("last_backup_time_millis", timestampMillis.toString()))
+    }
+
+    override suspend fun saveBackupNudgeDismissed(dismissed: Boolean) = withContext(ioDispatcher) {
+        dataStoreManager.saveBackupNudgeDismissed(dismissed)
+        database.settingsDao().insertOrUpdate(SettingsEntity("is_backup_nudge_dismissed", dismissed.toString()))
+    }
+
+    override suspend fun saveAppDisplayMode(mode: com.example.core.datastore.AppDisplayMode) = withContext(ioDispatcher) {
+        dataStoreManager.saveAppDisplayMode(mode)
+        database.settingsDao().insertOrUpdate(SettingsEntity("app_display_mode", mode.name))
     }
 }
 

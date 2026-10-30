@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -59,6 +60,7 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.WbSunny
@@ -135,6 +137,7 @@ fun InteractiveGuideScreen(
     onNavigateToIbadahGoals: () -> Unit = {},
     onNavigateToIslamicGrounding: () -> Unit = {},
     onNavigateToExportReport: () -> Unit = {},
+    onNavigateToDualCalendar: () -> Unit = {},
     onOpenDrawer: () -> Unit = {}
 ) {
     val topics = remember {
@@ -306,6 +309,30 @@ fun InteractiveGuideScreen(
                 icon = Icons.Default.AutoAwesome,
                 badge = "RAG Grounding",
                 actionButtonText = "Buka Konsultasi Fatwa"
+            ),
+            GuideTopic(
+                id = "topic_non_cash_rezeki",
+                title = "22. Rezeki Non-Tunai & Infaq Syukur",
+                shortSubtitle = "Pencatatan bingkisan, parsel & syukur infaq",
+                icon = Icons.Default.CardGiftcard,
+                badge = "Fiqih Syukur",
+                actionButtonText = "Coba Catat Rezeki Non-Tunai"
+            ),
+            GuideTopic(
+                id = "topic_dual_calendar",
+                title = "23. Kalender Hijriyah & Jadwal Ibadah",
+                shortSubtitle = "Tarikh Islam, puasa sunnah & haul 354 hari",
+                icon = Icons.Default.CalendarMonth,
+                badge = "Ummul Qura",
+                actionButtonText = "Buka Kalender Hijriyah"
+            ),
+            GuideTopic(
+                id = "topic_display_mode_privacy",
+                title = "24. Mode Tampilan & Keamanan Privasi",
+                shortSubtitle = "Mode Ringkas vs Lengkap & sensor saldo",
+                icon = Icons.Default.Tune,
+                badge = "UX & Hifzhul Mal",
+                actionButtonText = "Buka Pengaturan Terpusat"
             )
         )
     }
@@ -508,6 +535,9 @@ fun InteractiveGuideScreen(
                             18 -> TopicRikazFiqihContent(onTryAction = { openModule(18, onNavigateToIslamicGrounding) })
                             19 -> TopicAutomaticZakatContent(onTryAction = { openModule(19, onNavigateToIslamicGrounding) })
                             20 -> TopicGeminiAiFatwaContent(onTryAction = { openModule(20, onNavigateToIslamicGrounding) })
+                            21 -> TopicRezekiNonTunaiContent(onTryAction = { openModule(21, onNavigateToAddTransaction) })
+                            22 -> TopicDualCalendarGuideContent(onTryAction = { openModule(22, onNavigateToDualCalendar) })
+                            23 -> TopicDisplayModePrivacyContent(onTryAction = { openModule(23, onNavigateToSettings) })
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))

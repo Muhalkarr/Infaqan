@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.VolunteerActivism
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.filled.Delete
@@ -104,6 +105,10 @@ import com.example.core.calendar.HijriCalendarEngine
 import com.example.core.receipt.ReceiptAttachment
 import com.example.core.receipt.ReceiptImageStorage
 import com.example.core.receipt.ReceiptType
+import com.example.core.rezeki.RezekiCategory
+import com.example.core.rezeki.RezekiNonTunaiRecord
+import com.example.presentation.components.RezekiNonTunaiFormSection
+import com.example.presentation.components.TunaikanInfaqSyukurDialog
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.ui.theme.EmeraldDark
 import com.example.ui.theme.White12
@@ -125,6 +130,7 @@ import com.example.core.ui.AmanahHapticEngine
 fun AddTransactionScreen(
     viewModel: AmanahLedgerViewModel,
     editEntryId: String? = null,
+    defaultType: String? = null,
     onNavigateBack: () -> Unit,
     onOpenDrawer: () -> Unit = {},
     onNavigateToFatwa: () -> Unit = {}
@@ -139,14 +145,17 @@ fun AddTransactionScreen(
     val isEditMode = existingEntry != null
 
     val draft by viewModel.transactionDraft.collectAsState()
-    val hasActiveDraft = remember(existingEntry, draft) {
-        existingEntry == null && draft.isDraftActive
+    val hasActiveDraft = remember(existingEntry, draft, defaultType) {
+        existingEntry == null && draft.isDraftActive && defaultType == null
     }
 
     // Extract values if editing or restoring draft
-    val initialIsIncome = remember(existingEntry, hasActiveDraft) {
+    val initialIsIncome = remember(existingEntry, hasActiveDraft, defaultType) {
         if (hasActiveDraft) draft.isIncome
-        else existingEntry?.transactionType != "EXPENSE"
+        else if (defaultType == "EXPENSE") false
+        else if (defaultType == "INCOME" || defaultType == "INFLOW") true
+        else if (existingEntry != null) existingEntry.transactionType != "EXPENSE"
+        else false // Default pencatatan baru adalah Pengeluaran
     }
     val initialDate = remember(existingEntry, hasActiveDraft) {
         if (hasActiveDraft && draft.dateEpochMillis > 0L) Date(draft.dateEpochMillis)
@@ -175,10 +184,11 @@ fun AddTransactionScreen(
         if (hasActiveDraft) draft.descriptionText
         else existingEntry?.description?.replace(Regex("""\s*\(Round-up:.*?\)$"""), "") ?: ""
     }
-    val initialCategory = remember(existingEntry, hasActiveDraft) {
-        if (hasActiveDraft) draft.selectedCategoryAccountId
-        else if (existingEntry == null) "acc_salary"
-        else {
+    val initialCategory = remember(existingEntry, hasActiveDraft, defaultType, initialIsIncome) {
+        if (hasActiveDraft && defaultType == null) draft.selectedCategoryAccountId
+        else if (existingEntry == null) {
+            if (initialIsIncome) "acc_salary" else "acc_living"
+        } else {
             if (existingEntry.transactionType == "INFLOW") {
                 existingEntry.lines.firstOrNull { it.credit > 0 && it.accountId in listOf("acc_salary", "acc_trade", "acc_gift", "acc_rikaz", "acc_syubhat") }?.accountId ?: "acc_salary"
             } else {
@@ -213,6 +223,15 @@ fun AddTransactionScreen(
     }
 
     var isIncome by remember(initialIsIncome) { mutableStateOf(initialIsIncome) }
+    var isRezekiNonTunai by remember(defaultType) { mutableStateOf(defaultType == "REZEKI") }
+    var rezekiTitle by remember { mutableStateOf("") }
+    var rezekiGiver by remember { mutableStateOf("") }
+    var rezekiCategory by remember { mutableStateOf(RezekiCategory.FOOD_BEVERAGE) }
+    var rezekiEstimatedValueText by remember { mutableStateOf("") }
+    var rezekiInfaqRate by remember { mutableDoubleStateOf(0.05) }
+    var rezekiNotes by remember { mutableStateOf("") }
+    var savedRezekiRecordForInfaq by remember { mutableStateOf<RezekiNonTunaiRecord?>(null) }
+    var isSavingRezeki by remember { mutableStateOf(false) }
     var selectedDate by remember(initialDate) { mutableStateOf(initialDate) }
     var amountText by remember(initialAmountText) { mutableStateOf(initialAmountText) }
     var descriptionText by remember(initialDesc) { mutableStateOf(initialDesc) }
@@ -222,6 +241,24 @@ fun AddTransactionScreen(
     var selectedAssetAccountId by remember(initialAsset) { mutableStateOf(initialAsset) }
     var categoryDropdownExpanded by remember { mutableStateOf(false) }
     var assetDropdownExpanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(defaultType) {
+        if (defaultType == "EXPENSE") {
+            isIncome = false
+            isRezekiNonTunai = false
+            if (selectedCategoryAccountId == "acc_salary") {
+                selectedCategoryAccountId = "acc_living"
+            }
+        } else if (defaultType == "INFLOW" || defaultType == "INCOME") {
+            isIncome = true
+            isRezekiNonTunai = false
+            if (selectedCategoryAccountId == "acc_living") {
+                selectedCategoryAccountId = "acc_salary"
+            }
+        } else if (defaultType == "REZEKI") {
+            isRezekiNonTunai = true
+        }
+    }
 
     // Infaq options for income
     var infaqRate by remember(initialRate) { mutableDoubleStateOf(initialRate) } // 5%
@@ -445,7 +482,7 @@ fun AddTransactionScreen(
                 title = {
                     Column {
                         Text(
-                            text = if (isEditMode) "Ubah Transaksi Syariah" else "Catat Transaksi Berpasangan",
+                            text = if (isEditMode) "Ubah Transaksi Syariah" else if (isRezekiNonTunai) "Catat Rezeki Non-Tunai" else "Catat Transaksi Berpasangan",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -455,6 +492,12 @@ fun AddTransactionScreen(
                                 text = "Mode Modifikasi Jurnal & Neraca",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.secondary
+                            )
+                        } else if (isRezekiNonTunai) {
+                            Text(
+                                text = "Pemberian, Hadiah & Traktiran Berkah",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         } else if (hasActiveDraft) {
                             Text(
@@ -500,55 +543,149 @@ fun AddTransactionScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. Segmented Control: Pemasukan (Rezeki) vs Pengeluaran (Konsumsi)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                    .padding(4.dp)
-            ) {
-                Box(
+            // 1. Segmented Control: Pemasukan (Rezeki) vs Pengeluaran (Konsumsi) vs Rezeki Non-Tunai
+            if (!isEditMode) {
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (isIncome) MaterialTheme.colorScheme.primary else Color.Transparent)
-                        .clickable {
-                            AmanahHapticEngine.performKeyClick(haptic, context)
-                            isIncome = true
-                            selectedCategoryAccountId = "acc_salary"
-                        }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .padding(4.dp)
                 ) {
-                    Text(
-                        text = "Pemasukan (Rezeki)",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                    // Pemasukan
+                    val isIncomeSelected = !isRezekiNonTunai && isIncome
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isIncomeSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
+                            .clickable {
+                                AmanahHapticEngine.performKeyClick(haptic, context)
+                                isRezekiNonTunai = false
+                                isIncome = true
+                                selectedCategoryAccountId = "acc_salary"
+                            }
+                            .padding(vertical = 10.dp)
+                            .testTag("tab_mode_income"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Pemasukan",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isIncomeSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
 
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (!isIncome) MaterialTheme.colorScheme.error else Color.Transparent)
-                        .clickable {
-                            AmanahHapticEngine.performKeyClick(haptic, context)
-                            isIncome = false
-                            selectedCategoryAccountId = "acc_living"
+                    // Pengeluaran
+                    val isExpenseSelected = !isRezekiNonTunai && !isIncome
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isExpenseSelected) MaterialTheme.colorScheme.error else Color.Transparent)
+                            .clickable {
+                                AmanahHapticEngine.performKeyClick(haptic, context)
+                                isRezekiNonTunai = false
+                                isIncome = false
+                                selectedCategoryAccountId = "acc_living"
+                            }
+                            .padding(vertical = 10.dp)
+                            .testTag("tab_mode_expense"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Pengeluaran",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isExpenseSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    // Rezeki Non-Tunai (Hadiah/Traktiran)
+                    Box(
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isRezekiNonTunai) MaterialTheme.colorScheme.primary else Color.Transparent)
+                            .clickable {
+                                AmanahHapticEngine.performKeyClick(haptic, context)
+                                isRezekiNonTunai = true
+                            }
+                            .padding(vertical = 10.dp)
+                            .testTag("tab_mode_rezeki_non_tunai"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CardGiftcard,
+                                contentDescription = null,
+                                modifier = Modifier.size(15.dp),
+                                tint = if (isRezekiNonTunai) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "Rezeki Hadiah",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isRezekiNonTunai) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .padding(4.dp)
                 ) {
-                    Text(
-                        text = "Pengeluaran (Konsumsi)",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (!isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isIncome) MaterialTheme.colorScheme.primary else Color.Transparent)
+                            .clickable {
+                                AmanahHapticEngine.performKeyClick(haptic, context)
+                                isIncome = true
+                                selectedCategoryAccountId = "acc_salary"
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Pemasukan (Rezeki)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (!isIncome) MaterialTheme.colorScheme.error else Color.Transparent)
+                            .clickable {
+                                AmanahHapticEngine.performKeyClick(haptic, context)
+                                isIncome = false
+                                selectedCategoryAccountId = "acc_living"
+                            }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Pengeluaran (Konsumsi)",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (!isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -790,9 +927,45 @@ fun AddTransactionScreen(
                 }
             }
 
-            // 3. Amount Field
-            OutlinedTextField(
-                value = amountText,
+            if (isRezekiNonTunai && !isEditMode) {
+                RezekiNonTunaiFormSection(
+                    title = rezekiTitle,
+                    onTitleChange = { rezekiTitle = it },
+                    giverName = rezekiGiver,
+                    onGiverNameChange = { rezekiGiver = it },
+                    category = rezekiCategory,
+                    onCategoryChange = { rezekiCategory = it },
+                    estimatedValueText = rezekiEstimatedValueText,
+                    onEstimatedValueTextChange = { rezekiEstimatedValueText = it },
+                    infaqRate = rezekiInfaqRate,
+                    onInfaqRateChange = { rezekiInfaqRate = it },
+                    notes = rezekiNotes,
+                    onNotesChange = { rezekiNotes = it },
+                    isSaving = isSavingRezeki,
+                    onSubmit = {
+                        val estimatedVal = rezekiEstimatedValueText.toDoubleOrNull() ?: 0.0
+                        if (rezekiTitle.isNotBlank() && estimatedVal > 0) {
+                            isSavingRezeki = true
+                            viewModel.recordRezekiNonTunai(
+                                title = rezekiTitle,
+                                giverName = rezekiGiver,
+                                category = rezekiCategory,
+                                estimatedValue = estimatedVal,
+                                suggestedInfaqRate = rezekiInfaqRate,
+                                notes = rezekiNotes,
+                                dateMillis = selectedDate.time,
+                                onSuccess = { recorded ->
+                                    isSavingRezeki = false
+                                    savedRezekiRecordForInfaq = recorded
+                                }
+                            )
+                        }
+                    }
+                )
+            } else {
+                // 3. Amount Field
+                OutlinedTextField(
+                    value = amountText,
                 onValueChange = { },
                 readOnly = true,
                 label = { Text("Nominal Transaksi (Rp)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
@@ -1821,7 +1994,30 @@ fun AddTransactionScreen(
                     )
                 }
             }
+            }
         }
+    }
+
+    savedRezekiRecordForInfaq?.let { record ->
+        TunaikanInfaqSyukurDialog(
+            record = record,
+            wallets = state.wallets,
+            getWalletBalance = { state.getWalletBalance(it) },
+            onDismiss = {
+                savedRezekiRecordForInfaq = null
+                onNavigateBack()
+            },
+            onConfirm = { walletId, amount, note ->
+                viewModel.tunaikanInfaqSyukur(
+                    rezekiId = record.id,
+                    walletId = walletId,
+                    infaqAmount = amount,
+                    note = note
+                )
+                savedRezekiRecordForInfaq = null
+                onNavigateBack()
+            }
+        )
     }
 
     if (showDeleteConfirmDialog && editEntryId != null) {

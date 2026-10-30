@@ -29,6 +29,10 @@ import com.example.core.scheduler.RecurringType
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Date
+import com.example.core.rezeki.RezekiCategory
+import com.example.core.rezeki.RezekiNonTunaiDao
+import com.example.core.rezeki.RezekiNonTunaiEntity
+import com.example.core.rezeki.RezekiNonTunaiRecord
 
 @Database(
     entities = [
@@ -42,9 +46,10 @@ import java.util.Date
         CustomRulingEntity::class,
         RecurringTransactionEntity::class,
         InfaqRuleEntity::class,
-        InfaqDistributionEntity::class
+        InfaqDistributionEntity::class,
+        RezekiNonTunaiEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AmanahDatabase : RoomDatabase() {
@@ -60,6 +65,7 @@ abstract class AmanahDatabase : RoomDatabase() {
     abstract fun recurringTransactionDao(): RecurringTransactionDao
     abstract fun infaqRuleDao(): InfaqRuleDao
     abstract fun infaqDistributionDao(): InfaqDistributionDao
+    abstract fun rezekiNonTunaiDao(): RezekiNonTunaiDao
 
 
     companion object {
@@ -459,6 +465,43 @@ object EntityMappers {
             receiptNumber = e.receiptNumber,
             notes = e.notes,
             isVerified = e.isVerified
+        )
+    }
+
+    fun toEntity(r: RezekiNonTunaiRecord): RezekiNonTunaiEntity {
+        return RezekiNonTunaiEntity(
+            id = r.id,
+            title = r.title,
+            giverName = r.giverName,
+            category = r.category.name,
+            estimatedValue = r.estimatedValue,
+            suggestedInfaqRate = r.suggestedInfaqRate,
+            suggestedInfaqAmount = r.suggestedInfaqAmount,
+            isPaidInfaq = r.isPaidInfaq,
+            paidJournalEntryId = r.paidJournalEntryId,
+            dateMillis = r.dateMillis,
+            hijriDateString = r.hijriDateString,
+            notes = r.notes,
+            createdAtMillis = r.createdAtMillis,
+            updatedAtMillis = System.currentTimeMillis()
+        )
+    }
+
+    fun toDomain(e: RezekiNonTunaiEntity): RezekiNonTunaiRecord {
+        return RezekiNonTunaiRecord(
+            id = e.id,
+            title = e.title,
+            giverName = e.giverName,
+            category = try { RezekiCategory.valueOf(e.category) } catch (_: Exception) { RezekiCategory.FOOD_BEVERAGE },
+            estimatedValue = e.estimatedValue,
+            suggestedInfaqRate = e.suggestedInfaqRate,
+            suggestedInfaqAmount = e.suggestedInfaqAmount,
+            isPaidInfaq = e.isPaidInfaq,
+            paidJournalEntryId = e.paidJournalEntryId,
+            dateMillis = e.dateMillis,
+            hijriDateString = e.hijriDateString,
+            notes = e.notes,
+            createdAtMillis = e.createdAtMillis
         )
     }
 }

@@ -31,7 +31,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoMode
+import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CheckCircle
@@ -63,6 +66,7 @@ import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -101,7 +105,10 @@ import androidx.compose.ui.graphics.Brush
 import com.example.Screen
 import com.example.presentation.components.AppNavigationDrawerContent
 import com.example.presentation.components.BudgetCategoryAllocationChart
+import com.example.presentation.components.DashboardRezekiNonTunaiWidget
+import com.example.presentation.components.TunaikanInfaqSyukurDialog
 import com.example.presentation.components.DualCalendarCard
+import com.example.core.rezeki.RezekiNonTunaiRecord
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -115,6 +122,7 @@ import com.example.core.calendar.HijriDate
 import com.example.core.state.AmanahLedgerUiState
 import com.example.core.state.AmanahLedgerViewModel
 import java.text.SimpleDateFormat
+import java.text.NumberFormat
 import java.util.Locale
 import com.example.ui.theme.EmeraldDark
 import com.example.ui.theme.GoldLight
@@ -132,7 +140,10 @@ import androidx.compose.ui.layout.ContentScale
 fun DashboardScreen(
     viewModel: AmanahLedgerViewModel,
     onOpenDrawer: () -> Unit = {},
-    onNavigateToAddTransaction: () -> Unit,
+    onNavigateToAddTransaction: () -> Unit = {},
+    onNavigateToAddExpense: () -> Unit = onNavigateToAddTransaction,
+    onNavigateToAddIncome: () -> Unit = onNavigateToAddTransaction,
+    onNavigateToRezeki: () -> Unit = onNavigateToAddTransaction,
     onEditTransaction: (String) -> Unit,
     onNavigateToBudget: () -> Unit,
     onNavigateToRules: () -> Unit,
@@ -153,9 +164,12 @@ fun DashboardScreen(
     onNavigateToAmilDirectory: () -> Unit = {},
     onNavigateToFaraidh: () -> Unit = {},
     onNavigateToExportReport: () -> Unit = {},
-    onNavigateToIslamicGrounding: () -> Unit = {}
+    onNavigateToIslamicGrounding: () -> Unit = {},
+    onNavigateToDualCalendar: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val syncState by viewModel.syncState.collectAsState()
+    val isDataBackedUp = (syncState.lastSyncedTimeMillis > 0L) || (state.lastBackupTimeMillis > 0L)
     val latestAlert by viewModel.appStateNotifier.latestAlert.collectAsState()
     val hijriNow = remember { HijriCalendarEngine.fromGregorian() }
     val masehiNow = remember { SimpleDateFormat("d MMM yyyy", Locale("id", "ID")).format(Date()) }
@@ -164,6 +178,7 @@ fun DashboardScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var selectedEntryForDetail by remember { mutableStateOf<JournalEntry?>(null) }
     var entryToDelete by remember { mutableStateOf<JournalEntry?>(null) }
+    var selectedRezekiForInfaq by remember { mutableStateOf<RezekiNonTunaiRecord?>(null) }
     var dismissBackupNudge by remember { mutableStateOf(false) }
     var transactionDisplayLimit by remember { mutableStateOf(30) }
     var dashboardTab by remember { mutableStateOf(0) }
@@ -211,6 +226,47 @@ fun DashboardScreen(
                     }
                 },
                 actions = {
+                    // Mode Switcher Action Chip (Ringkas vs Lengkap)
+                    Surface(
+                        onClick = { viewModel.toggleAppDisplayMode() },
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .testTag("dashboard_mode_switch_chip")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE)
+                                    Icons.Default.AutoAwesome
+                                else
+                                    Icons.Default.Nightlight,
+                                contentDescription = null,
+                                tint = if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE) "Ringkas" else "Lengkap",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+
                     // Quick Balance Privacy Mask Toggle (Mata Saldo)
                     IconButton(
                         onClick = { viewModel.toggleBalancePrivacy() },
@@ -225,23 +281,6 @@ fun DashboardScreen(
                         )
                     }
                 }
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onNavigateToAddTransaction,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 8.dp,
-                    pressedElevation = 12.dp
-                ),
-                shape = RoundedCornerShape(16.dp),
-                icon = { Icon(Icons.Default.Add, contentDescription = "Catat Transaksi", modifier = Modifier.size(24.dp)) },
-                text = { Text("Catat Transaksi", fontWeight = FontWeight.Bold, fontSize = 15.sp) },
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .testTag("add_transaction_fab")
             )
         }
     ) { paddingValues ->
@@ -309,17 +348,292 @@ fun DashboardScreen(
                 }
             }
 
-            // 2. PRIORITAS UTAMA (HERO): Virtual Infaq Vault & Total Assets (Brankas Amanah & Saldo Kas)
-            item {
-                VirtualInfaqVaultCard(
-                    vaultBalance = state.virtualInfaqVaultBalance,
-                    distributionCount = state.infaqDistributions.size,
-                    isMasked = state.securityConfig.isMaskBalance,
-                    onToggleMask = { viewModel.toggleBalancePrivacy() },
-                    onDisburseClick = { showDisburseDialog = true },
-                    onHistoryClick = onNavigateToVaultHistory
-                )
-            }
+            if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE) {
+                // ==========================================================
+                // TAMPILAN MODE SEDERHANA (RAMAH PEMULA & ARUS KAS HARIAN)
+                // ==========================================================
+
+                // A. KARTU SALDO KAS UTAMA BERSIH & RAMAH
+                item {
+                    val nf = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
+                    val totalIncome = remember(state.journalEntries) {
+                        state.journalEntries.filter { it.transactionType == "INFLOW" }.sumOf { it.totalDebit }
+                    }
+                    val totalExpense = remember(state.journalEntries) {
+                        state.journalEntries.filter { it.transactionType == "EXPENSE" }.sumOf { it.totalDebit }
+                    }
+                    val currentBalance = state.totalWalletBalance
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("simple_hero_balance_card"),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        text = "Total Saldo Kas Anda",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = if (state.securityConfig.isMaskBalance) "Rp ••••••••" else "Rp ${nf.format(currentBalance)}",
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.clickable { onNavigateToVaultHistory() }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Savings,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = if (state.securityConfig.isMaskBalance) "Infaq: Rp •••" else "Infaq: Rp ${nf.format(state.virtualInfaqVaultBalance)}",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.secondary
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // Ringkasan Pemasukan & Pengeluaran Berdampingan
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFF2E7D32).copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowDownward,
+                                            contentDescription = "Pemasukan",
+                                            tint = Color(0xFF2E7D32),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text("Pemasukan", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(
+                                            if (state.securityConfig.isMaskBalance) "Rp •••" else "Rp ${nf.format(totalIncome)}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF2E7D32)
+                                        )
+                                    }
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFC62828).copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowUpward,
+                                            contentDescription = "Pengeluaran",
+                                            tint = Color(0xFFC62828),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text("Pengeluaran", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(
+                                            if (state.securityConfig.isMaskBalance) "Rp •••" else "Rp ${nf.format(totalExpense)}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFFC62828)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // B. 3 TOMBOL AKSI CEPAT RAMAH PEMULA
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Catat Pengeluaran
+                        Button(
+                            onClick = onNavigateToAddExpense,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFC62828),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = 48.dp)
+                                .testTag("simple_action_expense")
+                        ) {
+                            Icon(Icons.Default.ArrowUpward, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Keluar", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+
+                        // Catat Pemasukan
+                        Button(
+                            onClick = onNavigateToAddIncome,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2E7D32),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = 48.dp)
+                                .testTag("simple_action_income")
+                        ) {
+                            Icon(Icons.Default.ArrowDownward, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Masuk", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+
+                        // Sedekah Subuh / Infaq
+                        Button(
+                            onClick = onNavigateToSedekahSubuh,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = 48.dp)
+                                .testTag("simple_action_sedekah")
+                        ) {
+                            Icon(Icons.Default.VolunteerActivism, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Sedekah", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                    }
+                }
+
+                // C. WIDGET KESIAPAN IBADAH & REZEKI (RINGKAS & TIDAK MENGINTIMIDASI)
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().testTag("simple_ibadah_glance_card"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(34.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.WbSunny,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "Rutinitas Sedekah Fajar",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = if (state.sedekahSubuhState.currentStreak > 0)
+                                            "🔥 Streak ${state.sedekahSubuhState.currentStreak} hari aktif"
+                                        else
+                                            "Mulai hari berkah dengan sedekah",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Button(
+                                onClick = { viewModel.recordSedekahSubuh(amount = 2000.0) },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.secondary,
+                                    contentColor = MaterialTheme.colorScheme.onSecondary
+                                ),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                                modifier = Modifier.defaultMinSize(minHeight = 36.dp)
+                            ) {
+                                Text("+ Rp 2.000", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            } else {
+                // 2. PRIORITAS UTAMA (HERO): Virtual Infaq Vault & Total Assets (Brankas Amanah & Saldo Kas)
+                item {
+                    VirtualInfaqVaultCard(
+                        vaultBalance = state.virtualInfaqVaultBalance,
+                        distributionCount = state.infaqDistributions.size,
+                        isMasked = state.securityConfig.isMaskBalance,
+                        onToggleMask = { viewModel.toggleBalancePrivacy() },
+                        onDisburseClick = { showDisburseDialog = true },
+                        onHistoryClick = onNavigateToVaultHistory
+                    )
+                }
 
             // 3. KONTROL TAMPILAN: Segmented View Mode (Mengatasi Kepadatan Informasi / Progressive Disclosure)
             item {
@@ -408,15 +722,18 @@ fun DashboardScreen(
                     }
                 }
             }
+            }
 
-            if (dashboardTab == 0) {
-                // TAB 0: RINGKASAN UTAMA & OPERASIONAL HARIAN
-                // 4. Dual Calendar Gregorian & Hijriah Header
-                item {
-                    DualCalendarCard(
-                        selectedHijriOffset = state.selectedHijriOffset
-                    )
-                }
+            if (dashboardTab == 0 || state.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE) {
+                if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.COMPREHENSIVE) {
+                    // TAB 0: RINGKASAN UTAMA & OPERASIONAL HARIAN
+                    // 4. Dual Calendar Gregorian & Hijriah Header
+                    item {
+                        DualCalendarCard(
+                            selectedHijriOffset = state.selectedHijriOffset,
+                            onOpenFullCalendar = onNavigateToDualCalendar
+                        )
+                    }
 
                 // 5. Sedekah Subuh Streak Visualizer Widget (Habit Tracker Fajar)
                 item {
@@ -425,6 +742,17 @@ fun DashboardScreen(
                         onClick = onNavigateToSedekahSubuh,
                         onQuickGive = { amount ->
                             viewModel.recordSedekahSubuh(amount = amount)
+                        }
+                    )
+                }
+
+                // 5B. Rezeki Non-Tunai & Hadiah Widget
+                item {
+                    DashboardRezekiNonTunaiWidget(
+                        rezekiList = state.rezekiNonTunaiList,
+                        onAddRezekiClick = onNavigateToRezeki,
+                        onTunaikanInfaqClick = { record ->
+                            selectedRezekiForInfaq = record
                         }
                     )
                 }
@@ -619,6 +947,7 @@ fun DashboardScreen(
                         }
                     }
                 }
+            }
 
             // 12. PRIORITAS OPERASIONAL: Double-Entry Journal History Section Header
             item {
@@ -628,7 +957,10 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Buku Besar Terkini (Double-Entry Log)",
+                        text = if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE)
+                            "Riwayat Transaksi Terbaru"
+                        else
+                            "Buku Besar Terkini (Double-Entry Log)",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -642,7 +974,10 @@ fun DashboardScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "∑Debit = ∑Kredit",
+                            text = if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE)
+                                "Arus Kas Rapi"
+                            else
+                                "∑Debit = ∑Kredit",
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -727,9 +1062,10 @@ fun DashboardScreen(
                 }
             }
 
-            // 14. PRIORITAS PALING BAWAH (EDUKASI & PANDUAN): Interactive Guide Hero Banner Card
-            item {
-                Card(
+            if (state.appDisplayMode == com.example.core.datastore.AppDisplayMode.COMPREHENSIVE) {
+                // 14. PRIORITAS PALING BAWAH (EDUKASI & PANDUAN): Interactive Guide Hero Banner Card
+                item {
+                    Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onNavigateToGuide() }
@@ -885,9 +1221,81 @@ fun DashboardScreen(
                     }
                 }
             }
+            } else {
+                // Banner Rekomendasi Fitur Lengkap Syariah (Hanya Mode Sederhana)
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("simple_mode_pro_features_banner"),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Nightlight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Fitur Akuntansi Syariah Lengkap",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Kalkulator Waris (Faraidh), Pinjaman Qardh, Hisab Zakat Maal & Multi-Kantong.",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        lineHeight = 14.sp
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = { viewModel.setAppDisplayMode(com.example.core.datastore.AppDisplayMode.COMPREHENSIVE) },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                                modifier = Modifier.defaultMinSize(minHeight = 36.dp)
+                            ) {
+                                Text("Mode Lengkap", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
 
             // 16. PRIORITAS PALING BAWAH (PEMELIHARAAN SISTEM): Periodic Local Room Database Backup Nudge
-            if (!dismissBackupNudge) {
+            if (!isDataBackedUp && !state.isBackupNudgeDismissed && !dismissBackupNudge) {
                 item {
                     Card(
                         modifier = Modifier
@@ -958,7 +1366,10 @@ fun DashboardScreen(
                                     }
 
                                     TextButton(
-                                        onClick = { dismissBackupNudge = true },
+                                        onClick = {
+                                            dismissBackupNudge = true
+                                            viewModel.dismissBackupNudgePermanently()
+                                        },
                                         modifier = Modifier.defaultMinSize(minHeight = 48.dp)
                                     ) {
                                         Text(
@@ -1231,6 +1642,24 @@ fun DashboardScreen(
             },
             onToggleHighContrast = {
                 viewModel.toggleHighContrast()
+            }
+        )
+    }
+
+    selectedRezekiForInfaq?.let { record ->
+        TunaikanInfaqSyukurDialog(
+            record = record,
+            wallets = state.wallets,
+            getWalletBalance = { state.getWalletBalance(it) },
+            onDismiss = { selectedRezekiForInfaq = null },
+            onConfirm = { walletId, amount, note ->
+                viewModel.tunaikanInfaqSyukur(
+                    rezekiId = record.id,
+                    walletId = walletId,
+                    infaqAmount = amount,
+                    note = note
+                )
+                selectedRezekiForInfaq = null
             }
         )
     }

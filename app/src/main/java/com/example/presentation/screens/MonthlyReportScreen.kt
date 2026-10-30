@@ -2,6 +2,7 @@ package com.example.presentation.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -70,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.core.calendar.HijriCalendarEngine
+import com.example.core.calendar.HijriDate
 import com.example.core.report.FinancialPdfGenerator
 import com.example.core.state.AmanahLedgerViewModel
 import java.io.File
@@ -95,8 +97,12 @@ fun MonthlyReportScreen(
     val context = LocalContext.current
 
     val currentCal = remember { Calendar.getInstance() }
+    val currentHijri = remember { HijriCalendarEngine.fromGregorian(currentCal.time) }
+    var isHijriCalendarBasis by remember { mutableStateOf(false) }
     var selectedMonth by remember { mutableIntStateOf(currentCal.get(Calendar.MONTH)) }
     var selectedYear by remember { mutableIntStateOf(currentCal.get(Calendar.YEAR)) }
+    var selectedHijriMonth by remember { mutableIntStateOf(currentHijri.month) } // 1..12
+    var selectedHijriYear by remember { mutableIntStateOf(currentHijri.year) }
     var generatedPdfFile by remember { mutableStateOf<File?>(null) }
     var isGenerating by remember { mutableStateOf(false) }
 
@@ -114,11 +120,48 @@ fun MonthlyReportScreen(
             set(Calendar.YEAR, selectedYear)
         }
     }
-    val monthName = remember(reportCal) {
+    val gregorianMonthName = remember(reportCal) {
         SimpleDateFormat("MMMM yyyy", Locale("id", "ID")).format(reportCal.time)
     }
-    val hijriDate = remember(reportCal) {
+    val gregorianHijriEquivalent = remember(reportCal) {
         HijriCalendarEngine.fromGregorian(reportCal.time)
+    }
+
+    val hijriMonthName = remember(selectedHijriMonth, selectedHijriYear) {
+        val name = HijriDate.monthNames.getOrElse(selectedHijriMonth - 1) { "Bulan $selectedHijriMonth" }
+        "$name $selectedHijriYear H"
+    }
+
+    val displayPrimaryMonth = if (isHijriCalendarBasis) hijriMonthName else gregorianMonthName
+    val displaySecondaryMonth = if (isHijriCalendarBasis) {
+        "Periode Kalender Hijriyah Islam (Bulan ke-$selectedHijriMonth)"
+    } else {
+        "${gregorianHijriEquivalent.monthName} ${gregorianHijriEquivalent.year} H"
+    }
+
+    // Filter transaksi untuk periode bulan terpilih (Masehi vs Hijriyah)
+    val periodEntries = remember(state.journalEntries, isHijriCalendarBasis, selectedMonth, selectedYear, selectedHijriMonth, selectedHijriYear) {
+        state.journalEntries.filter { entry ->
+            if (isHijriCalendarBasis) {
+                entry.hijriMonth == selectedHijriMonth && entry.hijriYear == selectedHijriYear
+            } else {
+                val c = Calendar.getInstance().apply { time = entry.gregorianDate }
+                c.get(Calendar.MONTH) == selectedMonth && c.get(Calendar.YEAR) == selectedYear
+            }
+        }
+    }
+
+    val periodIncome = remember(periodEntries) {
+        periodEntries.filter { it.transactionType == "INFLOW" || it.transactionType == "INCOME" }.sumOf { it.totalDebit }
+    }
+    val periodExpense = remember(periodEntries) {
+        periodEntries.filter { it.transactionType == "EXPENSE" }.sumOf { it.totalDebit }
+    }
+    val periodInfaq = remember(periodEntries) {
+        periodEntries.filter { it.transactionType.contains("INFAQ") || it.transactionType == "ZAKAT" }.sumOf { it.totalDebit }
+    }
+    val periodInternalTransfer = remember(periodEntries) {
+        periodEntries.filter { it.transactionType == "TRANSFER" }.sumOf { it.totalDebit }
     }
 
     fun formatRupiah(amount: Double): String {
@@ -185,62 +228,141 @@ fun MonthlyReportScreen(
         ) {
             item { Spacer(modifier = Modifier.height(6.dp)) }
 
-            // 1. Month Selector Bar
+            // 1. Month Selector Bar (Dual Calendar Basis: Masehi vs Hijriyah)
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("monthly_report_basis_card"),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(14.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        IconButton(
-                            onClick = {
-                                if (selectedMonth == 0) {
-                                    selectedMonth = 11
-                                    selectedYear--
-                                } else {
-                                    selectedMonth--
-                                }
-                            },
-                            modifier = Modifier.testTag("prev_month_button")
+                        // Toggle Segmented Control: Masehi vs Hijriyah
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(3.dp)
                         ) {
-                            Icon(imageVector = Icons.Default.ArrowBackIosNew, contentDescription = "Bulan Lalu", modifier = Modifier.size(16.dp))
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (!isHijriCalendarBasis) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                    .clickable {
+                                        isHijriCalendarBasis = false
+                                        currentPage = 1
+                                    }
+                                    .padding(vertical = 8.dp)
+                                    .testTag("report_mode_masehi"),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Kalender Masehi",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (!isHijriCalendarBasis) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isHijriCalendarBasis) MaterialTheme.colorScheme.primary else Color.Transparent)
+                                    .clickable {
+                                        isHijriCalendarBasis = true
+                                        currentPage = 1
+                                    }
+                                    .padding(vertical = 8.dp)
+                                    .testTag("report_mode_hijriyah"),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Kalender Hijriyah 🌙",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isHijriCalendarBasis) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
 
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = monthName,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "${hijriDate.monthName} ${hijriDate.year} H",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.secondary,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        IconButton(
-                            onClick = {
-                                if (selectedMonth == 11) {
-                                    selectedMonth = 0
-                                    selectedYear++
-                                } else {
-                                    selectedMonth++
-                                }
-                            },
-                            modifier = Modifier.testTag("next_month_button")
+                        // Baris Navigasi Bulan
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(imageVector = Icons.Default.ArrowForwardIos, contentDescription = "Bulan Depan", modifier = Modifier.size(16.dp))
+                            IconButton(
+                                onClick = {
+                                    currentPage = 1
+                                    if (isHijriCalendarBasis) {
+                                        if (selectedHijriMonth == 1) {
+                                            selectedHijriMonth = 12
+                                            selectedHijriYear--
+                                        } else {
+                                            selectedHijriMonth--
+                                        }
+                                    } else {
+                                        if (selectedMonth == 0) {
+                                            selectedMonth = 11
+                                            selectedYear--
+                                        } else {
+                                            selectedMonth--
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.testTag("prev_month_button")
+                            ) {
+                                Icon(imageVector = Icons.Default.ArrowBackIosNew, contentDescription = "Bulan Lalu", modifier = Modifier.size(16.dp))
+                            }
+
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = displayPrimaryMonth,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = displaySecondaryMonth,
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    currentPage = 1
+                                    if (isHijriCalendarBasis) {
+                                        if (selectedHijriMonth == 12) {
+                                            selectedHijriMonth = 1
+                                            selectedHijriYear++
+                                        } else {
+                                            selectedHijriMonth++
+                                        }
+                                    } else {
+                                        if (selectedMonth == 11) {
+                                            selectedMonth = 0
+                                            selectedYear++
+                                        } else {
+                                            selectedMonth++
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.testTag("next_month_button")
+                            ) {
+                                Icon(imageVector = Icons.Default.ArrowForwardIos, contentDescription = "Bulan Depan", modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }
@@ -353,10 +475,10 @@ fun MonthlyReportScreen(
                 }
             }
 
-            // 3. Executive Metrics Overview
+            // 3. Executive Metrics Overview (Period-Specific)
             item {
                 Text(
-                    text = "Ringkasan Laporan Periode $monthName",
+                    text = "Ringkasan Kinerja Keuangan Periode $displayPrimaryMonth",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -375,8 +497,9 @@ fun MonthlyReportScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Total Aset Halal", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatRupiah(state.totalAssets)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Pemasukan Kasab Periode", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Rp ${formatRupiah(periodIncome)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("${periodEntries.count { it.transactionType == "INFLOW" || it.transactionType == "INCOME" }} transaksi masuk", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -387,8 +510,9 @@ fun MonthlyReportScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Titipan Infaq Vault", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatRupiah(state.virtualInfaqVaultBalance)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                            Text("Beban Konsumsi Periode", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Rp ${formatRupiah(periodExpense)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            Text("${periodEntries.count { it.transactionType == "EXPENSE" }} transaksi belanja", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -406,8 +530,9 @@ fun MonthlyReportScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Total Beban Konsumsi", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatRupiah(state.totalConsumptionExpense)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            Text("Infaq & Zakat Periode", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Rp ${formatRupiah(periodInfaq)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                            Text("Penyucian harta & syukur", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
 
@@ -418,9 +543,9 @@ fun MonthlyReportScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Transfer Antar-Kantong", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Rp ${formatRupiah(state.totalInternalTransfer)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            Text("Arus internal (non-beban)", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Total Aset Halal (Neraca)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Rp ${formatRupiah(state.totalAssets)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Text("Kas, tabungan & emas", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -555,7 +680,7 @@ fun MonthlyReportScreen(
                                 Text("Riwayat Transaksi", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             }
                             Text(
-                                "${state.journalEntries.size} Total",
+                                "${periodEntries.size} Transaksi (${if (isHijriCalendarBasis) "Hijriyah" else "Masehi"})",
                                 fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -644,8 +769,8 @@ fun MonthlyReportScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Filter items
-                        val filteredList = state.journalEntries.filter { entry ->
+                        // Filter items dari periode bulan terpilih
+                        val filteredList = periodEntries.filter { entry ->
                             val matchesType = when (selectedTypeFilter) {
                                 "SEMUA" -> true
                                 "EXPENSE" -> entry.transactionType.equals("EXPENSE", ignoreCase = true)

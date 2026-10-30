@@ -25,11 +25,13 @@ import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,7 +63,8 @@ import java.util.Locale
 fun DualCalendarCard(
     selectedHijriOffset: Int = 0,
     modifier: Modifier = Modifier,
-    onDateSelected: (Date, HijriDate) -> Unit = { _, _ -> }
+    onDateSelected: (Date, HijriDate) -> Unit = { _, _ -> },
+    onOpenFullCalendar: (() -> Unit)? = null
 ) {
     var currentDateOffsetDays by remember { mutableStateOf(0) }
 
@@ -395,6 +398,32 @@ fun DualCalendarCard(
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
+                }
+            }
+
+            if (onOpenFullCalendar != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = onOpenFullCalendar,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("open_full_calendar_button"),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Buka Kalender Bulanan Lengkap",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }

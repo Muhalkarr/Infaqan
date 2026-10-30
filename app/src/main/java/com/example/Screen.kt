@@ -28,7 +28,8 @@ enum class Screen(val title: String) {
     DEBUG_TERMINAL("Terminal Log & Diagnostik"),
     GOLD_NISAB_TRACKER("Pelacak Emas & Nisab BAZNAS"),
     BUSINESS_ZAKAT("Zakat Bisnis & Saham Syariah"),
-    SHARIAH_AUDIT("Audit Kepatuhan Syariah");
+    SHARIAH_AUDIT("Audit Kepatuhan Syariah"),
+    DUAL_CALENDAR("Kalender Hijriyah & Masehi");
 
     fun toRoute(): String = when (this) {
         DASHBOARD -> com.example.navigation.AmanahRoutes.DASHBOARD
@@ -59,6 +60,7 @@ enum class Screen(val title: String) {
         GOLD_NISAB_TRACKER -> com.example.navigation.AmanahRoutes.GOLD_NISAB_TRACKER
         BUSINESS_ZAKAT -> com.example.navigation.AmanahRoutes.BUSINESS_ZAKAT
         SHARIAH_AUDIT -> com.example.navigation.AmanahRoutes.SHARIAH_AUDIT
+        DUAL_CALENDAR -> com.example.navigation.AmanahRoutes.DUAL_CALENDAR
     }
 
     companion object {
@@ -91,6 +93,7 @@ enum class Screen(val title: String) {
             com.example.navigation.AmanahRoutes.GOLD_NISAB_TRACKER -> GOLD_NISAB_TRACKER
             com.example.navigation.AmanahRoutes.BUSINESS_ZAKAT -> BUSINESS_ZAKAT
             com.example.navigation.AmanahRoutes.SHARIAH_AUDIT -> SHARIAH_AUDIT
+            com.example.navigation.AmanahRoutes.DUAL_CALENDAR -> DUAL_CALENDAR
             else -> DASHBOARD
         }
     }

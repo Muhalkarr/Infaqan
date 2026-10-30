@@ -19,16 +19,20 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -1359,6 +1363,262 @@ fun TopicGeminiAiFatwaContent(onTryAction: () -> Unit) {
             Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Text("Buka Konsultasi Fatwa Syariah AI", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+// TOPIC 22: REZEKI NON-TUNAI & INFAQ SYUKUR
+// -------------------------------------------------------------------------------------------------
+@Composable
+fun TopicRezekiNonTunaiContent(onTryAction: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "QS. Ibrahim: 7 & Hadits Riwayat Ahmad",
+            arabicText = "﴿وَإِذْ تَأَذَّنَ رَبُّكُمْ لَئِنْ شَكَرْتُمْ لَأَزِيدَنَّكُمْ﴾",
+            translation = "Dan (ingatlah) ketika Tuhanmu memaklumkan, 'Sesungguhnya jika kamu bersyukur, niscaya Aku akan menambah (nikmat) kepadamu...'",
+            fiqhNote = "Rezeki dalam Islam tidak terbatas pada uang tunai, transfer, atau gaji semata. Makanan, parsel, hadiah barang, diskon kebaikan, hingga tumpangan perjalanan adalah kenikmatan nyata yang disunnahkan untuk dicatat dan disyukuri melalui sedekah atau sujud syukur."
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Pencatatan Anugerah Non-Tunai", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                Text(
+                    text = "Amanah Ledger menyediakan jenis mutasi khusus 'Rezeki Non-Tunai' pada form Catat Transaksi. Anda dapat menaksir nilai wajar hadiah (fair market value) tanpa memanipulasi saldo kas dompet tunai Anda.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 17.sp
+                )
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🎁 ", fontSize = 14.sp)
+                            Text("Hadiah & Parsel: Taksir harga barang dan pilih kategori Rezeki Non-Tunai.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🤲 ", fontSize = 14.sp)
+                            Text("Infaq Syukur Tunai: Otomatis sisihkan 2.5% atau persentase sukarela dari nilai hadiah ke Brankas Infaq.", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
+
+        IslamicStepByStepCard(
+            title = "Panduan Mencatat Rezeki Non-Tunai:",
+            steps = listOf(
+                "Masuk ke menu 'Catat Transaksi Baru' (+ Entri).",
+                "Pilih jenis mutasi 'Rezeki Non-Tunai'.",
+                "Isi perkiraan nilai wajar hadiah atau bingkisan yang diterima.",
+                "Tuliskan keterangan (contoh: 'Hadiah parcel sembako dari kolega' atau 'Kupon umroh gratis').",
+                "Opsional: Aktifkan alokasi Infaq Syukur tunai dari kantong kas Anda sebagai wujud rasa terima kasih kepada Allah SWT.",
+                "Simpan catatan untuk masuk ke pembukuan rasa syukur dan laporan keberkahan tahunan."
+            )
+        )
+
+        IslamicQACard(
+            question = "Apakah rezeki non-tunai mempengaruhi hisab zakat maal?",
+            answer = "Barang konsumsi (seperti makanan atau parsel) tidak wajib dizakati. Namun hadiah berharga berupa logam mulia, saham, atau aset produktif akan diperhitungkan dalam akumulasi kekayaan tahunan jika telah memenuhi nisab.",
+            reference = "Kompilasi Hukum Zakat BAZNAS & Fatwa MUI No. 3 Tahun 2003"
+        )
+
+        Button(
+            onClick = onTryAction,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.CardGiftcard, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Coba Catat Rezeki Non-Tunai", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+// TOPIC 23: KALENDER HIJRIYAH & JADWAL IBADAH
+// -------------------------------------------------------------------------------------------------
+@Composable
+fun TopicDualCalendarGuideContent(onTryAction: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "QS. At-Taubah: 36 & QS. Al-Baqarah: 189",
+            arabicText = "﴿إِنَّ عِدَّةَ الشُّهُورِ عِنْدَ اللَّهِ اثْنَا عَشَرَ شَهْرًا فِي كِتَابِ اللَّهِ﴾",
+            translation = "Sesungguhnya bilangan bulan di sisi Allah ialah dua belas bulan, (sebagaimana) dalam ketetapan Allah pada waktu Dia menciptakan langit dan bumi...",
+            fiqhNote = "Penanggalan Qamariyah (Hijriyah) adalah poros waktu ibadah syar'i: penentuan awal Ramadhan, Idul Fitri, Dzulhijjah (Haji & Qurban), puasa sunnah, serta hisab Haul Zakat (1 tahun hijriyah = 354 hari)."
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Sinkronisasi Kalender Hijriyah & Masehi", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                Text(
+                    text = "Layar Kalender Hijriyah Amanah Ledger mengonversi tarikh Masehi ke Hijriyah secara presisi berdasarkan standar hisab hisab astronomis Kemenag RI dan Ummul Qura:",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 17.sp
+                )
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🌙 ", fontSize = 14.sp)
+                            Text("Penanda Puasa Sunnah: Otomatis mendeteksi puasa Ayyamul Bidh (13, 14, 15 Hijriyah), Senin & Kamis, serta Asyura.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("⏳ ", fontSize = 14.sp)
+                            Text("Hisab Haul 354 Hari: Menghubungkan mutasi tabungan dengan batas genap satu tahun haul syar'i (bukan 365 hari masehi).", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
+
+        IslamicStepByStepCard(
+            title = "Memanfaatkan Modul Kalender Hijriyah:",
+            steps = listOf(
+                "Buka menu 'Kalender Hijriyah & Masehi' dari bilah navigasi atau sidebar.",
+                "Periksa tanggal hari ini dalam format Masehi dan tarikh Hijriyah lengkap dengan nama bulan Islam.",
+                "Lihat lencana pengingat puasa sunnah di hari tersebut untuk mempersiapkan sahur dan niat ibadah.",
+                "Gunakan tombol navigasi bulan untuk melihat jadwal puasa dan tarikh di bulan-bulan mulia (Rajab, Sya'ban, Ramadhan, Dzulhijjah)."
+            )
+        )
+
+        IslamicQACard(
+            question = "Mengapa haul zakat menggunakan tahun Hijriyah bukan Masehi?",
+            answer = "Satu tahun Hijriyah berdurasi 354 hari, sekitar 11 hari lebih pendek dari tahun Masehi (365 hari). Menggunakan kalender Hijriyah memastikan perhitungan kewajiban zakat maal tepat waktu sesuai sunnah Rasulullah SAW.",
+            reference = "Kitab Al-Amwal Abu Ubaid & Ketetapan BAZNAS"
+        )
+
+        Button(
+            onClick = onTryAction,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Buka Kalender Hijriyah & Jadwal Ibadah", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+// TOPIC 24: MODE TAMPILAN & KEAMANAN PRIVASI
+// -------------------------------------------------------------------------------------------------
+@Composable
+fun TopicDisplayModePrivacyContent(onTryAction: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        IslamicDalilCard(
+            source = "Hadits Shahih Bukhari No. 1423 & Muslim No. 1031",
+            arabicText = "«حَتَّى لاَ تَعْلَمَ شِمَالُهُ مَا تُنْفِقُ يَمِينُهُ»",
+            translation = "...Hingga tangan kirinya tidak mengetahui apa yang diinfaqkan oleh tangan kanannya.",
+            fiqhNote = "Menjaga kerahasiaan kepemilikan harta dan riwayat sedekah dari pandangan orang lain adalah ikhtiar luhur untuk menghindari riya', ujub, hasad (dengki), serta menjaga keselamatan finansial keluarga."
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f))
+        ) {
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Mode Ringkas vs Lengkap & Sensor Privasi", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                Text(
+                    text = "Amanah Ledger dirancang fleksibel untuk segala tingkat pemahaman pengguna melalui dua pilar kenyamanan:",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 17.sp
+                )
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🌱 ", fontSize = 14.sp)
+                            Text("Mode Ringkas (Awam): Menyederhanakan sidebar menjadi 3 seksi esensial (~9 menu utama) tanpa istilah rumit perbankan.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🔬 ", fontSize = 14.sp)
+                            Text("Mode Lengkap (Komperehensif): Mengaktifkan 25+ instrumen hisab emas BAZNAS, waris faraidh, audit syariah, dan ekspor laporan PDF.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("👁️ ", fontSize = 14.sp)
+                            Text("Sensor Saldo (Masking 'Rp •••'): Sembunyikan nominal saldo saat berada di ruang publik atau kendaraan umum.", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🔒 ", fontSize = 14.sp)
+                            Text("Kunci PIN & Biometrik: Lindungi seluruh buku besar keluarga dengan PIN aman.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+        }
+
+        IslamicStepByStepCard(
+            title = "Cara Mengatur Mode & Privasi Saldo:",
+            steps = listOf(
+                "Masuk ke menu 'Pengaturan Terpusat' dari bilah bawah atau sidebar.",
+                "Pada bagian 'Mode Tampilan Aplikasi', pilih 'Mode Ringkas' untuk kemudahan sehari-hari atau 'Mode Lengkap' untuk hisab mendalam.",
+                "Ketuk ikon mata (Sensor Saldo) di bagian atas kartu beranda untuk menyembunyikan atau menampilkan saldo kapan saja.",
+                "Aktifkan Kunci PIN di menu Keamanan untuk mewajibkan otentikasi saat aplikasi dibuka."
+            )
+        )
+
+        IslamicQACard(
+            question = "Apakah data saya hilang saat berpindah dari Mode Lengkap ke Mode Ringkas?",
+            answer = "Tidak sama sekali. Semua mutasi, transaksi rutin, zakat, dan akad qardh tetap tersimpan aman di database Room. Mode Ringkas hanya menyederhanakan tampilan navigasi agar tidak membingungkan pengguna.",
+            reference = "Prinsip Desain UX Syariah: Yassiruu wa laa Tu'assiruu (Permudahlah dan jangan mempersulit)"
+        )
+
+        Button(
+            onClick = onTryAction,
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondary, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text("Buka Pengaturan Terpusat & Privasi", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondary)
         }
     }
 }
