@@ -1,23 +1,41 @@
 package com.example.core.backup
 
+import android.os.Build
 import android.util.Base64
-import com.example.core.accounting.Account
 import com.example.core.accounting.AccountCategory
 import com.example.core.accounting.JournalEntry
 import com.example.core.accounting.JournalLine
 import com.example.core.budget.BudgetAllocation
+import com.example.core.feature.AppFeatureVisibilityConfig
+import com.example.core.ibadah.IbadahDepositRecord
 import com.example.core.ibadah.IbadahGoal
 import com.example.core.ibadah.IbadahGoalType
+import com.example.core.infaq.AsnafCategory
+import com.example.core.infaq.InfaqCalculationType
 import com.example.core.infaq.InfaqDistributionRecord
+import com.example.core.infaq.InfaqReminderFrequency
 import com.example.core.infaq.InfaqRule
+import com.example.core.infaq.InfaqVaultReminderConfig
 import com.example.core.infaq.SedekahSubuhState
+import com.example.core.infaq.SedekahSubuhStreakEngine
+import com.example.core.notification.AmanahNotificationConfig
 import com.example.core.qardh.QardhRecord
 import com.example.core.qardh.QardhStatus
 import com.example.core.qardh.QardhType
 import com.example.core.receipt.ReceiptAttachment
 import com.example.core.receipt.ReceiptType
+import com.example.core.report.PdfEditorialConfig
+import com.example.core.rezeki.RezekiCategory
+import com.example.core.rezeki.RezekiNonTunaiRecord
+import com.example.core.scheduler.RecurringFrequency
 import com.example.core.scheduler.RecurringTransaction
+import com.example.core.scheduler.RecurringType
+import com.example.core.shariah.HaulCalculationMethod
+import com.example.core.shariah.ShariahMazhab
+import com.example.core.shariah.ShariahRulesConfig
+import com.example.core.shariah.ZakatProfesiFormula
 import com.example.core.wallet.WalletAccount
+import com.example.core.wallet.WalletMutationRecord
 import com.example.core.wallet.WalletType
 import org.json.JSONArray
 import org.json.JSONObject
@@ -26,6 +44,7 @@ import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import javax.crypto.Cipher
@@ -34,16 +53,247 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
+data class BackupPreferencesSnapshot(
+    val userNameKasMukmin: String = "Kas Keluarga Mukmin",
+    val primaryCurrencySymbol: String = "Rp",
+    val goldPricePerGram: Double = 1350000.0,
+    val selectedHijriOffset: Int = 0,
+    val startDayOfMonth: Int = 1,
+    val initialLedgerDate: String = "01/01/2024",
+    val fiscalCycleType: String = "MONTHLY_SALARY_DATE",
+    val initialLedgerBalance: Double = 0.0,
+    val fiscalYearStartMonth: Int = 1,
+    val defaultInfaqRate: Double = 0.05,
+    val isAutoDeductInfaqEnabled: Boolean = true,
+    val vaultMonthlyTarget: Double = 5000000.0,
+    val sedekahSubuhTargetDays: Int = 40,
+    val israfWarningThresholdPercent: Int = 80,
+    val isStrictBudgetEnforced: Boolean = false,
+    val isDeficitProtectionEnabled: Boolean = true,
+    val autoExecuteRecurringEnabled: Boolean = true,
+    val notifyOnRecurringDue: Boolean = true,
+    val showDailyHadith: Boolean = true,
+    val showQuickTutorial: Boolean = true,
+    val selectedGoalMode: String = "BALANCED_50_30_20",
+    val themeMode: String = "FOLLOW_SYSTEM",
+    val uiScaleMode: String = "DEFAULT",
+    val uiScaleFactor: Float = 1.0f,
+    val appDisplayMode: String = "SIMPLE",
+    val haulStartDateMillis: Long = 0L,
+    val isShakeFeedbackEnabled: Boolean = true,
+    val autoCloudBackupEnabled: Boolean = false,
+    val notificationConfigJson: String = AmanahNotificationConfig().toJson(),
+    val infaqVaultReminderConfigJson: String = serializeInfaqVaultReminder(InfaqVaultReminderConfig()),
+    val shariahConfigJson: String = serializeShariahConfig(ShariahRulesConfig()),
+    val featureVisibilityConfigJson: String = AppFeatureVisibilityConfig().toJson(),
+    val pdfEditorialConfigJson: String = PdfEditorialConfig().toJson(),
+    val disabledExpenseAccountIds: Set<String> = emptySet(),
+    val purifiedAuditEntryIds: Set<String> = emptySet()
+) {
+    fun toJson(): JSONObject {
+        val obj = JSONObject()
+        obj.put("userNameKasMukmin", userNameKasMukmin)
+        obj.put("primaryCurrencySymbol", primaryCurrencySymbol)
+        obj.put("goldPricePerGram", goldPricePerGram)
+        obj.put("selectedHijriOffset", selectedHijriOffset)
+        obj.put("startDayOfMonth", startDayOfMonth)
+        obj.put("initialLedgerDate", initialLedgerDate)
+        obj.put("fiscalCycleType", fiscalCycleType)
+        obj.put("initialLedgerBalance", initialLedgerBalance)
+        obj.put("fiscalYearStartMonth", fiscalYearStartMonth)
+        obj.put("defaultInfaqRate", defaultInfaqRate)
+        obj.put("isAutoDeductInfaqEnabled", isAutoDeductInfaqEnabled)
+        obj.put("vaultMonthlyTarget", vaultMonthlyTarget)
+        obj.put("sedekahSubuhTargetDays", sedekahSubuhTargetDays)
+        obj.put("israfWarningThresholdPercent", israfWarningThresholdPercent)
+        obj.put("isStrictBudgetEnforced", isStrictBudgetEnforced)
+        obj.put("isDeficitProtectionEnabled", isDeficitProtectionEnabled)
+        obj.put("autoExecuteRecurringEnabled", autoExecuteRecurringEnabled)
+        obj.put("notifyOnRecurringDue", notifyOnRecurringDue)
+        obj.put("showDailyHadith", showDailyHadith)
+        obj.put("showQuickTutorial", showQuickTutorial)
+        obj.put("selectedGoalMode", selectedGoalMode)
+        obj.put("themeMode", themeMode)
+        obj.put("uiScaleMode", uiScaleMode)
+        obj.put("uiScaleFactor", uiScaleFactor.toDouble())
+        obj.put("appDisplayMode", appDisplayMode)
+        obj.put("haulStartDateMillis", haulStartDateMillis)
+        obj.put("isShakeFeedbackEnabled", isShakeFeedbackEnabled)
+        obj.put("autoCloudBackupEnabled", autoCloudBackupEnabled)
+        obj.put("notificationConfigJson", notificationConfigJson)
+        obj.put("infaqVaultReminderConfigJson", infaqVaultReminderConfigJson)
+        obj.put("shariahConfigJson", shariahConfigJson)
+        obj.put("featureVisibilityConfigJson", featureVisibilityConfigJson)
+        obj.put("pdfEditorialConfigJson", pdfEditorialConfigJson)
+        obj.put("disabledExpenseAccountIds", JSONArray(disabledExpenseAccountIds.toList()))
+        obj.put("purifiedAuditEntryIds", JSONArray(purifiedAuditEntryIds.toList()))
+        return obj
+    }
+
+    companion object {
+        fun serializeInfaqVaultReminder(config: InfaqVaultReminderConfig): String {
+            return JSONObject().apply {
+                put("isEnabled", config.isEnabled)
+                put("frequency", config.frequency.name)
+                put("hour", config.hour)
+                put("minute", config.minute)
+                put("dayOfWeek", config.dayOfWeek)
+                put("minVaultBalanceThreshold", config.minVaultBalanceThreshold)
+                put("isAutoRecurringEnabled", config.isAutoRecurringEnabled)
+                put("recurringAmount", config.recurringAmount)
+                put("recurringTargetAsnaf", config.recurringTargetAsnaf)
+            }.toString()
+        }
+
+        fun deserializeInfaqVaultReminder(jsonStr: String?): InfaqVaultReminderConfig {
+            if (jsonStr.isNullOrBlank()) return InfaqVaultReminderConfig()
+            return try {
+                val obj = JSONObject(jsonStr)
+                InfaqVaultReminderConfig(
+                    isEnabled = obj.optBoolean("isEnabled", false),
+                    frequency = try {
+                        InfaqReminderFrequency.valueOf(obj.optString("frequency", InfaqReminderFrequency.WEEKLY.name))
+                    } catch (_: Exception) {
+                        InfaqReminderFrequency.WEEKLY
+                    },
+                    hour = obj.optInt("hour", 6).coerceIn(0, 23),
+                    minute = obj.optInt("minute", 0).coerceIn(0, 59),
+                    dayOfWeek = obj.optInt("dayOfWeek", Calendar.FRIDAY),
+                    minVaultBalanceThreshold = obj.optDouble("minVaultBalanceThreshold", 0.0).coerceAtLeast(0.0),
+                    isAutoRecurringEnabled = obj.optBoolean("isAutoRecurringEnabled", false),
+                    recurringAmount = obj.optDouble("recurringAmount", 50_000.0).coerceAtLeast(0.0),
+                    recurringTargetAsnaf = obj.optString("recurringTargetAsnaf", "Fakir Miskin / 8 Asnaf")
+                )
+            } catch (_: Exception) {
+                InfaqVaultReminderConfig()
+            }
+        }
+
+        fun serializeShariahConfig(config: ShariahRulesConfig): String {
+            return JSONObject().apply {
+                put("goldNisabGram", config.goldNisabGram)
+                put("silverNisabGram", config.silverNisabGram)
+                put("zakatPercentage", config.zakatPercentage)
+                put("zakatProfesiFormula", config.zakatProfesiFormula.name)
+                put("haulCalculationMethod", config.haulCalculationMethod.name)
+                put("selectedMazhab", config.selectedMazhab.name)
+                put("customCalculationFormula", config.customCalculationFormula)
+                put("isCustomFormulaActive", config.isCustomFormulaActive)
+                put("customFormulaName", config.customFormulaName)
+                put("defaultGoldPricePerGram", config.defaultGoldPricePerGram)
+                put("defaultSilverPricePerGram", config.defaultSilverPricePerGram)
+            }.toString()
+        }
+
+        fun deserializeShariahConfig(jsonStr: String?): ShariahRulesConfig {
+            if (jsonStr.isNullOrBlank()) return ShariahRulesConfig()
+            return try {
+                val obj = JSONObject(jsonStr)
+                ShariahRulesConfig(
+                    goldNisabGram = obj.optDouble("goldNisabGram", 85.0),
+                    silverNisabGram = obj.optDouble("silverNisabGram", 595.0),
+                    zakatPercentage = obj.optDouble("zakatPercentage", 2.5),
+                    zakatProfesiFormula = try {
+                        ZakatProfesiFormula.valueOf(obj.optString("zakatProfesiFormula", ZakatProfesiFormula.BRUTO.name))
+                    } catch (_: Exception) { ZakatProfesiFormula.BRUTO },
+                    haulCalculationMethod = try {
+                        HaulCalculationMethod.valueOf(obj.optString("haulCalculationMethod", HaulCalculationMethod.HIJRIAH.name))
+                    } catch (_: Exception) { HaulCalculationMethod.HIJRIAH },
+                    selectedMazhab = try {
+                        ShariahMazhab.valueOf(obj.optString("selectedMazhab", ShariahMazhab.SYAFII.name))
+                    } catch (_: Exception) { ShariahMazhab.SYAFII },
+                    customCalculationFormula = obj.optString("customCalculationFormula", ""),
+                    isCustomFormulaActive = obj.optBoolean("isCustomFormulaActive", false),
+                    customFormulaName = obj.optString("customFormulaName", "Formula Pribadi"),
+                    defaultGoldPricePerGram = obj.optDouble("defaultGoldPricePerGram", 1450000.0),
+                    defaultSilverPricePerGram = obj.optDouble("defaultSilverPricePerGram", 18000.0)
+                )
+            } catch (_: Exception) {
+                ShariahRulesConfig()
+            }
+        }
+
+        fun fromJson(obj: JSONObject?): BackupPreferencesSnapshot? {
+            if (obj == null) return null
+            return try {
+                val disabledIds = mutableSetOf<String>()
+                val dArr = obj.optJSONArray("disabledExpenseAccountIds")
+                if (dArr != null) {
+                    for (i in 0 until dArr.length()) {
+                        val id = dArr.optString(i, "")
+                        if (id.isNotBlank()) disabledIds.add(id)
+                    }
+                }
+                val purifiedIds = mutableSetOf<String>()
+                val pArr = obj.optJSONArray("purifiedAuditEntryIds")
+                if (pArr != null) {
+                    for (i in 0 until pArr.length()) {
+                        val id = pArr.optString(i, "")
+                        if (id.isNotBlank()) purifiedIds.add(id)
+                    }
+                }
+                BackupPreferencesSnapshot(
+                    userNameKasMukmin = obj.optString("userNameKasMukmin", "Kas Keluarga Mukmin"),
+                    primaryCurrencySymbol = obj.optString("primaryCurrencySymbol", "Rp"),
+                    goldPricePerGram = obj.optDouble("goldPricePerGram", 1350000.0),
+                    selectedHijriOffset = obj.optInt("selectedHijriOffset", 0),
+                    startDayOfMonth = obj.optInt("startDayOfMonth", 1).coerceIn(1, 28),
+                    initialLedgerDate = obj.optString("initialLedgerDate", "01/01/2024"),
+                    fiscalCycleType = obj.optString("fiscalCycleType", "MONTHLY_SALARY_DATE"),
+                    initialLedgerBalance = obj.optDouble("initialLedgerBalance", 0.0),
+                    fiscalYearStartMonth = obj.optInt("fiscalYearStartMonth", 1).coerceIn(1, 12),
+                    defaultInfaqRate = obj.optDouble("defaultInfaqRate", 0.05),
+                    isAutoDeductInfaqEnabled = obj.optBoolean("isAutoDeductInfaqEnabled", true),
+                    vaultMonthlyTarget = obj.optDouble("vaultMonthlyTarget", 5000000.0),
+                    sedekahSubuhTargetDays = obj.optInt("sedekahSubuhTargetDays", 40).coerceIn(1, 365),
+                    israfWarningThresholdPercent = obj.optInt("israfWarningThresholdPercent", 80).coerceIn(50, 100),
+                    isStrictBudgetEnforced = obj.optBoolean("isStrictBudgetEnforced", false),
+                    isDeficitProtectionEnabled = obj.optBoolean("isDeficitProtectionEnabled", true),
+                    autoExecuteRecurringEnabled = obj.optBoolean("autoExecuteRecurringEnabled", true),
+                    notifyOnRecurringDue = obj.optBoolean("notifyOnRecurringDue", true),
+                    showDailyHadith = obj.optBoolean("showDailyHadith", true),
+                    showQuickTutorial = obj.optBoolean("showQuickTutorial", true),
+                    selectedGoalMode = obj.optString("selectedGoalMode", "BALANCED_50_30_20"),
+                    themeMode = obj.optString("themeMode", "FOLLOW_SYSTEM"),
+                    uiScaleMode = obj.optString("uiScaleMode", "DEFAULT"),
+                    uiScaleFactor = obj.optDouble("uiScaleFactor", 1.0).toFloat(),
+                    appDisplayMode = obj.optString("appDisplayMode", "SIMPLE"),
+                    haulStartDateMillis = obj.optLong("haulStartDateMillis", 0L),
+                    isShakeFeedbackEnabled = obj.optBoolean("isShakeFeedbackEnabled", true),
+                    autoCloudBackupEnabled = obj.optBoolean("autoCloudBackupEnabled", false),
+                    notificationConfigJson = obj.optString("notificationConfigJson", AmanahNotificationConfig().toJson()),
+                    infaqVaultReminderConfigJson = obj.optString("infaqVaultReminderConfigJson", serializeInfaqVaultReminder(InfaqVaultReminderConfig())),
+                    shariahConfigJson = obj.optString("shariahConfigJson", serializeShariahConfig(ShariahRulesConfig())),
+                    featureVisibilityConfigJson = obj.optString("featureVisibilityConfigJson", AppFeatureVisibilityConfig().toJson()),
+                    pdfEditorialConfigJson = obj.optString("pdfEditorialConfigJson", PdfEditorialConfig().toJson()),
+                    disabledExpenseAccountIds = disabledIds,
+                    purifiedAuditEntryIds = purifiedIds
+                )
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+}
+
 data class BackupManifest(
-    val schemaVersion: Int = 3,
+    val schemaVersion: Int = 4,
     val appName: String = "Infaqan Syariah (Amanah Ledger)",
     val exportedAt: String,
     val journalEntriesCount: Int,
     val walletsCount: Int,
     val goalsCount: Int,
+    val qardhCount: Int = 0,
+    val rulesCount: Int = 0,
+    val recurringCount: Int = 0,
+    val distributionsCount: Int = 0,
+    val rezekiCount: Int = 0,
+    val walletMutationsCount: Int = 0,
+    val hasPreferences: Boolean = false,
+    val deviceName: String = "Perangkat Android",
     val checksum: String,
     val isPasswordProtected: Boolean,
-    val appVersion: String = "2.1.0",
+    val appVersion: String = "2.5.0",
     val isCompatible: Boolean = true,
     val migrationApplied: Boolean = false
 ) {
@@ -61,14 +311,32 @@ sealed class RestoreResult {
         val restoredRecurring: List<RecurringTransaction>,
         val restoredSedekahState: SedekahSubuhState,
         val restoredDistributions: List<InfaqDistributionRecord> = emptyList(),
-        val restoredQardh: List<QardhRecord> = emptyList()
+        val restoredQardh: List<QardhRecord> = emptyList(),
+        val restoredIbadahDeposits: List<IbadahDepositRecord> = emptyList(),
+        val restoredRezekiNonTunai: List<RezekiNonTunaiRecord> = emptyList(),
+        val restoredWalletMutations: List<WalletMutationRecord> = emptyList(),
+        val restoredPreferences: BackupPreferencesSnapshot? = null
     ) : RestoreResult()
 
     data class Failure(val errorMessage: String) : RestoreResult()
 }
 
-
 object BackupEngine {
+    const val CURRENT_SCHEMA_VERSION = 4
+
+    private fun safeDeviceName(): String {
+        return try {
+            val manufacturer = Build.MANUFACTURER?.trim().orEmpty()
+            val model = Build.MODEL?.trim().orEmpty()
+            when {
+                model.isBlank() -> "Perangkat Android"
+                manufacturer.isNotBlank() && !model.startsWith(manufacturer, ignoreCase = true) -> "$manufacturer $model"
+                else -> model
+            }
+        } catch (_: Throwable) {
+            "Perangkat Android"
+        }
+    }
 
     fun parseBackupPackage(backupText: String): BackupManifest? {
         return try {
@@ -81,18 +349,28 @@ object BackupEngine {
                 journalEntriesCount = root.optInt("entriesCount", 0),
                 walletsCount = root.optInt("walletsCount", 0),
                 goalsCount = root.optInt("goalsCount", 0),
+                qardhCount = root.optInt("qardhCount", 0),
+                rulesCount = root.optInt("rulesCount", 0),
+                recurringCount = root.optInt("recurringCount", 0),
+                distributionsCount = root.optInt("distributionsCount", 0),
+                rezekiCount = root.optInt("rezekiCount", 0),
+                walletMutationsCount = root.optInt("walletMutationsCount", 0),
+                hasPreferences = root.optBoolean("hasPreferences", false),
+                deviceName = root.optString("deviceName", "Perangkat Android"),
                 checksum = root.optString("checksum", "N/A"),
                 isPasswordProtected = root.optBoolean("isEncrypted", false),
                 appVersion = root.optString("appVersion", "2.0.0"),
-                isCompatible = schema <= 3,
-                migrationApplied = schema < 3
+                isCompatible = schema in 1..CURRENT_SCHEMA_VERSION,
+                migrationApplied = schema < CURRENT_SCHEMA_VERSION
             )
         } catch (_: Exception) {
             null
         }
     }
 
-    private val isoDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    private fun formatIsoTimestamp(date: Date = Date()): String {
+        return SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(date)
+    }
 
     fun calculateSha256(data: String): String {
         val digest = MessageDigest.getInstance("SHA-256")
@@ -153,7 +431,7 @@ object BackupEngine {
     }
 
     /**
-     * Create an encrypted/encoded export backup string
+     * Create an encrypted/encoded export backup package (schema v4) covering all ledger entities & preferences.
      */
     fun createBackupPackage(
         journalEntries: List<JournalEntry>,
@@ -165,11 +443,15 @@ object BackupEngine {
         sedekahSubuhState: SedekahSubuhState,
         distributions: List<InfaqDistributionRecord> = emptyList(),
         qardhRecords: List<QardhRecord> = emptyList(),
+        ibadahDeposits: List<IbadahDepositRecord> = emptyList(),
+        rezekiNonTunai: List<RezekiNonTunaiRecord> = emptyList(),
+        walletMutations: List<WalletMutationRecord> = emptyList(),
+        preferences: BackupPreferencesSnapshot? = null,
+        deviceName: String = safeDeviceName(),
         password: String = ""
     ): String {
         val rootJson = JSONObject()
         val dataJson = JSONObject()
-
 
         // 1. Journal entries
         val entriesArray = JSONArray()
@@ -193,7 +475,6 @@ object BackupEngine {
             }
             eObj.put("lines", linesArray)
 
-            // Receipt attachment
             entry.receiptAttachment?.let { receipt ->
                 val rObj = JSONObject()
                 rObj.put("id", receipt.id)
@@ -270,6 +551,12 @@ object BackupEngine {
         sObj.put("longestStreak", sedekahSubuhState.longestStreak)
         sObj.put("totalContributions", sedekahSubuhState.totalContributions)
         sObj.put("totalDaysGiven", sedekahSubuhState.totalDaysGiven)
+        sObj.put("lastContributionDateMillis", sedekahSubuhState.lastContributionDate?.time ?: 0L)
+        val historyJsonObj = JSONObject()
+        for ((dateKey, amt) in sedekahSubuhState.historyMap) {
+            historyJsonObj.put(dateKey, amt)
+        }
+        sObj.put("historyMap", historyJsonObj)
         dataJson.put("sedekahSubuh", sObj)
 
         // 6. Infaq Rules
@@ -334,7 +621,7 @@ object BackupEngine {
         }
         dataJson.put("distributions", distArray)
 
-        // 9. Qardh Records (Hutang-Piutang Kebajikan)
+        // 9. Qardh Records
         val qardhArray = JSONArray()
         for (q in qardhRecords) {
             val qObj = JSONObject()
@@ -355,6 +642,64 @@ object BackupEngine {
         }
         dataJson.put("qardh", qardhArray)
 
+        // 10. Ibadah Deposits
+        val depArray = JSONArray()
+        for (dep in ibadahDeposits) {
+            val dpObj = JSONObject()
+            dpObj.put("id", dep.id)
+            dpObj.put("goalId", dep.goalId)
+            dpObj.put("amount", dep.amount)
+            dpObj.put("depositDate", dep.depositDate.time)
+            dpObj.put("sourceWalletId", dep.sourceWalletId)
+            dpObj.put("fromWalletId", dep.fromWalletId)
+            dpObj.put("notes", dep.notes)
+            depArray.put(dpObj)
+        }
+        dataJson.put("ibadahDeposits", depArray)
+
+        // 11. Rezeki Non-Tunai (v4)
+        val rezekiArray = JSONArray()
+        for (rz in rezekiNonTunai) {
+            val rzObj = JSONObject()
+            rzObj.put("id", rz.id)
+            rzObj.put("title", rz.title)
+            rzObj.put("giverName", rz.giverName)
+            rzObj.put("category", rz.category.name)
+            rzObj.put("estimatedValue", rz.estimatedValue)
+            rzObj.put("suggestedInfaqRate", rz.suggestedInfaqRate)
+            rzObj.put("suggestedInfaqAmount", rz.suggestedInfaqAmount)
+            rzObj.put("isPaidInfaq", rz.isPaidInfaq)
+            rzObj.put("paidJournalEntryId", rz.paidJournalEntryId ?: "")
+            rzObj.put("dateMillis", rz.dateMillis)
+            rzObj.put("hijriDateString", rz.hijriDateString)
+            rzObj.put("notes", rz.notes)
+            rzObj.put("createdAtMillis", rz.createdAtMillis)
+            rezekiArray.put(rzObj)
+        }
+        dataJson.put("rezekiNonTunai", rezekiArray)
+
+        // 12. Wallet Mutations (v4)
+        val mutArray = JSONArray()
+        for (m in walletMutations) {
+            val mObj = JSONObject()
+            mObj.put("id", m.id)
+            mObj.put("fromWalletId", m.fromWalletId)
+            mObj.put("toWalletId", m.toWalletId)
+            mObj.put("amount", m.amount)
+            mObj.put("adminFee", m.adminFee)
+            mObj.put("note", m.note)
+            mObj.put("timestampMillis", m.timestampMillis)
+            mObj.put("transactionId", m.transactionId)
+            mObj.put("linkedJournalEntryId", m.linkedJournalEntryId)
+            mutArray.put(mObj)
+        }
+        dataJson.put("walletMutations", mutArray)
+
+        // 13. Full App & Notification Preferences Snapshot (v4)
+        if (preferences != null) {
+            dataJson.put("preferences", preferences.toJson())
+        }
+
         val rawJsonString = dataJson.toString()
         val dataChecksum = calculateSha256(rawJsonString)
 
@@ -366,13 +711,21 @@ object BackupEngine {
         }
         val encodedPayload = Base64.encodeToString(encryptedBytes, Base64.NO_WRAP)
 
-        rootJson.put("schemaVersion", 3)
-        rootJson.put("appVersion", "2.1.0")
+        rootJson.put("schemaVersion", CURRENT_SCHEMA_VERSION)
+        rootJson.put("appVersion", "2.5.0")
         rootJson.put("appName", "Infaqan Syariah (Amanah Ledger)")
-        rootJson.put("exportedAt", isoDateFormat.format(Date()))
+        rootJson.put("exportedAt", formatIsoTimestamp())
+        rootJson.put("deviceName", deviceName)
         rootJson.put("entriesCount", journalEntries.size)
         rootJson.put("walletsCount", wallets.size)
         rootJson.put("goalsCount", goals.size)
+        rootJson.put("qardhCount", qardhRecords.size)
+        rootJson.put("rulesCount", rules.size)
+        rootJson.put("recurringCount", recurring.size)
+        rootJson.put("distributionsCount", distributions.size)
+        rootJson.put("rezekiCount", rezekiNonTunai.size)
+        rootJson.put("walletMutationsCount", walletMutations.size)
+        rootJson.put("hasPreferences", preferences != null)
         rootJson.put("checksum", dataChecksum)
         rootJson.put("isEncrypted", password.isNotEmpty())
         rootJson.put("encryptionAlgorithm", if (password.isNotEmpty()) "AES-256-GCM" else "NONE")
@@ -382,10 +735,9 @@ object BackupEngine {
     }
 
     /**
-     * Otomatis migrasi skema payload berkas cadangan versi terdahulu ke versi terbaru secara aman dan toleran.
+     * Automatically migrates payload schema from legacy versions (v1, v2, v3) to v4 cleanly.
      */
     fun migratePayload(dataJson: JSONObject, fromVersion: Int, targetVersion: Int): JSONObject {
-        // Migrasi v1 -> v2: Pastikan dompet memiliki linkedAccountId dan anggaran memiliki iconKey
         if (fromVersion < 2) {
             val wallets = dataJson.optJSONArray("wallets")
             if (wallets != null) {
@@ -405,7 +757,6 @@ object BackupEngine {
                 }
             }
         }
-        // Migrasi v2 -> v3: Pastikan recurring memiliki period key dan timestamp eksekusi idempotensi
         if (fromVersion < 3) {
             val recurring = dataJson.optJSONArray("recurring")
             if (recurring != null) {
@@ -420,11 +771,19 @@ object BackupEngine {
                 }
             }
         }
+        if (fromVersion < 4 && targetVersion >= 4) {
+            if (!dataJson.has("rezekiNonTunai")) {
+                dataJson.put("rezekiNonTunai", JSONArray())
+            }
+            if (!dataJson.has("walletMutations")) {
+                dataJson.put("walletMutations", JSONArray())
+            }
+        }
         return dataJson
     }
 
     /**
-     * Restore and verify backup package
+     * Restore and verify backup package (supports schema v1 through v4).
      */
     fun parseAndRestore(backupText: String, password: String = ""): RestoreResult {
         return try {
@@ -434,9 +793,7 @@ object BackupEngine {
             val schemaVersion = rootJson.optInt("schemaVersion", 1)
             val appVersion = rootJson.optString("appVersion", "2.0.0")
             val exportedAt = rootJson.optString("exportedAt", "Tidak Diketahui")
-            val entriesCount = rootJson.optInt("entriesCount", 0)
-            val walletsCount = rootJson.optInt("walletsCount", 0)
-            val goalsCount = rootJson.optInt("goalsCount", 0)
+            val deviceName = rootJson.optString("deviceName", "Perangkat Android")
             val expectedChecksum = rootJson.getString("checksum")
             val isEncrypted = rootJson.optBoolean("isEncrypted", false)
             val payloadBase64 = rootJson.getString("payload")
@@ -446,7 +803,6 @@ object BackupEngine {
                 if (password.isEmpty()) {
                     return RestoreResult.Failure("Berkas cadangan ini diproteksi sandi. Harap masukkan kata sandi enkripsi.")
                 }
-                // Periksa apakah format terenkripsi dengan AES-256-GCM (magic prefix "A256")
                 if (encryptedBytes.size > 4 &&
                     encryptedBytes[0] == 'A'.code.toByte() &&
                     encryptedBytes[1] == '2'.code.toByte() &&
@@ -459,7 +815,6 @@ object BackupEngine {
                         return RestoreResult.Failure("Kata sandi salah atau berkas enkripsi AES rusak (${e.localizedMessage}).")
                     }
                 } else {
-                    // Fallback backward-compatible XOR
                     encryptDecryptXor(encryptedBytes, password)
                 }
             } else {
@@ -475,8 +830,7 @@ object BackupEngine {
             }
 
             val rawDataJson = JSONObject(decryptedJsonString)
-            // Jalankan migrasi skema otomatis jika berasal dari versi terdahulu
-            val dataJson = migratePayload(rawDataJson, schemaVersion, 3)
+            val dataJson = migratePayload(rawDataJson, schemaVersion, CURRENT_SCHEMA_VERSION)
 
             // Parse journal entries
             val restoredEntries = mutableListOf<JournalEntry>()
@@ -504,7 +858,7 @@ object BackupEngine {
                         title = rObj.optString("title", "Bukti Transaksi"),
                         receiptType = try {
                             ReceiptType.valueOf(rObj.optString("receiptType", "STORE_RECEIPT"))
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             ReceiptType.STORE_RECEIPT
                         },
                         merchantName = rObj.optString("merchantName", ""),
@@ -543,7 +897,7 @@ object BackupEngine {
                         name = wObj.getString("name"),
                         type = try {
                             WalletType.valueOf(wObj.optString("type", "CASH"))
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             WalletType.CASH
                         },
                         institutionName = wObj.optString("institutionName", "Tunai"),
@@ -566,7 +920,7 @@ object BackupEngine {
                         id = gObj.getString("id"),
                         type = try {
                             IbadahGoalType.valueOf(gObj.optString("type", "QURBAN_KAMBING"))
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             IbadahGoalType.QURBAN_KAMBING
                         },
                         title = gObj.getString("title"),
@@ -601,12 +955,36 @@ object BackupEngine {
             // Parse Sedekah Subuh
             val sObj = dataJson.optJSONObject("sedekahSubuh")
             val restoredSedekah = if (sObj != null) {
-                SedekahSubuhState(
-                    currentStreak = sObj.optInt("currentStreak", 0),
-                    longestStreak = sObj.optInt("longestStreak", 0),
-                    totalContributions = sObj.optDouble("totalContributions", 0.0),
-                    totalDaysGiven = sObj.optInt("totalDaysGiven", 0)
-                )
+                val hMap = mutableMapOf<String, Double>()
+                val hObj = sObj.optJSONObject("historyMap")
+                if (hObj != null) {
+                    val keys = hObj.keys()
+                    while (keys.hasNext()) {
+                        val k = keys.next()
+                        hMap[k] = hObj.optDouble(k, 0.0)
+                    }
+                }
+                val lastMillis = sObj.optLong("lastContributionDateMillis", 0L)
+                val lastDate = if (lastMillis > 0L) Date(lastMillis) else null
+                if (hMap.isNotEmpty()) {
+                    val calc = SedekahSubuhStreakEngine.calculateStreak(hMap)
+                    calc.copy(
+                        currentStreak = maxOf(calc.currentStreak, sObj.optInt("currentStreak", 0)),
+                        longestStreak = maxOf(calc.longestStreak, sObj.optInt("longestStreak", 0)),
+                        totalContributions = maxOf(calc.totalContributions, sObj.optDouble("totalContributions", 0.0)),
+                        totalDaysGiven = maxOf(calc.totalDaysGiven, sObj.optInt("totalDaysGiven", 0)),
+                        lastContributionDate = lastDate ?: calc.lastContributionDate
+                    )
+                } else {
+                    SedekahSubuhState(
+                        currentStreak = sObj.optInt("currentStreak", 0),
+                        longestStreak = sObj.optInt("longestStreak", 0),
+                        totalContributions = sObj.optDouble("totalContributions", 0.0),
+                        totalDaysGiven = sObj.optInt("totalDaysGiven", 0),
+                        lastContributionDate = lastDate,
+                        badges = SedekahSubuhState.getDefaultBadges()
+                    )
+                }
             } else {
                 SedekahSubuhState()
             }
@@ -621,7 +999,7 @@ object BackupEngine {
                         id = rObj.getString("id"),
                         title = rObj.getString("title"),
                         targetCategory = try { AccountCategory.valueOf(rObj.getString("targetCategory")) } catch (_: Exception) { AccountCategory.EXPENSE },
-                        calculationType = try { com.example.core.infaq.InfaqCalculationType.valueOf(rObj.getString("calculationType")) } catch (_: Exception) { com.example.core.infaq.InfaqCalculationType.PERCENTAGE },
+                        calculationType = try { InfaqCalculationType.valueOf(rObj.getString("calculationType")) } catch (_: Exception) { InfaqCalculationType.PERCENTAGE },
                         rate = rObj.optDouble("rate", 0.05),
                         fixedAmount = rObj.optDouble("fixedAmount", 0.0),
                         roundUpStep = rObj.optDouble("roundUpStep", 5000.0),
@@ -641,11 +1019,11 @@ object BackupEngine {
                     RecurringTransaction(
                         id = rcObj.getString("id"),
                         title = rcObj.getString("title"),
-                        type = try { com.example.core.scheduler.RecurringType.valueOf(rcObj.getString("type")) } catch (_: Exception) { com.example.core.scheduler.RecurringType.EXPENSE },
+                        type = try { RecurringType.valueOf(rcObj.getString("type")) } catch (_: Exception) { RecurringType.EXPENSE },
                         amount = rcObj.getDouble("amount"),
                         categoryAccountId = rcObj.getString("categoryAccountId"),
                         assetAccountId = rcObj.getString("assetAccountId"),
-                        frequency = try { com.example.core.scheduler.RecurringFrequency.valueOf(rcObj.getString("frequency")) } catch (_: Exception) { com.example.core.scheduler.RecurringFrequency.MONTHLY },
+                        frequency = try { RecurringFrequency.valueOf(rcObj.getString("frequency")) } catch (_: Exception) { RecurringFrequency.MONTHLY },
                         dayOfMonthOrWeek = rcObj.optInt("dayOfMonthOrWeek", 1),
                         customInfaqRate = rcObj.optDouble("customInfaqRate", 0.05),
                         enableRoundUp = rcObj.optBoolean("enableRoundUp", true),
@@ -671,7 +1049,7 @@ object BackupEngine {
                         id = dObj.getString("id"),
                         amount = dObj.getDouble("amount"),
                         recipientName = dObj.getString("recipientName"),
-                        asnafCategory = try { com.example.core.infaq.AsnafCategory.valueOf(dObj.getString("asnafCategory")) } catch (_: Exception) { com.example.core.infaq.AsnafCategory.UMUM },
+                        asnafCategory = try { AsnafCategory.valueOf(dObj.getString("asnafCategory")) } catch (_: Exception) { AsnafCategory.UMUM },
                         distributionDate = Date(dObj.optLong("distributionDate", System.currentTimeMillis())),
                         hijriDateString = dObj.optString("hijriDateString", ""),
                         sourceAccountId = dObj.optString("sourceAccountId", "acc_bank"),
@@ -708,17 +1086,100 @@ object BackupEngine {
                 )
             }
 
+            // Parse Ibadah Deposits
+            val restoredIbadahDeposits = mutableListOf<IbadahDepositRecord>()
+            val depArray = dataJson.optJSONArray("ibadahDeposits") ?: JSONArray()
+            for (i in 0 until depArray.length()) {
+                val dpObj = depArray.getJSONObject(i)
+                val depDate = dpObj.optLong("depositDate", System.currentTimeMillis())
+                val srcWallet = dpObj.optString("sourceWalletId", "acc_cash")
+                val depNotes = dpObj.optString("notes", "")
+                restoredIbadahDeposits.add(
+                    IbadahDepositRecord(
+                        id = dpObj.getString("id"),
+                        goalId = dpObj.getString("goalId"),
+                        amount = dpObj.getDouble("amount"),
+                        depositDate = Date(depDate),
+                        dateMillis = depDate,
+                        sourceWalletId = srcWallet,
+                        fromWalletId = dpObj.optString("fromWalletId", srcWallet),
+                        notes = depNotes,
+                        note = depNotes
+                    )
+                )
+            }
+
+            // Parse Rezeki Non-Tunai (v4)
+            val restoredRezeki = mutableListOf<RezekiNonTunaiRecord>()
+            val rezekiArray = dataJson.optJSONArray("rezekiNonTunai") ?: JSONArray()
+            for (i in 0 until rezekiArray.length()) {
+                val rzObj = rezekiArray.getJSONObject(i)
+                val est = rzObj.optDouble("estimatedValue", 0.0)
+                val rate = rzObj.optDouble("suggestedInfaqRate", 0.05)
+                val paidEntry = rzObj.optString("paidJournalEntryId", "").ifBlank { null }
+                restoredRezeki.add(
+                    RezekiNonTunaiRecord(
+                        id = rzObj.getString("id"),
+                        title = rzObj.getString("title"),
+                        giverName = rzObj.optString("giverName", ""),
+                        category = try { RezekiCategory.valueOf(rzObj.optString("category")) } catch (_: Exception) { RezekiCategory.FOOD_BEVERAGE },
+                        estimatedValue = est,
+                        suggestedInfaqRate = rate,
+                        suggestedInfaqAmount = rzObj.optDouble("suggestedInfaqAmount", est * rate),
+                        isPaidInfaq = rzObj.optBoolean("isPaidInfaq", false),
+                        paidJournalEntryId = paidEntry,
+                        dateMillis = rzObj.optLong("dateMillis", System.currentTimeMillis()),
+                        hijriDateString = rzObj.optString("hijriDateString", ""),
+                        notes = rzObj.optString("notes", ""),
+                        createdAtMillis = rzObj.optLong("createdAtMillis", System.currentTimeMillis())
+                    )
+                )
+            }
+
+            // Parse Wallet Mutations (v4)
+            val restoredMutations = mutableListOf<WalletMutationRecord>()
+            val mutArray = dataJson.optJSONArray("walletMutations") ?: JSONArray()
+            for (i in 0 until mutArray.length()) {
+                val mObj = mutArray.getJSONObject(i)
+                val ts = mObj.optLong("timestampMillis", System.currentTimeMillis())
+                restoredMutations.add(
+                    WalletMutationRecord(
+                        id = mObj.getString("id"),
+                        fromWalletId = mObj.getString("fromWalletId"),
+                        toWalletId = mObj.getString("toWalletId"),
+                        amount = mObj.optDouble("amount", 0.0),
+                        adminFee = mObj.optDouble("adminFee", 0.0),
+                        note = mObj.optString("note", ""),
+                        timestampMillis = ts,
+                        date = Date(ts),
+                        transactionId = mObj.optString("transactionId", ""),
+                        linkedJournalEntryId = mObj.optString("linkedJournalEntryId", "")
+                    )
+                )
+            }
+
+            // Parse Preferences Snapshot (v4)
+            val restoredPreferences = BackupPreferencesSnapshot.fromJson(dataJson.optJSONObject("preferences"))
+
             val manifest = BackupManifest(
                 schemaVersion = schemaVersion,
                 exportedAt = exportedAt,
                 journalEntriesCount = restoredEntries.size,
                 walletsCount = restoredWallets.size,
                 goalsCount = restoredGoals.size,
+                qardhCount = restoredQardh.size,
+                rulesCount = restoredRules.size,
+                recurringCount = restoredRecurring.size,
+                distributionsCount = restoredDistributions.size,
+                rezekiCount = restoredRezeki.size,
+                walletMutationsCount = restoredMutations.size,
+                hasPreferences = restoredPreferences != null,
+                deviceName = deviceName,
                 checksum = expectedChecksum,
                 isPasswordProtected = isEncrypted,
                 appVersion = appVersion,
-                isCompatible = schemaVersion <= 3,
-                migrationApplied = schemaVersion < 3
+                isCompatible = schemaVersion in 1..CURRENT_SCHEMA_VERSION,
+                migrationApplied = schemaVersion < CURRENT_SCHEMA_VERSION
             )
 
             RestoreResult.Success(
@@ -731,9 +1192,12 @@ object BackupEngine {
                 restoredRecurring = restoredRecurring,
                 restoredSedekahState = restoredSedekah,
                 restoredDistributions = restoredDistributions,
-                restoredQardh = restoredQardh
+                restoredQardh = restoredQardh,
+                restoredIbadahDeposits = restoredIbadahDeposits,
+                restoredRezekiNonTunai = restoredRezeki,
+                restoredWalletMutations = restoredMutations,
+                restoredPreferences = restoredPreferences
             )
-
         } catch (e: Exception) {
             RestoreResult.Failure("Gagal memproses berkas cadangan: ${e.localizedMessage ?: e.message}")
         }

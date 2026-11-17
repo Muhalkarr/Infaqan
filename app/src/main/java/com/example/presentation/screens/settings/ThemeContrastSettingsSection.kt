@@ -11,13 +11,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.ui.theme.LocalAppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.CyberNeonGreen
+import com.example.ui.theme.rememberAppShape
+import com.example.ui.theme.rememberAppCardShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -50,12 +57,16 @@ fun ThemeOptionBox(
     testTag: String,
     onClick: () -> Unit
 ) {
+    val isTactical = LocalAppThemeMode.current.isTactical
+    val boxShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(10.dp)
     Surface(
-        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(10.dp),
+        color = if (isSelected) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+        } else MaterialTheme.colorScheme.surfaceVariant,
+        shape = boxShape,
         border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(boxShape)
             .clickable(onClick = onClick)
             .testTag(testTag)
     ) {
@@ -114,10 +125,11 @@ fun ThemeContrastSettingsSection(
 
         if (state.themeMode == AppThemeMode.FOLLOW_SYSTEM) {
             val systemIsDark = isSystemInDarkTheme()
+            val noticeShape = if (state.themeMode.isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
             Spacer(modifier = Modifier.height(6.dp))
             Surface(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                shape = RoundedCornerShape(8.dp),
+                shape = noticeShape,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -139,6 +151,33 @@ fun ThemeContrastSettingsSection(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Opsi 2: Protokol Taktis (Gelap // Cyber Terminal & Terang // Clean Lab)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ThemeOptionBox(
+                label = "Taktis Gelap (Terminal)",
+                icon = Icons.Default.Terminal,
+                isSelected = state.themeMode == AppThemeMode.TACTICAL_CYBER,
+                modifier = Modifier.weight(1f),
+                testTag = "settings_theme_tactical_cyber"
+            ) {
+                onSetThemeMode(AppThemeMode.TACTICAL_CYBER)
+            }
+            ThemeOptionBox(
+                label = "Taktis Terang (Clean Lab)",
+                icon = Icons.Default.Terminal,
+                isSelected = state.themeMode == AppThemeMode.TACTICAL_LIGHT,
+                modifier = Modifier.weight(1f),
+                testTag = "settings_theme_tactical_light"
+            ) {
+                onSetThemeMode(AppThemeMode.TACTICAL_LIGHT)
             }
         }
 
@@ -225,6 +264,7 @@ fun TextScaleSettingsSection(
     onSetUiScaleMode: (UiScaleMode) -> Unit,
     onSetUiScaleFactor: (Float) -> Unit
 ) {
+    val isTactical = state.themeMode.isTactical
     SettingsSectionCard(
         title = "Skala Tampilan & Ukuran Teks",
         subtitle = "Pengaturan ukuran font, keterbacaan, dan kenyamanan visual",
@@ -249,8 +289,9 @@ fun TextScaleSettingsSection(
                 )
             }
             Surface(
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(8.dp)
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp),
+                border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)) else null
             ) {
                 Text(
                     text = "${(state.uiScaleFactor * 100).toInt()}%",
@@ -280,11 +321,19 @@ fun TextScaleSettingsSection(
                 val isSelected = state.uiScaleMode == m
                 Surface(
                     onClick = { onSetUiScaleMode(m) },
-                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f) else MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(8.dp),
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp),
                     border = androidx.compose.foundation.BorderStroke(
                         width = 1.dp,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            if (isTactical) MaterialTheme.colorScheme.outline.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                        }
                     ),
                     modifier = Modifier.weight(1f).testTag("btn_ui_scale_${m.name.lowercase()}")
                 ) {
@@ -338,9 +387,14 @@ fun TextScaleSettingsSection(
 
         // Interactive live text preview
         Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
-            shape = RoundedCornerShape(10.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+            ),
+            shape = if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(10.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (isTactical) MaterialTheme.colorScheme.outline.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+            ),
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
         ) {
             Column(

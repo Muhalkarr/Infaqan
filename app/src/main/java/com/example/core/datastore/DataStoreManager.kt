@@ -19,6 +19,11 @@ import com.example.core.security.AutoLockInterval
 import com.example.core.security.SecurityConfig
 import com.example.ui.theme.AppThemeMode
 import com.example.ui.theme.UiScaleMode
+import com.example.core.feature.AppFeatureVisibilityConfig
+import com.example.core.infaq.InfaqReminderFrequency
+import com.example.core.infaq.InfaqVaultReminderConfig
+import com.example.core.report.PdfEditorialConfig
+import java.util.Calendar
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -65,7 +70,14 @@ data class AppUserPreferences(
     val hasCompletedOnboarding: Boolean = false,
     val isShakeFeedbackEnabled: Boolean = true,
     val lastBackupTimeMillis: Long = 0L,
-    val isBackupNudgeDismissed: Boolean = false
+    val isBackupNudgeDismissed: Boolean = false,
+    val featureVisibilityConfig: AppFeatureVisibilityConfig = AppFeatureVisibilityConfig(),
+    val infaqVaultReminderConfig: InfaqVaultReminderConfig = InfaqVaultReminderConfig(),
+    val haulStartDateMillis: Long = 0L,
+    val pdfEditorialConfig: PdfEditorialConfig = PdfEditorialConfig(),
+    val purifiedAuditEntryIds: Set<String> = emptySet(),
+    val notificationConfig: com.example.core.notification.AmanahNotificationConfig = com.example.core.notification.AmanahNotificationConfig(),
+    val autoCloudBackupEnabled: Boolean = false
 )
 
 class DataStoreManager(private val context: Context) {
@@ -115,6 +127,23 @@ class DataStoreManager(private val context: Context) {
         val SECURITY_ANSWER_HASH = stringPreferencesKey("security_answer_hash")
         val AUTO_LOCK_INTERVAL = stringPreferencesKey("security_auto_lock_interval")
         val IS_SHAKE_FEEDBACK_ENABLED = booleanPreferencesKey("is_shake_feedback_enabled")
+        val FEATURE_VISIBILITY_CONFIG = stringPreferencesKey("feature_visibility_config")
+
+        // Infaq Vault Push Notification Schedule & Recurring Payments
+        val INFAQ_REMINDER_ENABLED = booleanPreferencesKey("infaq_reminder_enabled")
+        val INFAQ_REMINDER_FREQUENCY = stringPreferencesKey("infaq_reminder_frequency")
+        val INFAQ_REMINDER_HOUR = intPreferencesKey("infaq_reminder_hour")
+        val INFAQ_REMINDER_MINUTE = intPreferencesKey("infaq_reminder_minute")
+        val INFAQ_REMINDER_DAY_OF_WEEK = intPreferencesKey("infaq_reminder_day_of_week")
+        val INFAQ_REMINDER_MIN_VAULT_AMOUNT = doublePreferencesKey("infaq_reminder_min_vault_amount")
+        val INFAQ_RECURRING_ENABLED = booleanPreferencesKey("infaq_recurring_enabled")
+        val INFAQ_RECURRING_AMOUNT = doublePreferencesKey("infaq_recurring_amount")
+        val INFAQ_RECURRING_TARGET = stringPreferencesKey("infaq_recurring_target")
+        val HAUL_START_DATE_MILLIS = longPreferencesKey("haul_start_date_millis")
+        val PDF_EDITORIAL_CONFIG = stringPreferencesKey("pdf_editorial_config")
+        val PURIFIED_AUDIT_ENTRY_IDS = stringSetPreferencesKey("purified_audit_entry_ids")
+        val NOTIFICATION_CONFIG_JSON = stringPreferencesKey("notification_config_json")
+        val AUTO_CLOUD_BACKUP_ENABLED = booleanPreferencesKey("auto_cloud_backup_enabled")
     }
 
     val userPreferencesFlow: Flow<AppUserPreferences> = context.appDataStore.data
@@ -219,6 +248,25 @@ class DataStoreManager(private val context: Context) {
                 autoLockInterval = autoLock
             )
 
+            val reminderFreqStr = preferences[PreferencesKeys.INFAQ_REMINDER_FREQUENCY]
+                ?: InfaqReminderFrequency.WEEKLY.name
+            val reminderFreq = try {
+                InfaqReminderFrequency.valueOf(reminderFreqStr)
+            } catch (_: Exception) {
+                InfaqReminderFrequency.WEEKLY
+            }
+            val infaqReminderConfig = InfaqVaultReminderConfig(
+                isEnabled = preferences[PreferencesKeys.INFAQ_REMINDER_ENABLED] ?: false,
+                frequency = reminderFreq,
+                hour = (preferences[PreferencesKeys.INFAQ_REMINDER_HOUR] ?: 6).coerceIn(0, 23),
+                minute = (preferences[PreferencesKeys.INFAQ_REMINDER_MINUTE] ?: 0).coerceIn(0, 59),
+                dayOfWeek = preferences[PreferencesKeys.INFAQ_REMINDER_DAY_OF_WEEK] ?: Calendar.FRIDAY,
+                minVaultBalanceThreshold = preferences[PreferencesKeys.INFAQ_REMINDER_MIN_VAULT_AMOUNT] ?: 0.0,
+                isAutoRecurringEnabled = preferences[PreferencesKeys.INFAQ_RECURRING_ENABLED] ?: false,
+                recurringAmount = preferences[PreferencesKeys.INFAQ_RECURRING_AMOUNT] ?: 50_000.0,
+                recurringTargetAsnaf = preferences[PreferencesKeys.INFAQ_RECURRING_TARGET] ?: "Fakir Miskin / 8 Asnaf"
+            )
+
             AppUserPreferences(
                 isDarkMode = isDarkMode,
                 isHighContrast = isHighContrast,
@@ -253,7 +301,14 @@ class DataStoreManager(private val context: Context) {
                 appDisplayMode = appDisplayMode,
                 isShakeFeedbackEnabled = preferences[PreferencesKeys.IS_SHAKE_FEEDBACK_ENABLED] ?: true,
                 lastBackupTimeMillis = preferences[PreferencesKeys.LAST_BACKUP_TIME_MILLIS] ?: 0L,
-                isBackupNudgeDismissed = preferences[PreferencesKeys.IS_BACKUP_NUDGE_DISMISSED] ?: false
+                isBackupNudgeDismissed = preferences[PreferencesKeys.IS_BACKUP_NUDGE_DISMISSED] ?: false,
+                featureVisibilityConfig = AppFeatureVisibilityConfig.fromJson(preferences[PreferencesKeys.FEATURE_VISIBILITY_CONFIG]),
+                infaqVaultReminderConfig = infaqReminderConfig,
+                haulStartDateMillis = preferences[PreferencesKeys.HAUL_START_DATE_MILLIS] ?: 0L,
+                pdfEditorialConfig = PdfEditorialConfig.fromJson(preferences[PreferencesKeys.PDF_EDITORIAL_CONFIG]),
+                purifiedAuditEntryIds = preferences[PreferencesKeys.PURIFIED_AUDIT_ENTRY_IDS] ?: emptySet(),
+                notificationConfig = com.example.core.notification.AmanahNotificationConfig.fromJson(preferences[PreferencesKeys.NOTIFICATION_CONFIG_JSON]),
+                autoCloudBackupEnabled = preferences[PreferencesKeys.AUTO_CLOUD_BACKUP_ENABLED] ?: false
             )
         }
 
@@ -263,12 +318,26 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
+    suspend fun saveFeatureVisibilityConfig(config: AppFeatureVisibilityConfig) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.FEATURE_VISIBILITY_CONFIG] = config.toJson()
+        }
+    }
+
     suspend fun saveThemeMode(mode: AppThemeMode) {
         context.appDataStore.edit { preferences ->
             preferences[PreferencesKeys.THEME_MODE] = mode.name
             when (mode) {
                 AppThemeMode.FOLLOW_SYSTEM -> {
                     // Retain existing boolean flags
+                }
+                AppThemeMode.TACTICAL_CYBER -> {
+                    preferences[PreferencesKeys.IS_DARK_MODE] = true
+                    preferences[PreferencesKeys.IS_HIGH_CONTRAST] = false
+                }
+                AppThemeMode.TACTICAL_LIGHT -> {
+                    preferences[PreferencesKeys.IS_DARK_MODE] = false
+                    preferences[PreferencesKeys.IS_HIGH_CONTRAST] = false
                 }
                 AppThemeMode.ELEGANT_DARK -> {
                     preferences[PreferencesKeys.IS_DARK_MODE] = true
@@ -493,6 +562,51 @@ class DataStoreManager(private val context: Context) {
     suspend fun saveBackupNudgeDismissed(dismissed: Boolean) {
         context.appDataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_BACKUP_NUDGE_DISMISSED] = dismissed
+        }
+    }
+
+    suspend fun saveInfaqVaultReminderConfig(config: InfaqVaultReminderConfig) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.INFAQ_REMINDER_ENABLED] = config.isEnabled
+            preferences[PreferencesKeys.INFAQ_REMINDER_FREQUENCY] = config.frequency.name
+            preferences[PreferencesKeys.INFAQ_REMINDER_HOUR] = config.hour.coerceIn(0, 23)
+            preferences[PreferencesKeys.INFAQ_REMINDER_MINUTE] = config.minute.coerceIn(0, 59)
+            preferences[PreferencesKeys.INFAQ_REMINDER_DAY_OF_WEEK] = config.dayOfWeek
+            preferences[PreferencesKeys.INFAQ_REMINDER_MIN_VAULT_AMOUNT] = config.minVaultBalanceThreshold
+            preferences[PreferencesKeys.INFAQ_RECURRING_ENABLED] = config.isAutoRecurringEnabled
+            preferences[PreferencesKeys.INFAQ_RECURRING_AMOUNT] = config.recurringAmount
+            preferences[PreferencesKeys.INFAQ_RECURRING_TARGET] = config.recurringTargetAsnaf
+        }
+    }
+
+    suspend fun saveHaulStartDateMillis(timestampMillis: Long) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAUL_START_DATE_MILLIS] = timestampMillis
+        }
+    }
+
+    suspend fun savePdfEditorialConfig(config: PdfEditorialConfig) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.PDF_EDITORIAL_CONFIG] = config.toJson()
+        }
+    }
+
+    suspend fun markAuditEntryPurified(entryId: String) {
+        context.appDataStore.edit { preferences ->
+            val current = preferences[PreferencesKeys.PURIFIED_AUDIT_ENTRY_IDS] ?: emptySet()
+            preferences[PreferencesKeys.PURIFIED_AUDIT_ENTRY_IDS] = current + entryId
+        }
+    }
+
+    suspend fun saveNotificationConfig(config: com.example.core.notification.AmanahNotificationConfig) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.NOTIFICATION_CONFIG_JSON] = config.toJson()
+        }
+    }
+
+    suspend fun saveAutoCloudBackupEnabled(enabled: Boolean) {
+        context.appDataStore.edit { preferences ->
+            preferences[PreferencesKeys.AUTO_CLOUD_BACKUP_ENABLED] = enabled
         }
     }
 }

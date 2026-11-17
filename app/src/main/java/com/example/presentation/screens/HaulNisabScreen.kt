@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
@@ -65,13 +67,18 @@ import com.example.ui.theme.White12
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
 import com.example.ui.theme.White70
+import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.CyberNeonGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HaulNisabScreen(
     viewModel: AmanahLedgerViewModel,
     onNavigateBack: () -> Unit,
-    onOpenDrawer: () -> Unit = {}
+    onOpenDrawer: () -> Unit = {},
+    onNavigateToZakatReport: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -85,46 +92,62 @@ fun HaulNisabScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("haul_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+            if (state.themeMode.isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Kalkulator Haul & Nisab",
+                    subCode = "RADAR//NISAB-HAUL-06",
+                    onBack = onNavigateBack,
+                    trailingActions = {
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("haul_menu_sidebar_button")
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu Sidebar", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
-                },
-                title = {
-                    Text(
-                        text = "Kalkulator Haul & Nisab Zakat",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                },
-                actions = {
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("haul_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
+                )
+            } else {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("haul_back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = "Kalkulator Haul & Nisab Zakat",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("haul_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     ) { paddingValues ->
         Column(
@@ -369,6 +392,27 @@ fun HaulNisabScreen(
                         }
                     }
                 }
+            }
+
+            Button(
+                onClick = onNavigateToZakatReport,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 48.dp)
+                    .testTag("haul_nisab_open_zakat_report_btn"),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Buka Laporan Zakat Lengkap (Nisab, Haul & Fitrah)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp
+                )
             }
         }
     }

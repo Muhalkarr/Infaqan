@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Nightlight
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
@@ -59,6 +61,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.VolunteerActivism
+import com.example.ui.theme.isTactical
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -91,6 +94,19 @@ import com.example.core.calendar.HijriCalendarEngine
 import com.example.core.state.AmanahLedgerUiState
 import com.example.ui.theme.EmeraldDark
 import com.example.ui.theme.GoldLight
+import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.LocalAppThemeMode
+import com.example.ui.theme.CyberNeonGreen
+import com.example.ui.theme.CyberTacticalBorder
+import com.example.ui.theme.CyberTacticalGold
+import com.example.ui.theme.CyberTerminalBackground
+import com.example.ui.theme.CyberTerminalSurface
+import com.example.ui.theme.CyberTerminalTextPrimary
+import com.example.ui.theme.CyberTerminalTextSecondary
+import com.example.ui.theme.ChakraPetchFontFamily
+import com.example.ui.theme.ShareTechMonoFontFamily
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.material.icons.filled.Bolt
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -104,7 +120,8 @@ fun AppNavigationDrawerContent(
     onTogglePrivacy: () -> Unit,
     onLockAppNow: () -> Unit,
     onOpenFeedback: (() -> Unit)? = null,
-    onToggleDisplayMode: (() -> Unit)? = null
+    onToggleDisplayMode: (() -> Unit)? = null,
+    onOpenSystemDiagnostics: (() -> Unit)? = null
 ) {
     val isSimpleMode = uiState.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE
     var isSyariahExpanded by remember(isSimpleMode) { mutableStateOf(!isSimpleMode) }
@@ -126,121 +143,313 @@ fun AppNavigationDrawerContent(
                 .verticalScroll(rememberScrollState())
         ) {
             // ==========================================
-            // SIDEBAR HEADER (ISLAMIC MOTIF & PROFILE)
+            // SIDEBAR HEADER (ISLAMIC MOTIF & PROFILE / PROTOKOL TAKTIS DOSSIER)
             // ==========================================
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                EmeraldDark,
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.95f)
+            if (uiState.themeMode.isTactical) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(
+                            androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.8f), Color.Transparent))
                             )
                         )
-                    )
-                    .padding(20.dp)
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        .padding(18.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(CutCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.primaryContainer)
+                                        .border(1.5.dp, MaterialTheme.colorScheme.primary, CutCornerShape(8.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Bolt,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "KONSOL BUKU BESAR // SYARIAH",
+                                        fontFamily = ChakraPetchFontFamily,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                    Text(
+                                        text = "PROTOKOL KEUANGAN AMANAH",
+                                        fontFamily = ShareTechMonoFontFamily,
+                                        fontSize = 9.sp,
+                                        color = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                            }
+
                             Box(
                                 modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(MaterialTheme.colorScheme.primary)
-                                    .border(1.5.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(12.dp)),
+                                    .size(32.dp)
+                                    .clip(CutCornerShape(6.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f), CutCornerShape(6.dp))
+                                    .clickable { onCloseDrawer() },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Nightlight,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = "AMANAH LEDGER",
-                                    fontSize = 17.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = Color.White,
-                                    letterSpacing = 0.5.sp
-                                )
-                                Text(
-                                    text = "Sistem Akuntansi Syariah",
-                                    fontSize = 11.sp,
-                                    color = Color.White.copy(alpha = 0.8f)
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Tutup Sidebar",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
 
-                        IconButton(
-                            onClick = onCloseDrawer,
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Profil Operator Taktis
+                        Box(
                             modifier = Modifier
-                                .size(36.dp)
-                                .testTag("sidebar_close_button")
+                                .fillMaxWidth()
+                                .clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f))
+                                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Tutup Sidebar",
-                                tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Profil Kas Mukmin & Hijri Card
-                    Surface(
-                        color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.25f),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = uiState.userNameKasMukmin,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    text = hijriDate.toString(),
-                                    fontSize = 10.sp,
-                                    color = Color.White.copy(alpha = 0.7f)
-                                )
-                            }
-
-                            // Quick Mask Indicator
-                            IconButton(
-                                onClick = onTogglePrivacy,
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .testTag("sidebar_quick_privacy_toggle")
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            text = "OPERATOR: ${uiState.userNameKasMukmin.uppercase()}",
+                                            fontFamily = ChakraPetchFontFamily,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        Box(modifier = Modifier.size(5.dp).background(MaterialTheme.colorScheme.primary, CutCornerShape(1.dp)))
+                                    }
+                                    Text(
+                                        text = "CLEARANCE: ALPHA // $hijriDate",
+                                        fontFamily = ShareTechMonoFontFamily,
+                                        fontSize = 9.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = onTogglePrivacy,
+                                    modifier = Modifier.size(32.dp).testTag("sidebar_quick_privacy_toggle")
+                                ) {
+                                    Icon(
+                                        imageVector = if (uiState.securityConfig.isMaskBalance) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = "Privasi Saldo",
+                                        tint = if (uiState.securityConfig.isMaskBalance) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // Mode Switcher Banner (Tactical Theme)
+                        val isTacticalSimple = uiState.appDisplayMode == com.example.core.datastore.AppDisplayMode.SIMPLE
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(CutCornerShape(6.dp))
+                                .background(
+                                    if (isTacticalSimple)
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
+                                    else
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                                )
+                                .border(
+                                    1.dp,
+                                    if (isTacticalSimple)
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.65f)
+                                    else
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                    CutCornerShape(6.dp)
+                                )
+                                .clickable { onToggleDisplayMode?.invoke() }
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
+                                .testTag("sidebar_mode_toggle")
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector = if (isTacticalSimple) Icons.Default.AutoAwesome else Icons.Default.Nightlight,
+                                        contentDescription = null,
+                                        tint = if (isTacticalSimple) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = if (isTacticalSimple) "MODE RINGKAS (PEMULA)" else "MODE LENGKAP SYARIAH",
+                                            fontFamily = ChakraPetchFontFamily,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = if (isTacticalSimple) "Ketuk ganti ke Mode Lengkap" else "Ketuk ganti ke Mode Ringkas",
+                                            fontFamily = ShareTechMonoFontFamily,
+                                            fontSize = 9.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
                                 Icon(
-                                    imageVector = if (uiState.securityConfig.isMaskBalance) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                    contentDescription = "Privasi Saldo",
-                                    tint = if (uiState.securityConfig.isMaskBalance) MaterialTheme.colorScheme.secondary else Color.White.copy(alpha = 0.7f),
+                                    imageVector = Icons.Default.SwapHoriz,
+                                    contentDescription = "Ganti Mode Tampilan",
+                                    tint = if (isTacticalSimple) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                     }
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    EmeraldDark,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.95f)
+                                )
+                            )
+                        )
+                        .padding(20.dp)
+                ) {
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.primary)
+                                        .border(1.5.dp, MaterialTheme.colorScheme.secondary, RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Nightlight,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.secondary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "AMANAH LEDGER",
+                                        fontSize = 17.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = Color.White,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                    Text(
+                                        text = "Sistem Akuntansi Syariah",
+                                        fontSize = 11.sp,
+                                        color = Color.White.copy(alpha = 0.8f)
+                                    )
+                                }
+                            }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                            IconButton(
+                                onClick = onCloseDrawer,
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .testTag("sidebar_close_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Tutup Sidebar",
+                                    tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Profil Kas Mukmin & Hijri Card
+                        Surface(
+                            color = MaterialTheme.colorScheme.scrim.copy(alpha = 0.25f),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = uiState.userNameKasMukmin,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = hijriDate.toString(),
+                                        fontSize = 10.sp,
+                                        color = Color.White.copy(alpha = 0.7f)
+                                    )
+                                }
+
+                                // Quick Mask Indicator
+                                IconButton(
+                                    onClick = onTogglePrivacy,
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .testTag("sidebar_quick_privacy_toggle")
+                                ) {
+                                    Icon(
+                                        imageVector = if (uiState.securityConfig.isMaskBalance) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = "Privasi Saldo",
+                                        tint = if (uiState.securityConfig.isMaskBalance) MaterialTheme.colorScheme.secondary else Color.White.copy(alpha = 0.7f),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
 
                     // Mode Switcher Banner
                     Surface(
@@ -300,6 +509,7 @@ fun AppNavigationDrawerContent(
                     }
                 }
             }
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -329,67 +539,95 @@ fun AppNavigationDrawerContent(
                     onClick = { onSelectScreen(Screen.ADD_TRANSACTION) }
                 )
 
-                SidebarNavigationItem(
-                    label = "Kantong Rekening & Kas",
-                    subtitle = "Dompet tunai, rekening bank & e-wallet",
-                    icon = Icons.Default.AccountBalance,
-                    selected = currentScreen == Screen.MULTI_WALLET,
-                    badgeText = "${uiState.wallets.size} Kantong",
-                    badgeColor = MaterialTheme.colorScheme.primary,
-                    testTag = "sidebar_nav_multi_wallet",
-                    onClick = { onSelectScreen(Screen.MULTI_WALLET) }
-                )
+                if (uiState.featureVisibilityConfig.isOperationalModuleEnabled && uiState.featureVisibilityConfig.showMultiWallet) {
+                    SidebarNavigationItem(
+                        label = "Kantong Rekening & Kas",
+                        subtitle = "Dompet tunai, rekening bank & e-wallet",
+                        icon = Icons.Default.AccountBalance,
+                        selected = currentScreen == Screen.MULTI_WALLET,
+                        badgeText = "${uiState.wallets.size} Kantong",
+                        badgeColor = MaterialTheme.colorScheme.primary,
+                        testTag = "sidebar_nav_multi_wallet",
+                        onClick = { onSelectScreen(Screen.MULTI_WALLET) }
+                    )
+                }
 
-                SidebarNavigationItem(
-                    label = "Kalender Hijriyah & Masehi",
-                    subtitle = "Tarikh Islam & jadwal puasa sunnah",
-                    icon = Icons.Default.CalendarMonth,
-                    selected = currentScreen == Screen.DUAL_CALENDAR,
-                    badgeText = "Tarikh & Puasa",
-                    badgeColor = MaterialTheme.colorScheme.secondary,
-                    testTag = "sidebar_nav_dual_calendar",
-                    onClick = { onSelectScreen(Screen.DUAL_CALENDAR) }
-                )
+                if (uiState.featureVisibilityConfig.isOperationalModuleEnabled && uiState.featureVisibilityConfig.showDualCalendar) {
+                    SidebarNavigationItem(
+                        label = "Kalender Hijriyah & Masehi",
+                        subtitle = "Tarikh Islam & jadwal puasa sunnah",
+                        icon = Icons.Default.CalendarMonth,
+                        selected = currentScreen == Screen.DUAL_CALENDAR,
+                        badgeText = "Tarikh & Puasa",
+                        badgeColor = MaterialTheme.colorScheme.secondary,
+                        testTag = "sidebar_nav_dual_calendar",
+                        onClick = { onSelectScreen(Screen.DUAL_CALENDAR) }
+                    )
+                }
 
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                )
+                val hasSimpleIbadahFeatures = (uiState.featureVisibilityConfig.isSyariahModuleEnabled && (uiState.featureVisibilityConfig.showSedekahSubuh || uiState.featureVisibilityConfig.showZakatHub)) ||
+                    (uiState.featureVisibilityConfig.isPlanningModuleEnabled && (uiState.featureVisibilityConfig.showIbadahGoals || uiState.featureVisibilityConfig.showZakatReport))
 
-                SidebarCategoryHeader(title = "IBADAH & KEUANGAN ISLAM")
+                if (hasSimpleIbadahFeatures) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    )
 
-                SidebarNavigationItem(
-                    label = "Sedekah Subuh Harian",
-                    subtitle = "Rutinitas sedekah fajar berkah",
-                    icon = Icons.Default.WbSunny,
-                    selected = currentScreen == Screen.SEDEKAH_SUBUH,
-                    badgeText = if (uiState.sedekahSubuhState.currentStreak > 0) "🔥 ${uiState.sedekahSubuhState.currentStreak} Hari" else null,
-                    badgeColor = MaterialTheme.colorScheme.secondary,
-                    testTag = "sidebar_nav_sedekah_subuh",
-                    onClick = { onSelectScreen(Screen.SEDEKAH_SUBUH) }
-                )
+                    SidebarCategoryHeader(title = "IBADAH & KEUANGAN ISLAM")
 
-                SidebarNavigationItem(
-                    label = "Zakat Hub & Kalkulator",
-                    subtitle = "Hisab zakat profesi & maal mudah",
-                    icon = Icons.Default.VolunteerActivism,
-                    selected = currentScreen == Screen.ZAKAT_HUB,
-                    badgeText = if (uiState.isNisabReached) "Wajib Zakat" else "Hitung",
-                    badgeColor = MaterialTheme.colorScheme.secondary,
-                    testTag = "sidebar_nav_zakat_hub",
-                    onClick = { onSelectScreen(Screen.ZAKAT_HUB) }
-                )
+                    if (uiState.featureVisibilityConfig.isSyariahModuleEnabled && uiState.featureVisibilityConfig.showSedekahSubuh) {
+                        SidebarNavigationItem(
+                            label = "Sedekah Subuh Harian",
+                            subtitle = "Rutinitas sedekah fajar berkah",
+                            icon = Icons.Default.WbSunny,
+                            selected = currentScreen == Screen.SEDEKAH_SUBUH,
+                            badgeText = if (uiState.sedekahSubuhState.currentStreak > 0) "🔥 ${uiState.sedekahSubuhState.currentStreak} Hari" else null,
+                            badgeColor = MaterialTheme.colorScheme.secondary,
+                            testTag = "sidebar_nav_sedekah_subuh",
+                            onClick = { onSelectScreen(Screen.SEDEKAH_SUBUH) }
+                        )
+                    }
 
-                SidebarNavigationItem(
-                    label = "Target Tabungan Ibadah",
-                    subtitle = "Niat Qurban, Aqiqah & Umroh",
-                    icon = Icons.Default.Savings,
-                    selected = currentScreen == Screen.IBADAH_GOALS,
-                    badgeText = "${uiState.ibadahGoals.size} Target",
-                    badgeColor = MaterialTheme.colorScheme.primary,
-                    testTag = "sidebar_nav_ibadah_goals",
-                    onClick = { onSelectScreen(Screen.IBADAH_GOALS) }
-                )
+                    if (uiState.featureVisibilityConfig.isSyariahModuleEnabled && uiState.featureVisibilityConfig.showZakatHub) {
+                        SidebarNavigationItem(
+                            label = "Zakat Hub & Kalkulator",
+                            subtitle = "Hisab zakat profesi & maal mudah",
+                            icon = Icons.Default.VolunteerActivism,
+                            selected = currentScreen == Screen.ZAKAT_HUB,
+                            badgeText = if (uiState.isNisabReached) "Wajib Zakat" else "Hitung",
+                            badgeColor = MaterialTheme.colorScheme.secondary,
+                            testTag = "sidebar_nav_zakat_hub",
+                            onClick = { onSelectScreen(Screen.ZAKAT_HUB) }
+                        )
+                    }
+
+                    if (uiState.featureVisibilityConfig.isPlanningModuleEnabled && uiState.featureVisibilityConfig.showZakatReport) {
+                        SidebarNavigationItem(
+                            label = "Laporan Zakat (Maal & Fitrah)",
+                            subtitle = "Rekap nisab, haul & tanggungan fitrah",
+                            icon = Icons.Default.Assessment,
+                            selected = currentScreen == Screen.ZAKAT_REPORT,
+                            badgeText = if (uiState.totalZakatReportPayable > 0) "Terhitung" else "Laporan",
+                            badgeColor = MaterialTheme.colorScheme.primary,
+                            testTag = "sidebar_nav_zakat_report",
+                            onClick = { onSelectScreen(Screen.ZAKAT_REPORT) }
+                        )
+                    }
+
+                    if (uiState.featureVisibilityConfig.isPlanningModuleEnabled && uiState.featureVisibilityConfig.showIbadahGoals) {
+                        SidebarNavigationItem(
+                            label = "Target Tabungan Ibadah",
+                            subtitle = "Niat Qurban, Aqiqah & Umroh",
+                            icon = Icons.Default.Savings,
+                            selected = currentScreen == Screen.IBADAH_GOALS,
+                            badgeText = "${uiState.ibadahGoals.size} Target",
+                            badgeColor = MaterialTheme.colorScheme.primary,
+                            testTag = "sidebar_nav_ibadah_goals",
+                            onClick = { onSelectScreen(Screen.IBADAH_GOALS) }
+                        )
+                    }
+                }
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
@@ -437,7 +675,14 @@ fun AppNavigationDrawerContent(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable { onSelectScreen(Screen.CENTRAL_SETTINGS) }
+                        .clickable {
+                            if (onToggleDisplayMode != null) {
+                                onToggleDisplayMode.invoke()
+                            } else {
+                                onSelectScreen(Screen.CENTRAL_SETTINGS)
+                            }
+                        }
+                        .testTag("sidebar_simple_mode_upgrade_card")
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -457,7 +702,7 @@ fun AppNavigationDrawerContent(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Memerlukan hisab emas, waris faraidh, audit syariah, atau ekspor laporan? Ubah ke Mode Lengkap di Pengaturan.",
+                            text = "Memerlukan hisab emas, waris faraidh, audit syariah, atau ekspor laporan? Ketuk kartu ini untuk beralih ke Mode Lengkap.",
                             style = MaterialTheme.typography.bodySmall,
                             fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
@@ -490,195 +735,43 @@ fun AppNavigationDrawerContent(
                     onClick = { onSelectScreen(Screen.ADD_TRANSACTION) }
                 )
 
-                SidebarNavigationItem(
-                    label = "Kalender Hijriyah & Masehi",
-                    subtitle = "Tarikh Islam, puasa sunnah & masehi",
-                    icon = Icons.Default.CalendarMonth,
-                    selected = currentScreen == Screen.DUAL_CALENDAR,
-                    badgeText = "Tarikh & Puasa",
-                    badgeColor = MaterialTheme.colorScheme.secondary,
-                    testTag = "sidebar_nav_dual_calendar",
-                    onClick = { onSelectScreen(Screen.DUAL_CALENDAR) }
-                )
+                if (uiState.featureVisibilityConfig.isOperationalModuleEnabled && uiState.featureVisibilityConfig.showDualCalendar) {
+                    SidebarNavigationItem(
+                        label = "Kalender Hijriyah & Masehi",
+                        subtitle = "Tarikh Islam, puasa sunnah & masehi",
+                        icon = Icons.Default.CalendarMonth,
+                        selected = currentScreen == Screen.DUAL_CALENDAR,
+                        badgeText = "Tarikh & Puasa",
+                        badgeColor = MaterialTheme.colorScheme.secondary,
+                        testTag = "sidebar_nav_dual_calendar",
+                        onClick = { onSelectScreen(Screen.DUAL_CALENDAR) }
+                    )
+                }
 
-                SidebarNavigationItem(
-                    label = "Kantong Rekening & Mutasi",
-                    subtitle = "Dompet tunai, rekening bank & e-wallet",
-                    icon = Icons.Default.AccountBalance,
-                    selected = currentScreen == Screen.MULTI_WALLET,
-                    badgeText = "${uiState.wallets.size} Kantong",
-                    badgeColor = MaterialTheme.colorScheme.primary,
-                    testTag = "sidebar_nav_multi_wallet",
-                    onClick = { onSelectScreen(Screen.MULTI_WALLET) }
-                )
+                if (uiState.featureVisibilityConfig.isOperationalModuleEnabled && uiState.featureVisibilityConfig.showMultiWallet) {
+                    SidebarNavigationItem(
+                        label = "Kantong Rekening & Mutasi",
+                        subtitle = "Dompet tunai, rekening bank & e-wallet",
+                        icon = Icons.Default.AccountBalance,
+                        selected = currentScreen == Screen.MULTI_WALLET,
+                        badgeText = "${uiState.wallets.size} Kantong",
+                        badgeColor = MaterialTheme.colorScheme.primary,
+                        testTag = "sidebar_nav_multi_wallet",
+                        onClick = { onSelectScreen(Screen.MULTI_WALLET) }
+                    )
+                }
 
-                SidebarNavigationItem(
-                    label = "Transaksi Rutin & Berulang",
-                    subtitle = "Jadwal tagihan & infaq otomatis",
-                    icon = Icons.Default.Schedule,
-                    selected = currentScreen == Screen.RECURRING_TRANSACTIONS,
-                    badgeText = if (uiState.dueRecurringCount > 0) "${uiState.dueRecurringCount} Jatuh Tempo" else null,
-                    badgeColor = if (uiState.dueRecurringCount > 0) Color(0xFFFF7043) else null,
-                    testTag = "sidebar_nav_recurring",
-                    onClick = { onSelectScreen(Screen.RECURRING_TRANSACTIONS) }
-                )
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                )
-
-                // KELOMPOK 2: FILANTROPI & SYARIAH (Collapsible)
-                SidebarCategoryHeader(
-                    title = "KEUANGAN SYARIAH",
-                    isCollapsible = true,
-                    isExpanded = isSyariahExpanded,
-                    onToggleExpand = { isSyariahExpanded = !isSyariahExpanded }
-                )
-
-                AnimatedVisibility(visible = isSyariahExpanded) {
-                    Column {
-                        SidebarNavigationItem(
-                            label = "Zakat Hub (Profesi/Tijarah/Fitrah)",
-                            subtitle = "Kalkulator zakat maal, fitrah & profesi",
-                            icon = Icons.Default.VolunteerActivism,
-                            selected = currentScreen == Screen.ZAKAT_HUB,
-                            badgeText = if (uiState.isNisabReached) "Wajib Zakat" else "Komprehensif",
-                            badgeColor = MaterialTheme.colorScheme.secondary,
-                            testTag = "sidebar_nav_zakat_hub",
-                            onClick = { onSelectScreen(Screen.ZAKAT_HUB) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Sedekah Subuh & Streak",
-                            subtitle = "Rutinitas sedekah berkah di fajar hari",
-                            icon = Icons.Default.WbSunny,
-                            selected = currentScreen == Screen.SEDEKAH_SUBUH,
-                            badgeText = if (uiState.sedekahSubuhState.currentStreak > 0) "🔥 ${uiState.sedekahSubuhState.currentStreak} Hari" else null,
-                            badgeColor = MaterialTheme.colorScheme.secondary,
-                            testTag = "sidebar_nav_sedekah_subuh",
-                            onClick = { onSelectScreen(Screen.SEDEKAH_SUBUH) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Brankas Infaq & Mustahiq",
-                            subtitle = "Akumulasi infaq & riwayat penyaluran",
-                            icon = Icons.Default.Savings,
-                            selected = currentScreen == Screen.VAULT_HISTORY,
-                            badgeText = if (uiState.securityConfig.isMaskBalance) "Rp •••" else "Rp ${nf.format(uiState.virtualInfaqVaultBalance)}",
-                            badgeColor = MaterialTheme.colorScheme.primary,
-                            testTag = "sidebar_nav_vault_history",
-                            onClick = { onSelectScreen(Screen.VAULT_HISTORY) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Haul & Nisab Tahunan",
-                            subtitle = "Batas minimal & waktu zakat kekayaan",
-                            icon = Icons.Default.MenuBook,
-                            selected = currentScreen == Screen.HAUL_NISAB,
-                            badgeText = if (uiState.isNisabReached) "Tercapai" else "Dipantau",
-                            badgeColor = if (uiState.isNisabReached) MaterialTheme.colorScheme.secondary else null,
-                            testTag = "sidebar_nav_haul_nisab",
-                            onClick = { onSelectScreen(Screen.HAUL_NISAB) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Pelacak Emas & Nisab BAZNAS",
-                            subtitle = "Pantau harga emas acuan hisab BAZNAS",
-                            icon = Icons.Default.MonetizationOn,
-                            selected = currentScreen == Screen.GOLD_NISAB_TRACKER,
-                            badgeText = "SK BAZNAS",
-                            badgeColor = MaterialTheme.colorScheme.secondary,
-                            testTag = "sidebar_nav_gold_nisab",
-                            onClick = { onSelectScreen(Screen.GOLD_NISAB_TRACKER) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Zakat Perniagaan & Saham",
-                            subtitle = "Zakat dagang, bisnis & portofolio syariah",
-                            icon = Icons.Default.BusinessCenter,
-                            selected = currentScreen == Screen.BUSINESS_ZAKAT,
-                            badgeText = "Bisnis & DES",
-                            badgeColor = MaterialTheme.colorScheme.primary,
-                            testTag = "sidebar_nav_business_zakat",
-                            onClick = { onSelectScreen(Screen.BUSINESS_ZAKAT) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Audit Kepatuhan Syariah",
-                            subtitle = "Pemeriksaan akad & kepatuhan syariat",
-                            icon = Icons.Default.VerifiedUser,
-                            selected = currentScreen == Screen.SHARIAH_AUDIT,
-                            badgeText = "Health Check",
-                            badgeColor = MaterialTheme.colorScheme.secondary,
-                            testTag = "sidebar_nav_shariah_audit",
-                            onClick = { onSelectScreen(Screen.SHARIAH_AUDIT) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Aturan Infaq Otomatis",
-                            subtitle = "Penyisihan sedekah dari tiap pemasukan",
-                            icon = Icons.Default.AutoFixHigh,
-                            selected = currentScreen == Screen.INFAQ_RULES,
-                            badgeText = "${uiState.rules.size} Aturan",
-                            testTag = "sidebar_nav_infaq_rules",
-                            onClick = { onSelectScreen(Screen.INFAQ_RULES) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Hutang Piutang (Qardhul Hasan)",
-                            subtitle = "Pinjaman kebajikan tanpa bunga/riba",
-                            icon = Icons.Default.Handshake,
-                            selected = currentScreen == Screen.QARDH,
-                            badgeText = if (uiState.qardhRecords.isNotEmpty()) "${uiState.qardhRecords.size} Akad" else null,
-                            badgeColor = MaterialTheme.colorScheme.primary,
-                            testTag = "sidebar_nav_qardh",
-                            onClick = { onSelectScreen(Screen.QARDH) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Direktori Lembaga Amil ZISWAF",
-                            subtitle = "Penyalur resmi BAZNAS & LAZ terverifikasi",
-                            icon = Icons.Default.LocationCity,
-                            selected = currentScreen == Screen.AMIL_DIRECTORY,
-                            badgeText = "BAZNAS & LAZ",
-                            badgeColor = MaterialTheme.colorScheme.secondary,
-                            testTag = "sidebar_nav_amil_directory",
-                            onClick = { onSelectScreen(Screen.AMIL_DIRECTORY) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Kalkulator Waris (Faraidh)",
-                            subtitle = "Penghitungan pembagian waris syar'i",
-                            icon = Icons.Default.Calculate,
-                            selected = currentScreen == Screen.FARAIDH_CALCULATOR,
-                            badgeText = "Hukum Waris",
-                            testTag = "sidebar_nav_faraidh",
-                            onClick = { onSelectScreen(Screen.FARAIDH_CALCULATOR) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Fatwa & Fiqih Muamalah DSN-MUI",
-                            subtitle = "Rujukan fatwa DSN-MUI & landasan dalil",
-                            icon = Icons.Default.MenuBook,
-                            selected = currentScreen == Screen.ISLAMIC_GROUNDING,
-                            badgeText = "Fatwa & Nisab",
-                            badgeColor = MaterialTheme.colorScheme.primary,
-                            testTag = "sidebar_nav_islamic_grounding",
-                            onClick = { onSelectScreen(Screen.ISLAMIC_GROUNDING) }
-                        )
-
-                        SidebarNavigationItem(
-                            label = "Pusat Kustomisasi Logika Syariah",
-                            subtitle = "Pengaturan bobot hisab & parameter",
-                            icon = Icons.Default.Tune,
-                            selected = currentScreen == Screen.SHARIAH_RULES_CUSTOMIZATION,
-                            badgeText = "Rules Studio",
-                            badgeColor = MaterialTheme.colorScheme.secondary,
-                            testTag = "sidebar_nav_shariah_rules_customization",
-                            onClick = { onSelectScreen(Screen.SHARIAH_RULES_CUSTOMIZATION) }
-                        )
-                    }
+                if (uiState.featureVisibilityConfig.isOperationalModuleEnabled && uiState.featureVisibilityConfig.showRecurringTransactions) {
+                    SidebarNavigationItem(
+                        label = "Transaksi Rutin & Berulang",
+                        subtitle = "Jadwal tagihan & infaq otomatis",
+                        icon = Icons.Default.Schedule,
+                        selected = currentScreen == Screen.RECURRING_TRANSACTIONS,
+                        badgeText = if (uiState.dueRecurringCount > 0) "${uiState.dueRecurringCount} Jatuh Tempo" else null,
+                        badgeColor = if (uiState.dueRecurringCount > 0) Color(0xFFFF7043) else null,
+                        testTag = "sidebar_nav_recurring",
+                        onClick = { onSelectScreen(Screen.RECURRING_TRANSACTIONS) }
+                    )
                 }
 
                 HorizontalDivider(
@@ -686,79 +779,303 @@ fun AppNavigationDrawerContent(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                 )
 
-                // KELOMPOK 3: PERENCANAAN & ANALISIS (Collapsible)
-                SidebarCategoryHeader(
-                    title = "PERENCANAAN & LAPORAN",
-                    isCollapsible = true,
-                    isExpanded = isPlanningExpanded,
-                    onToggleExpand = { isPlanningExpanded = !isPlanningExpanded }
-                )
+                // KELOMPOK 2: FILANTROPI & SYARIAH (Collapsible)
+                if (uiState.featureVisibilityConfig.isSyariahModuleEnabled && uiState.featureVisibilityConfig.activeSyariahCount > 0) {
+                    SidebarCategoryHeader(
+                        title = "KEUANGAN SYARIAH",
+                        isCollapsible = true,
+                        isExpanded = isSyariahExpanded,
+                        onToggleExpand = { isSyariahExpanded = !isSyariahExpanded }
+                    )
 
-                AnimatedVisibility(visible = isPlanningExpanded) {
-                    Column {
-                        SidebarNavigationItem(
-                            label = "Target Finansial dan Ibadah",
-                            subtitle = "Tabungan Qurban, Aqiqah & Haji",
-                            icon = Icons.Default.Savings,
-                            selected = currentScreen == Screen.IBADAH_GOALS,
-                            badgeText = "${uiState.ibadahGoals.size} Target",
-                            badgeColor = MaterialTheme.colorScheme.primary,
-                            testTag = "sidebar_nav_ibadah_goals",
-                            onClick = { onSelectScreen(Screen.IBADAH_GOALS) }
-                        )
+                    AnimatedVisibility(visible = isSyariahExpanded) {
+                        Column {
+                            if (uiState.featureVisibilityConfig.showZakatHub) {
+                                SidebarNavigationItem(
+                                    label = "Zakat Hub (Profesi/Tijarah/Fitrah)",
+                                    subtitle = "Kalkulator zakat maal, fitrah & profesi",
+                                    icon = Icons.Default.VolunteerActivism,
+                                    selected = currentScreen == Screen.ZAKAT_HUB,
+                                    badgeText = if (uiState.isNisabReached) "Wajib Zakat" else "Komprehensif",
+                                    badgeColor = MaterialTheme.colorScheme.secondary,
+                                    testTag = "sidebar_nav_zakat_hub",
+                                    onClick = { onSelectScreen(Screen.ZAKAT_HUB) }
+                                )
+                            }
 
-                        SidebarNavigationItem(
-                            label = "Anggaran & Batas Pos",
-                            subtitle = "Pagu belanja & peringatan boros",
-                            icon = Icons.Default.PieChart,
-                            selected = currentScreen == Screen.BUDGET_ALLOCATION,
-                            badgeText = if (uiState.overBudgetCount > 0) "${uiState.overBudgetCount} Over" else null,
-                            badgeColor = if (uiState.overBudgetCount > 0) Color(0xFFFF7043) else null,
-                            testTag = "sidebar_nav_budget",
-                            onClick = { onSelectScreen(Screen.BUDGET_ALLOCATION) }
-                        )
+                            if (uiState.featureVisibilityConfig.showSedekahSubuh) {
+                                SidebarNavigationItem(
+                                    label = "Sedekah Subuh & Streak",
+                                    subtitle = "Rutinitas sedekah berkah di fajar hari",
+                                    icon = Icons.Default.WbSunny,
+                                    selected = currentScreen == Screen.SEDEKAH_SUBUH,
+                                    badgeText = if (uiState.sedekahSubuhState.currentStreak > 0) "🔥 ${uiState.sedekahSubuhState.currentStreak} Hari" else null,
+                                    badgeColor = MaterialTheme.colorScheme.secondary,
+                                    testTag = "sidebar_nav_sedekah_subuh",
+                                    onClick = { onSelectScreen(Screen.SEDEKAH_SUBUH) }
+                                )
+                            }
 
-                        SidebarNavigationItem(
-                            label = "Analisis & Israf Guard",
-                            subtitle = "Kesehatan finansial & grafik belanja",
-                            icon = Icons.Default.Analytics,
-                            selected = currentScreen == Screen.ANALYTICS,
-                            badgeText = "SLI ${String.format(Locale.US, "%.0f", uiState.spiritualLiquidityIndex)}%",
-                            testTag = "sidebar_nav_analytics",
-                            onClick = { onSelectScreen(Screen.ANALYTICS) }
-                        )
+                            if (uiState.featureVisibilityConfig.showInfaqVault) {
+                                SidebarNavigationItem(
+                                    label = "Brankas Infaq & Mustahiq",
+                                    subtitle = "Akumulasi infaq & riwayat penyaluran",
+                                    icon = Icons.Default.Savings,
+                                    selected = currentScreen == Screen.VAULT_HISTORY,
+                                    badgeText = if (uiState.securityConfig.isMaskBalance) "Rp •••" else "Rp ${nf.format(uiState.virtualInfaqVaultBalance)}",
+                                    badgeColor = MaterialTheme.colorScheme.primary,
+                                    testTag = "sidebar_nav_vault_history",
+                                    onClick = { onSelectScreen(Screen.VAULT_HISTORY) }
+                                )
+                            }
 
-                        SidebarNavigationItem(
-                            label = "Laporan Bulanan & Ekspor",
-                            subtitle = "Rekapitulasi mutasi bulanan & infaq",
-                            icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                            selected = currentScreen == Screen.MONTHLY_REPORT,
-                            testTag = "sidebar_nav_monthly_report",
-                            onClick = { onSelectScreen(Screen.MONTHLY_REPORT) }
-                        )
+                            if (uiState.featureVisibilityConfig.showHaulNisab) {
+                                SidebarNavigationItem(
+                                    label = "Haul & Nisab Tahunan",
+                                    subtitle = "Batas minimal & waktu zakat kekayaan",
+                                    icon = Icons.Default.MenuBook,
+                                    selected = currentScreen == Screen.HAUL_NISAB,
+                                    badgeText = if (uiState.isNisabReached) "Tercapai" else "Dipantau",
+                                    badgeColor = if (uiState.isNisabReached) MaterialTheme.colorScheme.secondary else null,
+                                    testTag = "sidebar_nav_haul_nisab",
+                                    onClick = { onSelectScreen(Screen.HAUL_NISAB) }
+                                )
+                            }
 
-                        SidebarNavigationItem(
-                            label = "Arsip Bukti Struk Transaksi",
-                            subtitle = "Foto kuitansi & nota pembelanjaan",
-                            icon = Icons.Default.PhotoLibrary,
-                            selected = currentScreen == Screen.RECEIPT_ARCHIVE,
-                            badgeText = "${uiState.journalEntries.count { it.receiptAttachment != null }} Struk",
-                            badgeColor = MaterialTheme.colorScheme.secondary,
-                            testTag = "sidebar_nav_receipt_archive",
-                            onClick = { onSelectScreen(Screen.RECEIPT_ARCHIVE) }
-                        )
+                            if (uiState.featureVisibilityConfig.showGoldNisabTracker) {
+                                SidebarNavigationItem(
+                                    label = "Pelacak Emas & Nisab BAZNAS",
+                                    subtitle = "Pantau harga emas acuan hisab BAZNAS",
+                                    icon = Icons.Default.MonetizationOn,
+                                    selected = currentScreen == Screen.GOLD_NISAB_TRACKER,
+                                    badgeText = "SK BAZNAS",
+                                    badgeColor = MaterialTheme.colorScheme.secondary,
+                                    isExperimental = true,
+                                    testTag = "sidebar_nav_gold_nisab",
+                                    onClick = { onSelectScreen(Screen.GOLD_NISAB_TRACKER) }
+                                )
+                            }
 
-                        SidebarNavigationItem(
-                            label = "Ekspor PDF & CSV Mutasi",
-                            subtitle = "Unduh salinan berkas pembukuan kas",
-                            icon = Icons.Default.FileDownload,
-                            selected = currentScreen == Screen.EXPORT_REPORT,
-                            badgeText = "PDF / CSV",
-                            badgeColor = MaterialTheme.colorScheme.primary,
-                            testTag = "sidebar_nav_export_report",
-                            onClick = { onSelectScreen(Screen.EXPORT_REPORT) }
-                        )
+                            if (uiState.featureVisibilityConfig.showBusinessZakat) {
+                                SidebarNavigationItem(
+                                    label = "Zakat Perniagaan & Saham",
+                                    subtitle = "Zakat dagang, bisnis & portofolio syariah",
+                                    icon = Icons.Default.BusinessCenter,
+                                    selected = currentScreen == Screen.BUSINESS_ZAKAT,
+                                    badgeText = "Bisnis & DES",
+                                    badgeColor = MaterialTheme.colorScheme.primary,
+                                    isExperimental = true,
+                                    testTag = "sidebar_nav_business_zakat",
+                                    onClick = { onSelectScreen(Screen.BUSINESS_ZAKAT) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showShariahAudit) {
+                                SidebarNavigationItem(
+                                    label = "Audit Kepatuhan Syariah",
+                                    subtitle = "Pemeriksaan akad & kepatuhan syariat",
+                                    icon = Icons.Default.VerifiedUser,
+                                    selected = currentScreen == Screen.SHARIAH_AUDIT,
+                                    badgeText = "Health Check",
+                                    badgeColor = MaterialTheme.colorScheme.secondary,
+                                    isExperimental = true,
+                                    testTag = "sidebar_nav_shariah_audit",
+                                    onClick = { onSelectScreen(Screen.SHARIAH_AUDIT) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showAutoInfaqRules) {
+                                SidebarNavigationItem(
+                                    label = "Aturan Infaq Otomatis",
+                                    subtitle = "Penyisihan sedekah dari tiap pemasukan",
+                                    icon = Icons.Default.AutoFixHigh,
+                                    selected = currentScreen == Screen.INFAQ_RULES,
+                                    badgeText = "${uiState.rules.size} Aturan",
+                                    testTag = "sidebar_nav_infaq_rules",
+                                    onClick = { onSelectScreen(Screen.INFAQ_RULES) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showQardhHasan) {
+                                SidebarNavigationItem(
+                                    label = "Hutang Piutang (Qardhul Hasan)",
+                                    subtitle = "Pinjaman kebajikan tanpa bunga/riba",
+                                    icon = Icons.Default.Handshake,
+                                    selected = currentScreen == Screen.QARDH,
+                                    badgeText = if (uiState.qardhRecords.isNotEmpty()) "${uiState.qardhRecords.size} Akad" else null,
+                                    badgeColor = MaterialTheme.colorScheme.primary,
+                                    testTag = "sidebar_nav_qardh",
+                                    onClick = { onSelectScreen(Screen.QARDH) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showAmilDirectory) {
+                                SidebarNavigationItem(
+                                    label = "Direktori Lembaga Amil ZISWAF",
+                                    subtitle = "Penyalur resmi BAZNAS & LAZ terverifikasi",
+                                    icon = Icons.Default.LocationCity,
+                                    selected = currentScreen == Screen.AMIL_DIRECTORY,
+                                    badgeText = "BAZNAS & LAZ",
+                                    badgeColor = MaterialTheme.colorScheme.secondary,
+                                    testTag = "sidebar_nav_amil_directory",
+                                    onClick = { onSelectScreen(Screen.AMIL_DIRECTORY) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showFaraidhCalculator) {
+                                SidebarNavigationItem(
+                                    label = "Kalkulator Waris (Faraidh)",
+                                    subtitle = "Penghitungan pembagian waris syar'i",
+                                    icon = Icons.Default.Calculate,
+                                    selected = currentScreen == Screen.FARAIDH_CALCULATOR,
+                                    badgeText = "Hukum Waris",
+                                    isExperimental = true,
+                                    testTag = "sidebar_nav_faraidh",
+                                    onClick = { onSelectScreen(Screen.FARAIDH_CALCULATOR) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showIslamicGrounding) {
+                                SidebarNavigationItem(
+                                    label = "Fatwa & Fiqih Muamalah DSN-MUI",
+                                    subtitle = "Rujukan fatwa DSN-MUI & landasan dalil",
+                                    icon = Icons.Default.MenuBook,
+                                    selected = currentScreen == Screen.ISLAMIC_GROUNDING,
+                                    badgeText = "Fatwa & Nisab",
+                                    badgeColor = MaterialTheme.colorScheme.primary,
+                                    testTag = "sidebar_nav_islamic_grounding",
+                                    onClick = { onSelectScreen(Screen.ISLAMIC_GROUNDING) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showShariahRulesCustomization) {
+                                SidebarNavigationItem(
+                                    label = "Pusat Kustomisasi Logika Syariah",
+                                    subtitle = "Pengaturan bobot hisab & parameter",
+                                    icon = Icons.Default.Tune,
+                                    selected = currentScreen == Screen.SHARIAH_RULES_CUSTOMIZATION,
+                                    badgeText = "Rules Studio",
+                                    badgeColor = MaterialTheme.colorScheme.secondary,
+                                    isExperimental = true,
+                                    testTag = "sidebar_nav_shariah_rules_customization",
+                                    onClick = { onSelectScreen(Screen.SHARIAH_RULES_CUSTOMIZATION) }
+                                )
+                            }
+                        }
                     }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    )
+                }
+
+                // KELOMPOK 3: PERENCANAAN & ANALISIS (Collapsible)
+                if (uiState.featureVisibilityConfig.isPlanningModuleEnabled && uiState.featureVisibilityConfig.activePlanningCount > 0) {
+                    SidebarCategoryHeader(
+                        title = "PERENCANAAN & LAPORAN",
+                        isCollapsible = true,
+                        isExpanded = isPlanningExpanded,
+                        onToggleExpand = { isPlanningExpanded = !isPlanningExpanded }
+                    )
+
+                    AnimatedVisibility(visible = isPlanningExpanded) {
+                        Column {
+                            if (uiState.featureVisibilityConfig.showIbadahGoals) {
+                                SidebarNavigationItem(
+                                    label = "Target Finansial dan Ibadah",
+                                    subtitle = "Tabungan Qurban, Aqiqah & Haji",
+                                    icon = Icons.Default.Savings,
+                                    selected = currentScreen == Screen.IBADAH_GOALS,
+                                    badgeText = "${uiState.ibadahGoals.size} Target",
+                                    badgeColor = MaterialTheme.colorScheme.primary,
+                                    testTag = "sidebar_nav_ibadah_goals",
+                                    onClick = { onSelectScreen(Screen.IBADAH_GOALS) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showBudgetAllocation) {
+                                SidebarNavigationItem(
+                                    label = "Anggaran & Batas Pos",
+                                    subtitle = "Pagu belanja & peringatan boros",
+                                    icon = Icons.Default.PieChart,
+                                    selected = currentScreen == Screen.BUDGET_ALLOCATION,
+                                    badgeText = if (uiState.overBudgetCount > 0) "${uiState.overBudgetCount} Over" else null,
+                                    badgeColor = if (uiState.overBudgetCount > 0) Color(0xFFFF7043) else null,
+                                    testTag = "sidebar_nav_budget",
+                                    onClick = { onSelectScreen(Screen.BUDGET_ALLOCATION) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showAnalytics) {
+                                SidebarNavigationItem(
+                                    label = "Analisis & Israf",
+                                    subtitle = "Kesehatan finansial, arus dana & peringatan israf",
+                                    icon = Icons.Default.Analytics,
+                                    selected = currentScreen == Screen.ANALYTICS,
+                                    badgeText = "SLI ${String.format(Locale.US, "%.0f", uiState.spiritualLiquidityIndex)}%",
+                                    testTag = "sidebar_nav_analytics",
+                                    onClick = { onSelectScreen(Screen.ANALYTICS) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showMonthlyReport) {
+                                SidebarNavigationItem(
+                                    label = "Laporan Bulanan & Ekspor",
+                                    subtitle = "Rekapitulasi mutasi bulanan & infaq",
+                                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                                    selected = currentScreen == Screen.MONTHLY_REPORT,
+                                    testTag = "sidebar_nav_monthly_report",
+                                    onClick = { onSelectScreen(Screen.MONTHLY_REPORT) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showReceiptArchive) {
+                                SidebarNavigationItem(
+                                    label = "Arsip Bukti Struk Transaksi",
+                                    subtitle = "Foto kuitansi & nota pembelanjaan",
+                                    icon = Icons.Default.PhotoLibrary,
+                                    selected = currentScreen == Screen.RECEIPT_ARCHIVE,
+                                    badgeText = "${uiState.journalEntries.count { it.receiptAttachment != null }} Struk",
+                                    badgeColor = MaterialTheme.colorScheme.secondary,
+                                    isExperimental = true,
+                                    testTag = "sidebar_nav_receipt_archive",
+                                    onClick = { onSelectScreen(Screen.RECEIPT_ARCHIVE) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showExportReport) {
+                                SidebarNavigationItem(
+                                    label = "Ekspor PDF & CSV Mutasi",
+                                    subtitle = "Unduh salinan berkas pembukuan kas",
+                                    icon = Icons.Default.FileDownload,
+                                    selected = currentScreen == Screen.EXPORT_REPORT,
+                                    badgeText = "PDF / CSV",
+                                    badgeColor = MaterialTheme.colorScheme.primary,
+                                    testTag = "sidebar_nav_export_report",
+                                    onClick = { onSelectScreen(Screen.EXPORT_REPORT) }
+                                )
+                            }
+
+                            if (uiState.featureVisibilityConfig.showZakatReport) {
+                                SidebarNavigationItem(
+                                    label = "Laporan Zakat (Maal & Fitrah)",
+                                    subtitle = "Audit nisab, haul & tanggungan fitrah",
+                                    icon = Icons.Default.Assessment,
+                                    selected = currentScreen == Screen.ZAKAT_REPORT,
+                                    badgeText = if (uiState.totalZakatReportPayable > 0) "Rp ${nf.format(uiState.totalZakatReportPayable)}" else "Hisab",
+                                    badgeColor = MaterialTheme.colorScheme.secondary,
+                                    testTag = "sidebar_nav_zakat_report",
+                                    onClick = { onSelectScreen(Screen.ZAKAT_REPORT) }
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    )
                 }
 
                 HorizontalDivider(
@@ -832,6 +1149,17 @@ fun AppNavigationDrawerContent(
                 }
 
                 SidebarNavigationItem(
+                    label = "Pusat Notifikasi & Pengingat",
+                    subtitle = "Infaq harian, hutang Qardh & haul zakat",
+                    icon = Icons.Default.NotificationsActive,
+                    selected = currentScreen == Screen.NOTIFICATION_SETTINGS,
+                    badgeText = if (uiState.notificationConfig.isMasterEnabled) "${uiState.notificationConfig.activeChannelCount()}/3" else "Off",
+                    badgeColor = if (uiState.notificationConfig.isMasterEnabled) MaterialTheme.colorScheme.primary else null,
+                    testTag = "sidebar_nav_notification_settings",
+                    onClick = { onSelectScreen(Screen.NOTIFICATION_SETTINGS) }
+                )
+
+                SidebarNavigationItem(
                     label = "Cadangan Data & Restore",
                     subtitle = "Enkripsi & pemulihan database lokal",
                     icon = Icons.Default.Security,
@@ -891,26 +1219,67 @@ fun AppNavigationDrawerContent(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Quick Theme Toggle
+                        // Quick Theme Toggle (Terang / Gelap)
+                        val systemIsDark = androidx.compose.foundation.isSystemInDarkTheme()
+                        val effectiveIsDark = when (uiState.themeMode) {
+                            AppThemeMode.FOLLOW_SYSTEM -> systemIsDark
+                            AppThemeMode.TACTICAL_CYBER, AppThemeMode.ELEGANT_DARK, AppThemeMode.HIGH_CONTRAST_DARK -> true
+                            else -> false
+                        }
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(if (uiState.themeMode.isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp))
                                 .clickable { onToggleTheme() }
                                 .padding(horizontal = 8.dp, vertical = 6.dp)
                                 .testTag("sidebar_footer_theme_toggle")
                         ) {
                             Icon(
-                                imageVector = if (uiState.isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                imageVector = if (effectiveIsDark) Icons.Default.LightMode else Icons.Default.DarkMode,
                                 contentDescription = "Ganti Tema",
                                 tint = MaterialTheme.colorScheme.secondary,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = if (uiState.isDarkMode) "Terang" else "Gelap",
+                                text = if (effectiveIsDark) "Terang" else "Gelap",
                                 fontSize = 12.sp,
+                                fontFamily = if (uiState.themeMode.isTactical) ShareTechMonoFontFamily else null,
                                 color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        // SYS//TEMA Selector Button (Tombol SYS/TEMA di samping switch tema)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(if (uiState.themeMode.isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp))
+                                .background(if (uiState.themeMode.isTactical) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                                .border(
+                                    1.dp,
+                                    if (uiState.themeMode.isTactical) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                    if (uiState.themeMode.isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
+                                )
+                                .clickable {
+                                    onCloseDrawer()
+                                    onOpenSystemDiagnostics?.invoke()
+                                }
+                                .padding(horizontal = 8.dp, vertical = 6.dp)
+                                .testTag("sidebar_footer_sys_theme_toggle")
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .background(MaterialTheme.colorScheme.primary, if (uiState.themeMode.isTactical) CutCornerShape(1.dp) else CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "SYS//TEMA",
+                                fontSize = 11.sp,
+                                fontFamily = if (uiState.themeMode.isTactical) ChakraPetchFontFamily else null,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                letterSpacing = 0.5.sp
                             )
                         }
 
@@ -919,7 +1288,7 @@ fun AppNavigationDrawerContent(
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(if (uiState.themeMode.isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp))
                                     .clickable { onLockAppNow() }
                                     .padding(horizontal = 8.dp, vertical = 6.dp)
                                     .testTag("sidebar_footer_quick_lock")
@@ -930,7 +1299,7 @@ fun AppNavigationDrawerContent(
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "Kunci",
                                     fontSize = 12.sp,
@@ -946,7 +1315,7 @@ fun AppNavigationDrawerContent(
                     Box(
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(if (uiState.themeMode.isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp))
                             .clickable {
                                 onCloseDrawer()
                                 onOpenFeedback?.invoke()
@@ -955,7 +1324,7 @@ fun AppNavigationDrawerContent(
                             .testTag("drawer_feedback_footer_button")
                     ) {
                         Text(
-                            text = "Amanah Ledger v2.5\n© 2026 Muhalkarr • Buka Masukan & Changelog",
+                            text = "Amanah Ledger v2.6\n© 2026 Muhalkarr • Buka Masukan & Changelog",
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             fontSize = 10.sp,
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
@@ -976,6 +1345,7 @@ private fun SidebarCategoryHeader(
     isExpanded: Boolean = true,
     onToggleExpand: (() -> Unit)? = null
 ) {
+    val isTactical = LocalAppThemeMode.current.isTactical
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -983,7 +1353,7 @@ private fun SidebarCategoryHeader(
             .then(
                 if (isCollapsible && onToggleExpand != null) {
                     Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp))
                         .clickable { onToggleExpand() }
                 } else Modifier
             ),
@@ -993,6 +1363,7 @@ private fun SidebarCategoryHeader(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = title,
+                fontFamily = if (isTactical) ChakraPetchFontFamily else null,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -1002,11 +1373,12 @@ private fun SidebarCategoryHeader(
                 Spacer(modifier = Modifier.width(6.dp))
                 Surface(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(6.dp)
+                    shape = if (isTactical) CutCornerShape(3.dp) else RoundedCornerShape(6.dp)
                 ) {
                     Text(
                         text = badgeText,
                         fontSize = 9.sp,
+                        fontFamily = if (isTactical) ShareTechMonoFontFamily else null,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
@@ -1033,10 +1405,18 @@ private fun SidebarNavigationItem(
     subtitle: String? = null,
     badgeText: String? = null,
     badgeColor: Color? = null,
+    isExperimental: Boolean = false,
     testTag: String,
     onClick: () -> Unit
 ) {
+    val themeMode = LocalAppThemeMode.current
+    val isTacticalLight = themeMode == AppThemeMode.TACTICAL_LIGHT
+    val isTacticalCyber = themeMode == AppThemeMode.TACTICAL_CYBER
+    val isTactical = isTacticalLight || isTacticalCyber
+    val itemShape = if (isTactical) CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp) else RoundedCornerShape(12.dp)
+
     NavigationDrawerItem(
+        shape = itemShape,
         label = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1044,18 +1424,29 @@ private fun SidebarNavigationItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = label,
-                        fontSize = 13.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = if (isTactical) label.uppercase() else label,
+                            fontFamily = if (isTactical) ChakraPetchFontFamily else null,
+                            fontSize = 13.sp,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = if (isExperimental) Modifier.weight(1f, fill = false) else Modifier
+                        )
+                        if (isExperimental) {
+                            ExperimentalBadge(text = if (isTactical) "EXP//LAB" else "🧪 Lab")
+                        }
+                    }
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
+                            fontFamily = if (isTactical) ShareTechMonoFontFamily else null,
                             fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                            color = if (isTacticalCyber) CyberTerminalTextSecondary else MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -1064,15 +1455,18 @@ private fun SidebarNavigationItem(
 
                 if (badgeText != null) {
                     Spacer(modifier = Modifier.width(6.dp))
+                    val currentBadgeAccent = badgeColor ?: if (isTacticalCyber) CyberNeonGreen else MaterialTheme.colorScheme.primary
                     Surface(
-                        color = (badgeColor ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(6.dp)
+                        color = currentBadgeAccent.copy(alpha = if (isTacticalLight) 0.12f else 0.15f),
+                        shape = if (isTactical) CutCornerShape(3.dp) else RoundedCornerShape(6.dp),
+                        border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, currentBadgeAccent.copy(alpha = if (isTacticalLight) 0.7f else 0.5f)) else null
                     ) {
                         Text(
                             text = badgeText,
-                            fontSize = 10.sp,
+                            fontFamily = if (isTactical) ShareTechMonoFontFamily else null,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = badgeColor ?: MaterialTheme.colorScheme.primary,
+                            color = currentBadgeAccent,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
@@ -1083,20 +1477,29 @@ private fun SidebarNavigationItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (selected) {
+                    if (isTacticalCyber) CyberNeonGreen else MaterialTheme.colorScheme.primary
+                } else {
+                    if (isTacticalCyber) CyberTerminalTextSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 modifier = Modifier.size(20.dp)
             )
         },
         selected = selected,
         onClick = onClick,
         colors = NavigationDrawerItemDefaults.colors(
-            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            selectedContainerColor = if (isTacticalCyber) CyberNeonGreen.copy(alpha = 0.18f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
             unselectedContainerColor = Color.Transparent,
-            selectedTextColor = MaterialTheme.colorScheme.primary,
-            unselectedTextColor = MaterialTheme.colorScheme.onSurface
+            selectedTextColor = if (isTacticalCyber) CyberNeonGreen else MaterialTheme.colorScheme.primary,
+            unselectedTextColor = if (isTacticalCyber) CyberTerminalTextPrimary else MaterialTheme.colorScheme.onSurface
         ),
         modifier = Modifier
             .padding(horizontal = 12.dp, vertical = 1.dp)
+            .then(
+                if (isTactical && selected) {
+                    Modifier.border(1.2.dp, if (isTacticalCyber) CyberNeonGreen.copy(alpha = 0.6f) else MaterialTheme.colorScheme.primary, itemShape)
+                } else Modifier
+            )
             .testTag(testTag)
     )
 }

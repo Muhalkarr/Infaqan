@@ -60,6 +60,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.CyberNeonGreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -112,77 +116,108 @@ fun SedekahSubuhScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("sedekah_subuh_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                title = {
-                    Column {
-                        Text(
-                            text = "Sedekah Subuh Streak",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Konsistensi Kebaikan di Awal Fajar",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                },
-                actions = {
-                    Surface(
-                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(20.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)),
-                        modifier = Modifier.padding(end = 12.dp)
-                    ) {
+            if (state.themeMode.isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Sedekah Subuh Streak",
+                    subCode = "DAWN//STREAK-40",
+                    onBack = onNavigateBack,
+                    trailingActions = {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f), androidx.compose.foundation.shape.CutCornerShape(4.dp))
+                                .border(1.dp, MaterialTheme.colorScheme.primary, androidx.compose.foundation.shape.CutCornerShape(4.dp))
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "🔥",
-                                fontSize = 13.sp
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "${subuhState.currentStreak} Hari",
-                                fontSize = 12.sp,
+                                text = "STREAK: ${subuhState.currentStreak}D",
+                                fontFamily = com.example.ui.theme.ShareTechMonoFontFamily,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("sedekah_subuh_menu_sidebar_button")
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu Sidebar", tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                )
+            } else {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("sedekah_subuh_back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    title = {
+                        Column {
+                            Text(
+                                text = "Sedekah Subuh Streak",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Konsistensi Kebaikan di Awal Fajar",
+                                fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.secondary
                             )
                         }
+                    },
+                    actions = {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(20.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f)),
+                            modifier = Modifier.padding(end = 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "🔥",
+                                    fontSize = 13.sp
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "${subuhState.currentStreak} Hari",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("sedekah_subuh_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("sedekah_subuh_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            )
-        }
+                )
+            }
+        },
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier

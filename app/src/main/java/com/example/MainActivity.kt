@@ -1,17 +1,35 @@
 package com.example
 
+import android.content.Intent
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
@@ -33,6 +51,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.ui.theme.isTactical
 import com.example.Screen
 import com.example.core.debug.AppDebugLogger
 import com.example.core.state.AmanahLedgerViewModel
@@ -67,12 +87,15 @@ import kotlinx.coroutines.launch
 class MainActivity : FragmentActivity() {
     private val viewModel: AmanahLedgerViewModel by viewModels()
     private var shakeDetector: com.example.core.sensor.ShakeDetector? = null
+    private var pendingNavigationDestination by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         com.example.core.auth.FirebaseSafeInitializer.init(this)
         enableEdgeToEdge()
         viewModel.initContextDependencies(this)
+        viewModel.trySilentGoogleSignIn(this)
+        pendingNavigationDestination = intent?.getStringExtra("NAVIGATE_TO")
 
         shakeDetector = com.example.core.sensor.ShakeDetector {
             if (viewModel.uiState.value.isShakeFeedbackEnabled) {
@@ -85,12 +108,18 @@ class MainActivity : FragmentActivity() {
             val systemInDarkTheme = isSystemInDarkTheme()
             val effectiveDarkMode = when (state.themeMode) {
                 AppThemeMode.FOLLOW_SYSTEM -> systemInDarkTheme
-                AppThemeMode.ELEGANT_DARK, AppThemeMode.HIGH_CONTRAST_DARK -> true
-                AppThemeMode.LIGHT_MODE, AppThemeMode.HIGH_CONTRAST_LIGHT -> false
+                AppThemeMode.TACTICAL_CYBER, AppThemeMode.ELEGANT_DARK, AppThemeMode.HIGH_CONTRAST_DARK -> true
+                AppThemeMode.TACTICAL_LIGHT, AppThemeMode.LIGHT_MODE, AppThemeMode.HIGH_CONTRAST_LIGHT -> false
             }
             val effectiveHighContrast = when (state.themeMode) {
                 AppThemeMode.HIGH_CONTRAST_LIGHT, AppThemeMode.HIGH_CONTRAST_DARK -> true
                 else -> state.isHighContrast
+            }
+
+            androidx.compose.runtime.SideEffect {
+                val controller = androidx.core.view.WindowCompat.getInsetsController(this@MainActivity.window, this@MainActivity.window.decorView)
+                controller.isAppearanceLightStatusBars = !effectiveDarkMode
+                controller.isAppearanceLightNavigationBars = !effectiveDarkMode
             }
 
             var showFeedbackSheet by remember { androidx.compose.runtime.mutableStateOf(false) }
@@ -103,9 +132,16 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            val initialDestination = intent?.getStringExtra("NAVIGATE_TO")
+            LaunchedEffect(state.securityConfig.isScreenshotProtected) {
+                if (state.securityConfig.isScreenshotProtected) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }
+            }
 
             AmanahLedgerTheme(
+                themeMode = state.themeMode,
                 darkTheme = effectiveDarkMode,
                 highContrast = effectiveHighContrast,
                 uiScaleFactor = state.uiScaleFactor
@@ -113,10 +149,15 @@ class MainActivity : FragmentActivity() {
                 androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
                     AmanahMainApp(
                         viewModel = viewModel,
-                        initialDestination = initialDestination
+                        initialDestination = pendingNavigationDestination,
+                        onNavigationHandled = { pendingNavigationDestination = null }
                     )
 
-                    if (!state.hasCompletedOnboarding) {
+                    AnimatedVisibility(
+                        visible = !state.hasCompletedOnboarding,
+                        enter = fadeIn(tween(350)),
+                        exit = fadeOut(tween(300))
+                    ) {
                         OnboardingScreen(
                             viewModel = viewModel,
                             onComplete = { viewModel.completeOnboarding() }
@@ -145,6 +186,15 @@ class MainActivity : FragmentActivity() {
         viewModel.onAppBackgrounded()
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val target = intent.getStringExtra("NAVIGATE_TO")
+        if (!target.isNullOrBlank()) {
+            pendingNavigationDestination = target
+        }
+    }
+
     override fun onStart() {
         super.onStart()
         shakeDetector?.start(this)
@@ -163,7 +213,8 @@ data class BottomNavItem(
 @Composable
 fun AmanahMainApp(
     viewModel: AmanahLedgerViewModel,
-    initialDestination: String? = null
+    initialDestination: String? = null,
+    onNavigationHandled: () -> Unit = {}
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -171,9 +222,9 @@ fun AmanahMainApp(
     val currentScreen = remember(currentRoute) { Screen.fromRoute(currentRoute) }
     val state by viewModel.uiState.collectAsState()
 
-    // Navigasi instan dari Shortcut atau App Widget
-    LaunchedEffect(initialDestination) {
-        if (!initialDestination.isNullOrBlank()) {
+    // Navigasi instan dari Shortcut, Notifikasi, atau App Widget (baik cold start maupun onNewIntent)
+    LaunchedEffect(initialDestination, state.securityConfig.isAppLocked) {
+        if (!initialDestination.isNullOrBlank() && !state.securityConfig.isAppLocked) {
             val route = when (initialDestination) {
                 "ADD_TRANSACTION_EXPENSE" -> "${AmanahRoutes.ADD_TRANSACTION}?type=EXPENSE"
                 "ADD_TRANSACTION_INCOME" -> "${AmanahRoutes.ADD_TRANSACTION}?type=INFLOW"
@@ -181,7 +232,13 @@ fun AmanahMainApp(
                 "SEDEKAH_SUBUH" -> AmanahRoutes.SEDEKAH_SUBUH
                 "IBADAH_GOALS" -> AmanahRoutes.IBADAH_GOALS
                 "ZAKAT_HUB" -> AmanahRoutes.ZAKAT_HUB
+                "ZAKAT_REPORT" -> AmanahRoutes.ZAKAT_REPORT
+                "VAULT_HISTORY" -> AmanahRoutes.VAULT_HISTORY
                 "FARAIDH" -> AmanahRoutes.FARAIDH
+                "QARDH" -> AmanahRoutes.QARDH
+                "RECURRING_TRANSACTIONS" -> AmanahRoutes.RECURRING_TRANSACTIONS
+                "NOTIFICATION_SETTINGS" -> AmanahRoutes.NOTIFICATION_SETTINGS
+                "BACKUP_RESTORE" -> AmanahRoutes.BACKUP_RESTORE
                 else -> null
             }
             if (route != null) {
@@ -190,6 +247,7 @@ fun AmanahMainApp(
                     launchSingleTop = true
                 }
             }
+            onNavigationHandled()
         }
     }
 
@@ -243,6 +301,7 @@ fun AmanahMainApp(
         )
     }
     val showBottomBar = currentRoute in topLevelRoutes
+    var showSystemDiagnosticsDialog by remember { androidx.compose.runtime.mutableStateOf(false) }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -297,6 +356,10 @@ fun AmanahMainApp(
                 },
                 onToggleDisplayMode = {
                     viewModel.toggleAppDisplayMode()
+                },
+                onOpenSystemDiagnostics = {
+                    coroutineScope.launch { drawerState.close() }
+                    showSystemDiagnosticsDialog = true
                 }
             )
         }
@@ -304,165 +367,348 @@ fun AmanahMainApp(
         Scaffold(
             bottomBar = {
                 if (showBottomBar) {
-                    NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 8.dp
-                    ) {
-                        // 1 & 2: Sisi Kiri (Beranda, Buku Kas)
-                        leftNavItems.forEach { item ->
-                            val isSelected = currentRoute == item.route
-                            NavigationBarItem(
-                                selected = isSelected,
-                                onClick = {
-                                    AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tab '${item.title}' (${item.route})")
-                                    coroutineScope.launch { drawerState.close() }
-                                    if (item.route == AmanahRoutes.DASHBOARD) {
-                                        if (currentRoute == AmanahRoutes.DASHBOARD) {
-                                            viewModel.triggerDashboardScrollToTop()
-                                        } else {
-                                            navController.navigate(AmanahRoutes.DASHBOARD) {
-                                                popUpTo(AmanahRoutes.DASHBOARD) {
-                                                    inclusive = false
-                                                }
-                                                launchSingleTop = true
-                                            }
-                                            viewModel.triggerDashboardScrollToTop()
-                                        }
-                                    } else if (currentRoute != item.route) {
-                                        navController.navigate(item.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
+                    if (state.themeMode.isTactical) {
+                        com.example.ui.theme.TacticalCommsBottomBar(
+                            currentRoute = currentRoute,
+                            onNavigate = { route ->
+                                coroutineScope.launch { drawerState.close() }
+                                if (route == AmanahRoutes.DASHBOARD) {
+                                    if (currentRoute == AmanahRoutes.DASHBOARD) {
+                                        viewModel.triggerDashboardScrollToTop()
+                                    } else {
+                                        navController.navigate(AmanahRoutes.DASHBOARD) {
+                                            popUpTo(AmanahRoutes.DASHBOARD) {
+                                                inclusive = false
                                             }
                                             launchSingleTop = true
-                                            restoreState = true
                                         }
+                                        viewModel.triggerDashboardScrollToTop()
                                     }
-                                },
-                                icon = {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = item.title
-                                    )
-                                },
-                                label = {
-                                    Text(
-                                        text = item.title,
-                                        fontSize = 10.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                },
-                                colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                                ),
-                                modifier = Modifier.testTag(item.testTag)
-                            )
-                        }
-
-                        // 3: TOMBOL UTAMA TENGAH (CENTER DOCKED ACTION BUTTON) - CATAT TRANSAKSI
-                        NavigationBarItem(
-                            selected = false,
-                            onClick = {
-                                AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tombol utama tengah (+) Catat Transaksi")
+                                } else if (currentRoute != route) {
+                                    navController.navigate(route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            },
+                            onAddTransaction = {
                                 coroutineScope.launch { drawerState.close() }
                                 viewModel.clearTransactionDraft()
                                 navController.navigate("${AmanahRoutes.ADD_TRANSACTION}?type=EXPENSE") {
                                     launchSingleTop = true
                                 }
-                            },
-                            icon = {
-                                Box(
-                                    modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(CircleShape)
-                                        .background(
-                                            Brush.verticalGradient(
-                                                colors = listOf(
-                                                    MaterialTheme.colorScheme.primary,
-                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
-                                                )
-                                            )
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = "Catat Transaksi",
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = "Catat",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            colors = NavigationBarItemDefaults.colors(
-                                indicatorColor = Color.Transparent
-                            ),
-                            modifier = Modifier.testTag("nav_center_add_transaction")
+                            }
                         )
-
-                        // 4 & 5: Sisi Kanan (Kantong, Pengaturan)
-                        rightNavItems.forEach { item ->
-                            val isSelected = currentRoute == item.route
-                            NavigationBarItem(
-                                selected = isSelected,
-                                onClick = {
-                                    AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tab '${item.title}' (${item.route})")
-                                    coroutineScope.launch { drawerState.close() }
-                                    if (currentRoute != item.route) {
-                                        navController.navigate(item.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
+                    } else {
+                        NavigationBar(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 8.dp
+                        ) {
+                            // 1 & 2: Sisi Kiri (Beranda, Buku Kas)
+                            leftNavItems.forEach { item ->
+                                val isSelected = currentRoute == item.route
+                                NavigationBarItem(
+                                    selected = isSelected,
+                                    onClick = {
+                                        AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tab '${item.title}' (${item.route})")
+                                        coroutineScope.launch { drawerState.close() }
+                                        if (item.route == AmanahRoutes.DASHBOARD) {
+                                            if (currentRoute == AmanahRoutes.DASHBOARD) {
+                                                viewModel.triggerDashboardScrollToTop()
+                                            } else {
+                                                navController.navigate(AmanahRoutes.DASHBOARD) {
+                                                    popUpTo(AmanahRoutes.DASHBOARD) {
+                                                        inclusive = false
+                                                    }
+                                                    launchSingleTop = true
+                                                }
+                                                viewModel.triggerDashboardScrollToTop()
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
+                                        } else if (currentRoute != item.route) {
+                                            navController.navigate(item.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
                                         }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = item.icon,
+                                            contentDescription = item.title
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            text = item.title,
+                                            fontSize = 10.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    ),
+                                    modifier = Modifier.testTag(item.testTag)
+                                )
+                            }
+
+                            // 3: TOMBOL UTAMA TENGAH (CENTER DOCKED ACTION BUTTON) - CATAT TRANSAKSI
+                            NavigationBarItem(
+                                selected = false,
+                                onClick = {
+                                    AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tombol utama tengah (+) Catat Transaksi")
+                                    coroutineScope.launch { drawerState.close() }
+                                    viewModel.clearTransactionDraft()
+                                    navController.navigate("${AmanahRoutes.ADD_TRANSACTION}?type=EXPENSE") {
+                                        launchSingleTop = true
                                     }
                                 },
                                 icon = {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = item.title
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(42.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                Brush.verticalGradient(
+                                                    colors = listOf(
+                                                        MaterialTheme.colorScheme.primary,
+                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
+                                                    )
+                                                )
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Catat Transaksi",
+                                            tint = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
                                 },
                                 label = {
                                     Text(
-                                        text = item.title,
-                                        fontSize = 10.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        text = "Catat",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
                                     )
                                 },
                                 colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    indicatorColor = Color.Transparent
                                 ),
-                                modifier = Modifier.testTag(item.testTag)
+                                modifier = Modifier.testTag("nav_center_add_transaction")
                             )
+
+                            // 4 & 5: Sisi Kanan (Kantong, Pengaturan)
+                            rightNavItems.forEach { item ->
+                                val isSelected = currentRoute == item.route
+                                NavigationBarItem(
+                                    selected = isSelected,
+                                    onClick = {
+                                        AppDebugLogger.logUserAction("Bilah Bawah", "Memilih tab '${item.title}' (${item.route})")
+                                        coroutineScope.launch { drawerState.close() }
+                                        if (currentRoute != item.route) {
+                                            navController.navigate(item.route) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = item.icon,
+                                            contentDescription = item.title
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            text = item.title,
+                                            fontSize = 10.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    ),
+                                    modifier = Modifier.testTag(item.testTag)
+                                )
+                            }
                         }
                     }
                 }
             }
         ) { paddingValues ->
-            AmanahNavHost(
-                navController = navController,
-                viewModel = viewModel,
-                onOpenDrawer = {
-                    AppDebugLogger.logUserAction("Navigasi", "Membuka drawer navigasi samping")
-                    coroutineScope.launch { drawerState.open() }
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                AmanahNavHost(
+                    navController = navController,
+                    viewModel = viewModel,
+                    onOpenDrawer = {
+                        AppDebugLogger.logUserAction("Navigasi", "Membuka drawer navigasi samping")
+                        coroutineScope.launch { drawerState.open() }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // DIALOG TELEMETRI DIAGNOSTIK SISTEM & GANTI TEMA CEPAT
+        if (showSystemDiagnosticsDialog) {
+            val nf = remember { java.text.NumberFormat.getNumberInstance(java.util.Locale("id", "ID")) }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { showSystemDiagnosticsDialog = false },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(MaterialTheme.colorScheme.primary, androidx.compose.foundation.shape.CutCornerShape(2.dp))
+                        )
+                        Text(
+                            text = "KONSOL DIAGNOSTIK SISTEM",
+                            fontFamily = com.example.ui.theme.ChakraPetchFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 },
-                modifier = Modifier.padding(paddingValues)
+                text = {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = "STATUS SISTEM: v4.2 // PROTOKOL AMANAH",
+                            fontFamily = com.example.ui.theme.ShareTechMonoFontFamily,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "INTEGRITAS SYARIAH: 100% AMANAH (ZERO RIBA & GHARAR)",
+                            fontFamily = com.example.ui.theme.ShareTechMonoFontFamily,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "AMBANG NISAB EMAS: Rp ${nf.format(state.nisabThreshold.toLong())} (85g Emas)",
+                            fontFamily = com.example.ui.theme.ShareTechMonoFontFamily,
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            text = "STATUS NISAB: ${if (state.isNisabReached) "[MENCAPAI NISAB // WAJIB ZAKAT]" else "[DI BAWAH NISAB]"}",
+                            fontFamily = com.example.ui.theme.ShareTechMonoFontFamily,
+                            fontSize = 10.sp,
+                            color = if (state.isNisabReached) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "DATABASE LOKAL: TERENKRIPSI & AMAN (ROOM SQLITE CIPHER)",
+                            fontFamily = com.example.ui.theme.ShareTechMonoFontFamily,
+                            fontSize = 9.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        androidx.compose.material3.HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                            thickness = 1.dp
+                        )
+
+                        Text(
+                            text = "PILIHAN TEMA APLIKASI:",
+                            fontFamily = com.example.ui.theme.ChakraPetchFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        // Pilihan Tema Cepat (Seluruh 7 Mode Tema)
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            listOf(
+                                AppThemeMode.TACTICAL_CYBER to "Protokol Taktis (Gelap // Cyber Terminal)",
+                                AppThemeMode.TACTICAL_LIGHT to "Protokol Taktis (Terang // Clean Lab)",
+                                AppThemeMode.ELEGANT_DARK to "Mode Gelap Elegan",
+                                AppThemeMode.LIGHT_MODE to "Mode Terang Bersih",
+                                AppThemeMode.HIGH_CONTRAST_LIGHT to "Kontras Tinggi (Terang)",
+                                AppThemeMode.HIGH_CONTRAST_DARK to "Kontras Tinggi (Gelap)",
+                                AppThemeMode.FOLLOW_SYSTEM to "Ikuti Sistem Ponsel (Otomatis)"
+                            ).forEach { (mode, name) ->
+                                val isSelected = state.themeMode == mode
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(androidx.compose.foundation.shape.CutCornerShape(4.dp))
+                                        .background(if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else Color.Transparent)
+                                        .border(
+                                            1.dp,
+                                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                            androidx.compose.foundation.shape.CutCornerShape(4.dp)
+                                        )
+                                        .clickable {
+                                            viewModel.setThemeMode(mode)
+                                            showSystemDiagnosticsDialog = false
+                                        }
+                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = name,
+                                        fontFamily = com.example.ui.theme.ShareTechMonoFontFamily,
+                                        fontSize = 10.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (isSelected) {
+                                        Text(
+                                            text = "[AKTIF]",
+                                            fontFamily = com.example.ui.theme.ShareTechMonoFontFamily,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(
+                        onClick = { showSystemDiagnosticsDialog = false }
+                    ) {
+                        Text(
+                            text = "TUTUP [ESC]",
+                            fontFamily = com.example.ui.theme.ChakraPetchFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                shape = androidx.compose.foundation.shape.CutCornerShape(12.dp),
+                containerColor = MaterialTheme.colorScheme.surface,
+                titleContentColor = MaterialTheme.colorScheme.primary,
+                textContentColor = MaterialTheme.colorScheme.onSurface
             )
         }
     }

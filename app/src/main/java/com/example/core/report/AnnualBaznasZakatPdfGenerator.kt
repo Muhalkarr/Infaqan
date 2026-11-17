@@ -16,35 +16,47 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import com.example.ui.theme.isTactical
 
 object AnnualBaznasZakatPdfGenerator {
 
     fun generateAnnualBaznasZakatReportPdf(
         context: Context,
         state: AmanahLedgerUiState,
-        muzakkiName: String = "Hamba Allah (Muzakki Amanah)"
+        muzakkiName: String = "Hamba Allah (Muzakki Amanah)",
+        editorialConfig: PdfEditorialConfig = state.pdfEditorialConfig,
+        dateRange: PdfDateRange = PdfDateRange()
     ): File {
         val document = PdfDocument()
+        val isTactical = state.themeMode.isTactical
+        val resolvedTitle = editorialConfig.resolveDocumentTitle("Lembar Penetapan Zakat Maal BAZNAS")
         val session = FinancialPdfGenerator.PdfPageSession(
             document = document,
-            documentTitle = "Lembar Penetapan Zakat Maal BAZNAS",
-            subtitle = "Hisab Tahunan Berbasis SK BAZNAS & Multi-Wallet"
+            documentTitle = resolvedTitle,
+            subtitle = editorialConfig.resolveHeaderSubtitle(isTactical, "Hisab Tahunan Berbasis SK BAZNAS & Multi-Wallet"),
+            isTactical = isTactical,
+            editorialConfig = editorialConfig
         )
 
         val canvas = session.canvas
         val paint = session.paint
 
-        val emeraldDark = Color.rgb(0, 77, 64)
-        val goldAccent = Color.rgb(218, 165, 32)
-        val textDark = Color.rgb(20, 30, 32)
-        val textMuted = Color.rgb(90, 105, 110)
-        val bgCard = Color.rgb(238, 245, 243)
-        val borderLight = Color.rgb(200, 220, 215)
+        val emeraldDark = session.emeraldDark
+        val goldAccent = session.goldAccent
+        val textDark = if (isTactical) Color.rgb(15, 25, 22) else Color.rgb(20, 30, 32)
+        val textMuted = session.textMuted
+        val bgCard = if (isTactical) Color.rgb(235, 243, 240) else Color.rgb(238, 245, 243)
+        val borderLight = if (isTactical) Color.rgb(180, 215, 205) else Color.rgb(200, 220, 215)
 
         val cal = Calendar.getInstance()
-        val hijriDate = HijriCalendarEngine.fromGregorian(cal.time)
+        val hijriDate = HijriCalendarEngine.fromGregorian(cal.time, manualOffsetDays = state.selectedHijriOffset)
         val printDateStr = SimpleDateFormat("dd MMMM yyyy", Locale("id", "ID")).format(Date())
         val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
+
+        val effectiveOwnerName = editorialConfig.resolveOwnerName(muzakkiName)
+        val headerTitle = editorialConfig.headerBrandTitle.trim().ifBlank { resolvedTitle.uppercase(Locale("id", "ID")) }
+        val headerSub = editorialConfig.resolveHeaderSubtitle(isTactical, "STANDAR BADAN AMIL ZAKAT NASIONAL (BAZNAS) & DSN-MUI")
+        val hijriYearStr = if (editorialConfig.includeHijriDate) "${hijriDate.year} H / " else ""
 
         // 1. OFFICIAL BAZNAS-STYLE HEADER
         paint.color = emeraldDark
@@ -54,18 +66,23 @@ object AnnualBaznasZakatPdfGenerator {
 
         paint.color = Color.WHITE
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        paint.textSize = 14f
-        canvas.drawText("LEMBAR PENETAPAN HISAB ZAKAT MAAL TAHUNAN", 46f, session.y + 26f, paint)
+        paint.textSize = 13.5f
+        canvas.drawText(headerTitle.take(48), 46f, session.y + 26f, paint)
 
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         paint.textSize = 9f
         paint.color = Color.rgb(220, 245, 242)
-        canvas.drawText("STANDAR BADAN AMIL ZAKAT NASIONAL (BAZNAS) & DSN-MUI", 46f, session.y + 42f, paint)
+        canvas.drawText(headerSub.take(70), 46f, session.y + 42f, paint)
 
         paint.color = goldAccent
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        paint.textSize = 9.5f
-        canvas.drawText("Tahun Buku: ${hijriDate.year} H / ${cal.get(Calendar.YEAR)} M • Diterbitkan: $printDateStr", 46f, session.y + 62f, paint)
+        paint.textSize = 9f
+        val bannerLine3 = if (dateRange.isCustomEnabled) {
+            "${dateRange.formatPdfHeaderPeriod()} • Cetak: $printDateStr"
+        } else {
+            "Tahun Buku: ${hijriYearStr}${cal.get(Calendar.YEAR)} M • Diterbitkan: $printDateStr"
+        }
+        canvas.drawText(bannerLine3.take(86), 46f, session.y + 62f, paint)
 
         session.y += 92f
 
@@ -86,7 +103,8 @@ object AnnualBaznasZakatPdfGenerator {
         paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
         paint.textSize = 9f
         paint.color = textMuted
-        canvas.drawText("Nama Muzakki : $muzakkiName", 44f, session.y + 32f, paint)
+        val ownerLbl = editorialConfig.resolveOwnerLabel(isTactical).trimEnd(':')
+        canvas.drawText("$ownerLbl : $effectiveOwnerName", 44f, session.y + 32f, paint)
         canvas.drawText("Mata Uang Acuan : ${state.primaryCurrencyCode} (${state.primaryCurrencySymbol})", 44f, session.y + 45f, paint)
 
         val goldPrice = state.goldPricePerGram
@@ -198,13 +216,18 @@ object AnnualBaznasZakatPdfGenerator {
 
         paint.textSize = 8f
         paint.color = textMuted
-        canvas.drawText("( $muzakkiName )", 60f, session.y + 60f, paint)
+        canvas.drawText("( $effectiveOwnerName )", 60f, session.y + 60f, paint)
         canvas.drawText("( Amil Terverifikasi BAZNAS )", 360f, session.y + 60f, paint)
+
+        session.y += 72f
+        PdfSectionWriters.drawClosingNoteSection(session, editorialConfig, emeraldDark, textDark, bgCard)
 
         session.finish()
 
         val outputDir = File(context.cacheDir, "reports").apply { mkdirs() }
-        val outputFile = File(outputDir, "Penetapan_Zakat_BAZNAS_${System.currentTimeMillis()}.pdf")
+        val basePrefix = editorialConfig.resolveFilePrefix("Penetapan_Zakat_BAZNAS")
+        val finalPrefix = if (dateRange.isCustomEnabled) "${basePrefix}_${dateRange.formatShortFileTag()}" else basePrefix
+        val outputFile = File(outputDir, "${finalPrefix}_${System.currentTimeMillis()}.pdf")
         FileOutputStream(outputFile).use { out ->
             document.writeTo(out)
         }

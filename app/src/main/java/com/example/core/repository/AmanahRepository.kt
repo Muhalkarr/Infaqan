@@ -16,6 +16,8 @@ import com.example.core.wallet.WalletAccount
 import com.example.core.scheduler.RecurringTransaction
 import com.example.core.infaq.InfaqRule
 import com.example.core.infaq.InfaqDistributionRecord
+import com.example.core.infaq.InfaqVaultReminderConfig
+import com.example.core.report.PdfEditorialConfig
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -158,6 +160,13 @@ interface AmanahRepository {
     suspend fun saveLastBackupTime(timestampMillis: Long)
     suspend fun saveBackupNudgeDismissed(dismissed: Boolean)
     suspend fun saveAppDisplayMode(mode: com.example.core.datastore.AppDisplayMode)
+    suspend fun saveFeatureVisibilityConfig(config: com.example.core.feature.AppFeatureVisibilityConfig)
+    suspend fun saveInfaqVaultReminderConfig(config: InfaqVaultReminderConfig)
+    suspend fun saveHaulStartDateMillis(timestampMillis: Long)
+    suspend fun savePdfEditorialConfig(config: PdfEditorialConfig)
+    suspend fun markAuditEntryPurified(entryId: String)
+    suspend fun saveNotificationConfig(config: com.example.core.notification.AmanahNotificationConfig)
+    suspend fun saveAutoCloudBackupEnabled(enabled: Boolean)
 }
 
 
@@ -174,6 +183,14 @@ class AmanahRepositoryImpl(
         dataStoreManager.saveThemeMode(mode)
         database.settingsDao().insertOrUpdate(SettingsEntity("theme_mode", mode.name))
         when (mode) {
+            com.example.ui.theme.AppThemeMode.TACTICAL_CYBER -> {
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_dark_mode", "true"))
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_high_contrast", "false"))
+            }
+            com.example.ui.theme.AppThemeMode.TACTICAL_LIGHT -> {
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_dark_mode", "false"))
+                database.settingsDao().insertOrUpdate(SettingsEntity("is_high_contrast", "false"))
+            }
             com.example.ui.theme.AppThemeMode.ELEGANT_DARK -> {
                 database.settingsDao().insertOrUpdate(SettingsEntity("is_dark_mode", "true"))
                 database.settingsDao().insertOrUpdate(SettingsEntity("is_high_contrast", "false"))
@@ -354,6 +371,10 @@ class AmanahRepositoryImpl(
         dataStoreManager.markGuideCompleted(guideTitle)
     }
 
+    override suspend fun markAuditEntryPurified(entryId: String) = withContext(ioDispatcher) {
+        dataStoreManager.markAuditEntryPurified(entryId)
+    }
+
     override suspend fun setOnboardingCompleted() = withContext(ioDispatcher) {
         dataStoreManager.setOnboardingCompleted()
     }
@@ -511,30 +532,64 @@ class AmanahRepositoryImpl(
         database.qardhDao().clearAll()
     }
 
+    private fun serializeSedekahHistory(historyMap: Map<String, Double>): String {
+        val obj = org.json.JSONObject()
+        for ((k, v) in historyMap) {
+            obj.put(k, v)
+        }
+        return obj.toString()
+    }
+
+    private fun deserializeSedekahHistory(json: String?): Map<String, Double> {
+        if (json.isNullOrBlank()) return emptyMap()
+        return try {
+            val obj = org.json.JSONObject(json)
+            val map = mutableMapOf<String, Double>()
+            val keys = obj.keys()
+            while (keys.hasNext()) {
+                val k = keys.next()
+                map[k] = obj.optDouble(k, 0.0)
+            }
+            map
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
+    private suspend fun buildHydratedSedekahState(entity: com.example.core.database.SedekahSubuhEntity): SedekahSubuhState {
+        val historyJson = database.settingsDao().getSettingByKey("sedekah_subuh_history_json")?.value
+        val historyMap = deserializeSedekahHistory(historyJson)
+        val lastDate = if (entity.lastContributionDateMillis > 0) java.util.Date(entity.lastContributionDateMillis) else null
+        return if (historyMap.isNotEmpty()) {
+            val calculated = com.example.core.infaq.SedekahSubuhStreakEngine.calculateStreak(historyMap)
+            calculated.copy(
+                currentStreak = maxOf(calculated.currentStreak, entity.currentStreak),
+                longestStreak = maxOf(calculated.longestStreak, entity.longestStreak),
+                totalContributions = maxOf(calculated.totalContributions, entity.totalContributions),
+                totalDaysGiven = maxOf(calculated.totalDaysGiven, entity.totalDaysGiven),
+                lastContributionDate = lastDate ?: calculated.lastContributionDate
+            )
+        } else {
+            SedekahSubuhState(
+                currentStreak = entity.currentStreak,
+                longestStreak = entity.longestStreak,
+                totalContributions = entity.totalContributions,
+                totalDaysGiven = entity.totalDaysGiven,
+                lastContributionDate = lastDate,
+                historyMap = emptyMap(),
+                badges = SedekahSubuhState.getDefaultBadges()
+            )
+        }
+    }
+
     // Sedekah Subuh
     override fun getSedekahSubuhFlow(): Flow<SedekahSubuhState?> =
         database.sedekahSubuhDao().getSedekahStateFlow().map { entity ->
-            entity?.let {
-                SedekahSubuhState(
-                    currentStreak = it.currentStreak,
-                    longestStreak = it.longestStreak,
-                    totalContributions = it.totalContributions,
-                    totalDaysGiven = it.totalDaysGiven,
-                    lastContributionDate = if (it.lastContributionDateMillis > 0) java.util.Date(it.lastContributionDateMillis) else null
-                )
-            }
+            entity?.let { buildHydratedSedekahState(it) }
         }.flowOn(ioDispatcher)
 
     override suspend fun getSedekahSubuh(): SedekahSubuhState? = withContext(ioDispatcher) {
-        database.sedekahSubuhDao().getSedekahState()?.let {
-            SedekahSubuhState(
-                currentStreak = it.currentStreak,
-                longestStreak = it.longestStreak,
-                totalContributions = it.totalContributions,
-                totalDaysGiven = it.totalDaysGiven,
-                lastContributionDate = if (it.lastContributionDateMillis > 0) java.util.Date(it.lastContributionDateMillis) else null
-            )
-        }
+        database.sedekahSubuhDao().getSedekahState()?.let { buildHydratedSedekahState(it) }
     }
 
     override suspend fun saveSedekahSubuh(state: SedekahSubuhState) = withContext(ioDispatcher) {
@@ -549,10 +604,14 @@ class AmanahRepositoryImpl(
                 updatedAtMillis = System.currentTimeMillis()
             )
         )
+        database.settingsDao().insertOrUpdate(
+            SettingsEntity("sedekah_subuh_history_json", serializeSedekahHistory(state.historyMap))
+        )
     }
 
     override suspend fun clearSedekahSubuh() = withContext(ioDispatcher) {
         database.sedekahSubuhDao().clearAll()
+        database.settingsDao().deleteByKey("sedekah_subuh_history_json")
     }
 
     override suspend fun resetAllAppData() = withContext(ioDispatcher) {
@@ -760,6 +819,37 @@ class AmanahRepositoryImpl(
     override suspend fun saveAppDisplayMode(mode: com.example.core.datastore.AppDisplayMode) = withContext(ioDispatcher) {
         dataStoreManager.saveAppDisplayMode(mode)
         database.settingsDao().insertOrUpdate(SettingsEntity("app_display_mode", mode.name))
+    }
+
+    override suspend fun saveFeatureVisibilityConfig(config: com.example.core.feature.AppFeatureVisibilityConfig) = withContext(ioDispatcher) {
+        dataStoreManager.saveFeatureVisibilityConfig(config)
+        database.settingsDao().insertOrUpdate(SettingsEntity("feature_visibility_config", config.toJson()))
+    }
+
+    override suspend fun saveInfaqVaultReminderConfig(config: InfaqVaultReminderConfig) = withContext(ioDispatcher) {
+        dataStoreManager.saveInfaqVaultReminderConfig(config)
+        database.settingsDao().insertOrUpdate(SettingsEntity("infaq_reminder_enabled", config.isEnabled.toString()))
+        database.settingsDao().insertOrUpdate(SettingsEntity("infaq_reminder_schedule", config.scheduleSummaryText()))
+    }
+
+    override suspend fun saveHaulStartDateMillis(timestampMillis: Long) = withContext(ioDispatcher) {
+        dataStoreManager.saveHaulStartDateMillis(timestampMillis)
+        database.settingsDao().insertOrUpdate(SettingsEntity("haul_start_date_millis", timestampMillis.toString()))
+    }
+
+    override suspend fun savePdfEditorialConfig(config: PdfEditorialConfig) = withContext(ioDispatcher) {
+        dataStoreManager.savePdfEditorialConfig(config)
+        database.settingsDao().insertOrUpdate(SettingsEntity("pdf_editorial_config", config.toJson()))
+    }
+
+    override suspend fun saveNotificationConfig(config: com.example.core.notification.AmanahNotificationConfig) = withContext(ioDispatcher) {
+        dataStoreManager.saveNotificationConfig(config)
+        database.settingsDao().insertOrUpdate(SettingsEntity("notification_config_json", config.toJson()))
+    }
+
+    override suspend fun saveAutoCloudBackupEnabled(enabled: Boolean) = withContext(ioDispatcher) {
+        dataStoreManager.saveAutoCloudBackupEnabled(enabled)
+        database.settingsDao().insertOrUpdate(SettingsEntity("auto_cloud_backup_enabled", enabled.toString()))
     }
 }
 

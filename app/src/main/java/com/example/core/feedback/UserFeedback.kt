@@ -159,7 +159,7 @@ object FeedbackRepository {
         val stars = "★".repeat(feedback.rating) + "☆".repeat(5 - feedback.rating)
         val contactLine = if (!feedback.contact.isNullOrBlank()) "\n👤 Kontak/Pengirim: ${feedback.contact}" else ""
         return """
-📢 *MASUKAN PENGGUNA AMANAH LEDGER v2.5*
+📢 *MASUKAN PENGGUNA AMANAH LEDGER v2.6*
 ---------------------------------------
 📌 Kategori: ${feedback.type.label}
 ⭐ Rating Kepuasan: $stars (${feedback.rating}/5)$contactLine

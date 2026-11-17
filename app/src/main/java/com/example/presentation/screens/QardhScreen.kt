@@ -668,7 +668,7 @@ fun QardhFormDialog(
                                         },
                                         fontSize = 9.sp,
                                         fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSel) Color.White else MaterialTheme.colorScheme.onSurface
+                                        color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                             }

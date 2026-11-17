@@ -12,7 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import com.example.ui.theme.LocalAppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.CyberNeonGreen
+import com.example.ui.theme.rememberAppCardShape
+import com.example.ui.theme.rememberAppShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Check
@@ -50,9 +57,20 @@ fun SettingsSectionCard(
     icon: ImageVector,
     content: @Composable () -> Unit
 ) {
+    val themeMode = LocalAppThemeMode.current
+    val isTactical = themeMode.isTactical
+    val cardShape = rememberAppCardShape(16)
+    val pillShape = rememberAppShape(8)
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = cardShape,
+        border = BorderStroke(
+            1.dp,
+            if (isTactical) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        ),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -60,19 +78,24 @@ fun SettingsSectionCard(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                        .clip(pillShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = title,
+                        text = if (isTactical) "// ${title.uppercase()}" else title,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = subtitle,
@@ -83,7 +106,10 @@ fun SettingsSectionCard(
             }
 
             Spacer(modifier = Modifier.height(14.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+            HorizontalDivider(
+                color = if (isTactical) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+            )
             Spacer(modifier = Modifier.height(10.dp))
 
             content()
@@ -99,6 +125,7 @@ fun SettingsSwitchRow(
     testTag: String,
     onCheckedChange: (Boolean) -> Unit
 ) {
+    val isTactical = LocalAppThemeMode.current.isTactical
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -125,8 +152,10 @@ fun SettingsSwitchRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = MaterialTheme.colorScheme.primary
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
             ),
             modifier = Modifier.testTag(testTag)
         )
@@ -149,6 +178,7 @@ fun LedgerIdentitySettingsSection(
         subtitle = "Konfigurasi nama akun dan siklus periode pencatatan",
         icon = Icons.Default.AccountBalance
     ) {
+        val itemShape = rememberAppShape(8)
         // Nama Profil Kas Mukmin
         Row(
             modifier = Modifier
@@ -254,11 +284,12 @@ fun LedgerIdentitySettingsSection(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(6.dp))
+            val itemShape = rememberAppShape(8)
             FiscalCycleType.entries.forEach { cycle ->
                 val isSelected = state.fiscalCycleType == cycle
                 Surface(
                     color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = itemShape,
                     border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -355,7 +386,7 @@ fun LedgerIdentitySettingsSection(
             }
             Surface(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(8.dp)
+                shape = itemShape
             ) {
                 Text(
                     text = "Rp (IDR)",

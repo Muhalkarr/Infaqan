@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,6 +46,8 @@ import java.util.Locale
 fun BudgetAllocationHealthChart(
     budgets: List<BudgetAllocation>,
     getMonthlySpent: (String) -> Double,
+    isMasked: Boolean = false,
+    isTactical: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val numberFormat = remember {
@@ -52,12 +55,14 @@ fun BudgetAllocationHealthChart(
             maximumFractionDigits = 0
         }
     }
+    val cardShape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp)
+    val badgeShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag("budget_health_chart_card"),
-        shape = RoundedCornerShape(16.dp),
+        shape = cardShape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
@@ -89,7 +94,7 @@ fun BudgetAllocationHealthChart(
                 val statusColor = if (overCount == 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
 
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = badgeShape,
                     color = statusColor.copy(alpha = 0.15f),
                     border = androidx.compose.foundation.BorderStroke(1.dp, statusColor.copy(alpha = 0.5f))
                 ) {
@@ -153,7 +158,11 @@ fun BudgetAllocationHealthChart(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Rp ${numberFormat.format(spent)} / Rp ${numberFormat.format(budget.monthlyLimit)} (${(ratio * 100).toInt()}%)",
+                                text = if (isMasked) {
+                                    "Rp ••• / Rp ••• (${(ratio * 100).toInt()}%)"
+                                } else {
+                                    "Rp ${numberFormat.format(spent)} / Rp ${numberFormat.format(budget.monthlyLimit)} (${(ratio * 100).toInt()}%)"
+                                },
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
@@ -165,14 +174,14 @@ fun BudgetAllocationHealthChart(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(badgeShape)
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .fillMaxWidth(animatedRatio)
-                                    .clip(RoundedCornerShape(4.dp))
+                                    .clip(badgeShape)
                                     .background(barColor)
                             )
                         }

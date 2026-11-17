@@ -76,6 +76,13 @@ import com.example.ui.theme.White12
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
 import com.example.ui.theme.White70
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.example.presentation.components.InfaqVaultReminderCard
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.rememberAppCardShape
+import com.example.ui.theme.rememberAppShape
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,58 +93,82 @@ fun InfaqRulesScreen(
     onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val isTactical = state.themeMode.isTactical
+    val fabShape = rememberAppShape(16)
     var showAddDialog by remember { mutableStateOf(false) }
     var editingRule by remember { mutableStateOf<InfaqRule?>(null) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("rules_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+            if (isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Aturan Otomasi Infaq",
+                    subCode = "IFTTT//INFAQ-VAULT",
+                    onBack = onNavigateBack,
+                    trailingActions = {
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("rules_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
-                },
-                title = {
-                    Text(
-                        text = "Aturan Otomasi Infaq & Penyucian",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                },
-                actions = {
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("rules_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
+                )
+            } else {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("rules_back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    title = {
+                        Text(
+                            text = "Aturan Otomasi Infaq & Penyucian",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("rules_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.secondary,
                 contentColor = MaterialTheme.colorScheme.onSecondary,
+                shape = fabShape,
                 modifier = Modifier.testTag("add_rule_fab")
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Tambah Aturan Infaq")
@@ -152,9 +183,29 @@ fun InfaqRulesScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
+                InfaqVaultReminderCard(
+                    config = state.infaqVaultReminderConfig,
+                    vaultBalance = state.virtualInfaqVaultBalance,
+                    rules = state.rules,
+                    onUpdateConfig = { viewModel.updateInfaqVaultReminderConfig(it) },
+                    onSendTestNotification = {
+                        viewModel.sendTestInfaqVaultNotification(context) { sent ->
+                            Toast.makeText(
+                                context,
+                                if (sent) "Notifikasi pengingat Infaq Vault dikirim!"
+                                else "Gagal mengirim notifikasi. Periksa izin notifikasi aplikasi.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                )
+            }
+
+            item {
                 Text(
-                    text = "Konfigurasi IFTTT Ibadah Finansial",
+                    text = "Konfigurasi IFTTT Ibadah Finansial (${state.rules.size} Aturan)",
                     fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -197,11 +248,12 @@ fun InfaqRuleItemCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val cardShape = rememberAppCardShape(12)
     Card(
         modifier = Modifier.fillMaxWidth().testTag("rule_card_${rule.id}"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        shape = cardShape,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
     ) {
         Row(
             modifier = Modifier

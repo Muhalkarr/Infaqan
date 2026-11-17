@@ -2,6 +2,7 @@ package com.example.presentation.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -23,6 +25,8 @@ import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,13 +61,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.calendar.HijriCalendarEngine
 import com.example.core.report.FinancialPdfGenerator
+import com.example.core.report.PdfDateRange
+import com.example.core.report.PdfPeriodFilterHelper
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.presentation.components.BudgetAllocationHealthChart
+import com.example.presentation.components.CashflowBreakdownDetailCard
+import com.example.presentation.components.ComprehensiveSliAnalysisCard
+import com.example.presentation.components.FinancialConditionTraceCard
 import com.example.presentation.components.FlowNode
 import com.example.presentation.components.HijriRadialHeatmap
+import com.example.presentation.components.PdfDateRangeCard
 import com.example.presentation.components.SankeyFlowDiagram
 import com.example.presentation.components.SpendingTrendLineChart
 import com.example.ui.theme.AssetBlue
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.isTactical
 import com.example.ui.theme.White12
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
@@ -74,45 +86,67 @@ import com.example.ui.theme.White70
 fun AnalyticsScreen(
     viewModel: AmanahLedgerViewModel,
     onNavigateBack: () -> Unit,
-    onOpenDrawer: () -> Unit = {}
+    onOpenDrawer: () -> Unit = {},
+    onNavigateToVaultHistory: () -> Unit = {},
+    onNavigateToInfaqRules: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     var showExportDialog by remember { mutableStateOf(false) }
+    var analyticsDateRange by remember { mutableStateOf(PdfDateRange()) }
+
+    val isTactical = state.themeMode.isTactical
+    val isMasked = state.securityConfig.isMaskBalance
+    val cardShape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(14.dp)
+
+    val scopedState = remember(state, analyticsDateRange) {
+        if (!analyticsDateRange.isCustomEnabled) state
+        else {
+            val scoped = PdfPeriodFilterHelper.compute(state, analyticsDateRange)
+            state.copy(
+                journalEntries = scoped.filteredEntries,
+                infaqDistributions = scoped.filteredDistributions,
+                walletMutations = scoped.filteredMutations,
+                rezekiNonTunaiList = scoped.filteredRezeki,
+                ibadahDeposits = scoped.filteredIbadahDeposits,
+                sedekahSubuhState = scoped.filteredSubuhState
+            )
+        }
+    }
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val secondaryColor = MaterialTheme.colorScheme.secondary
     val errorColor = MaterialTheme.colorScheme.error
 
-    val sources = remember(state.totalIncomeKasab, state.totalIncomeNonKasab, primaryColor, secondaryColor) {
+    val sources = remember(scopedState.totalIncomeKasab, scopedState.totalIncomeNonKasab, primaryColor, secondaryColor) {
         listOf(
             FlowNode(
                 label = "Kasab (Aktif)",
-                value = state.totalIncomeKasab.coerceAtLeast(1000.0),
+                value = scopedState.totalIncomeKasab.coerceAtLeast(1000.0),
                 color = primaryColor
             ),
             FlowNode(
                 label = "Non-Kasab (Windfall)",
-                value = state.totalIncomeNonKasab.coerceAtLeast(1000.0),
+                value = scopedState.totalIncomeNonKasab.coerceAtLeast(1000.0),
                 color = secondaryColor
             )
         )
     }
 
-    val netSavings = (state.totalIncomeKasab + state.totalIncomeNonKasab - state.totalConsumptionExpense - state.totalPurifiedInfaq)
+    val netSavings = (scopedState.totalIncomeKasab + scopedState.totalIncomeNonKasab - scopedState.totalConsumptionExpense - scopedState.totalPurifiedInfaq)
         .coerceAtLeast(1000.0)
 
-    val targets = remember(state.totalConsumptionExpense, state.totalPurifiedInfaq, netSavings, errorColor, secondaryColor) {
+    val targets = remember(scopedState.totalConsumptionExpense, scopedState.totalPurifiedInfaq, netSavings, errorColor, secondaryColor) {
         listOf(
             FlowNode(
                 label = "Belanja Konsumsi",
-                value = state.totalConsumptionExpense.coerceAtLeast(1000.0),
+                value = scopedState.totalConsumptionExpense.coerceAtLeast(1000.0),
                 color = errorColor
             ),
             FlowNode(
                 label = "Vault Infaq Amanah",
-                value = state.totalPurifiedInfaq.coerceAtLeast(1000.0),
+                value = scopedState.totalPurifiedInfaq.coerceAtLeast(1000.0),
                 color = secondaryColor
             ),
             FlowNode(
@@ -126,76 +160,153 @@ fun AnalyticsScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("analytics_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                title = {
-                    Text(
-                        text = "Infografis & Visualisasi Syariah",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            val cal = java.util.Calendar.getInstance()
-                            val pdfFile = FinancialPdfGenerator.generateMonthlyReportPdf(
-                                context = context,
-                                state = state,
-                                targetMonth = cal.get(java.util.Calendar.MONTH),
-                                targetYear = cal.get(java.util.Calendar.YEAR)
+            if (isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Analisis & Audit SLI",
+                    subCode = "ISRAF//SLI-AUDIT",
+                    onBack = onNavigateBack,
+                    trailingActions = {
+                        IconButton(
+                            onClick = { viewModel.toggleBalancePrivacy() },
+                            modifier = Modifier.testTag("analytics_privacy_toggle_button")
+                        ) {
+                            Icon(
+                                imageVector = if (isMasked) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (isMasked) "Tampilkan Nominal" else "Sensor Nominal",
+                                tint = if (isMasked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
                             )
-                            FinancialPdfGenerator.viewPdfReport(context, pdfFile)
-                            Toast.makeText(context, "Laporan PDF Berhasil Diunduh!", Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier.testTag("download_pdf_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PictureAsPdf,
-                            contentDescription = "Unduh PDF Laporan Bulanan",
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
+                        }
+                        IconButton(
+                            onClick = {
+                                val cal = java.util.Calendar.getInstance()
+                                val pdfFile = FinancialPdfGenerator.generateMonthlyReportPdf(
+                                    context = context,
+                                    state = state,
+                                    targetMonth = cal.get(java.util.Calendar.MONTH),
+                                    targetYear = cal.get(java.util.Calendar.YEAR)
+                                )
+                                FinancialPdfGenerator.viewPdfReport(context, pdfFile)
+                                Toast.makeText(context, "Laporan PDF Berhasil Diunduh!", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.testTag("download_pdf_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PictureAsPdf,
+                                contentDescription = "Unduh PDF Laporan Bulanan",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        IconButton(
+                            onClick = { showExportDialog = true },
+                            modifier = Modifier.testTag("export_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = "Ekspor Buku Besar",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("analytics_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
-                    IconButton(
-                        onClick = { showExportDialog = true },
-                        modifier = Modifier.testTag("export_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FileDownload,
-                            contentDescription = "Ekspor Buku Besar",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                )
+            } else {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("analytics_back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    title = {
+                        Column {
+                            Text(
+                                text = "Analisis & Israf",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Visualisasi Arus Kas, Audit SLI & Monitoring Israf",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { viewModel.toggleBalancePrivacy() },
+                            modifier = Modifier.testTag("analytics_privacy_toggle_button")
+                        ) {
+                            Icon(
+                                imageVector = if (isMasked) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (isMasked) "Tampilkan Nominal" else "Sensor Nominal",
+                                tint = if (isMasked) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                val cal = java.util.Calendar.getInstance()
+                                val pdfFile = FinancialPdfGenerator.generateMonthlyReportPdf(
+                                    context = context,
+                                    state = state,
+                                    targetMonth = cal.get(java.util.Calendar.MONTH),
+                                    targetYear = cal.get(java.util.Calendar.YEAR)
+                                )
+                                FinancialPdfGenerator.viewPdfReport(context, pdfFile)
+                                Toast.makeText(context, "Laporan PDF Berhasil Diunduh!", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.testTag("download_pdf_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PictureAsPdf,
+                                contentDescription = "Unduh PDF Laporan Bulanan",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        IconButton(
+                            onClick = { showExportDialog = true },
+                            modifier = Modifier.testTag("export_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = "Ekspor Buku Besar",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("analytics_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("analytics_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            )
+                )
+            }
         }
     ) { paddingValues ->
         Column(
@@ -206,25 +317,38 @@ fun AnalyticsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. Spending Trend Line Chart (Visualisasi D3/Line Graph)
-            SpendingTrendLineChart(
-                journalEntries = state.journalEntries,
-                budgets = state.budgets
+            // 1. Kartu Pemilihan Rentang Waktu & Kalender (Masehi / Hijriyah)
+            PdfDateRangeCard(
+                uiState = state,
+                dateRange = analyticsDateRange,
+                onDateRangeChange = { analyticsDateRange = it },
+                compact = false
             )
 
-            // 2. Budget Allocation Health Monitor
-            BudgetAllocationHealthChart(
-                budgets = state.budgets,
-                getMonthlySpent = { accountId ->
-                    state.getMonthlySpentForAccount(accountId)
-                }
+            // 2. Audit Spiritual Liquidity Index (SLI) & Rasio Infaq
+            ComprehensiveSliAnalysisCard(
+                state = scopedState,
+                onNavigateToVaultHistory = onNavigateToVaultHistory,
+                onNavigateToInfaqRules = onNavigateToInfaqRules,
+                isMasked = isMasked,
+                onToggleMask = { viewModel.toggleBalancePrivacy() }
             )
 
-            // 3. Sankey Diagram Card
+            // 3. Rapor Kesehatan Keuangan & Jejak Transaksi Pembentuk
+            FinancialConditionTraceCard(
+                state = scopedState,
+                isMasked = isMasked,
+                onToggleMask = { viewModel.toggleBalancePrivacy() }
+            )
+
+            // 4. Rincian Terperinci Aliran Arus Kas & Tabungan Bersih
+            CashflowBreakdownDetailCard(state = scopedState, isMasked = isMasked)
+
+            // 5. Sankey Flow Diagram (Visualisasi Sumber Rezeki ke Belanja & Vault)
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(14.dp),
+                shape = cardShape,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -240,15 +364,33 @@ fun AnalyticsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(14.dp))
-                    SankeyFlowDiagram(sources = sources, targets = targets)
+                    SankeyFlowDiagram(sources = sources, targets = targets, isMasked = isMasked)
                 }
             }
 
-            // 2. Hijri Radial Heatmap Card
+            // 6. Grafik Tren Belanja Harian & Kepatuhan Batas
+            SpendingTrendLineChart(
+                journalEntries = scopedState.journalEntries,
+                budgets = scopedState.budgets,
+                isMasked = isMasked,
+                isTactical = isTactical
+            )
+
+            // 7. Monitor Kesehatan Alokasi Anggaran Bulanan
+            BudgetAllocationHealthChart(
+                budgets = scopedState.budgets,
+                getMonthlySpent = { accountId ->
+                    scopedState.getMonthlySpentForAccount(accountId)
+                },
+                isMasked = isMasked,
+                isTactical = isTactical
+            )
+
+            // 8. Hijri Radial Heatmap Kedermawanan
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(14.dp),
+                shape = cardShape,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -264,66 +406,7 @@ fun AnalyticsScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(14.dp))
-                    HijriRadialHeatmap(entries = state.journalEntries)
-                }
-            }
-
-            // 3. Behavioral Finance Metrics Summary
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Indeks Kesehatan Finansial & Spiritual",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Spiritual Liquidity Index", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            "${String.format("%.1f", state.spiritualLiquidityIndex)}%",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Total Terinfaq (Vault + Disbursed)", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            "Rp ${formatRupiah(state.totalPurifiedInfaq)}",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Realisasi Disalurkan ke Mustahiq", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            "Rp ${formatRupiah(state.totalDisbursedInfaq)}",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
+                    HijriRadialHeatmap(entries = scopedState.journalEntries)
                 }
             }
         }

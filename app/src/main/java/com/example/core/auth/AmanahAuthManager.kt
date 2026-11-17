@@ -7,12 +7,18 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
+import com.example.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +38,7 @@ data class AmanahUserProfile(
     val displayName: String = "Hamba Allah",
     val email: String = "",
     val photoUrl: String? = null,
-    val isAnonymous: Boolean = true,
+    val isAnonymous: Boolean = false,
     val isCloudConnected: Boolean = false
 )
 
@@ -44,11 +50,15 @@ data class AmanahAuthState(
 )
 
 class AmanahAuthManager(private val context: Context) {
-    private val TAG = "AmanahAuthManager"
+    private val appContext: Context = context.applicationContext
+
+    companion object {
+        private const val TAG = "AmanahAuthManager"
+    }
 
     private val firebaseAuth: FirebaseAuth? by lazy {
         try {
-            FirebaseSafeInitializer.init(context)
+            FirebaseSafeInitializer.init(appContext)
             FirebaseAuth.getInstance()
         } catch (e: Throwable) {
             Log.w(TAG, "FirebaseAuth initialization fallback: ${e.message}")
@@ -56,9 +66,9 @@ class AmanahAuthManager(private val context: Context) {
         }
     }
 
-    private val credentialManager by lazy {
+    private val appCredentialManager: CredentialManager? by lazy {
         try {
-            CredentialManager.create(context)
+            CredentialManager.create(appContext)
         } catch (e: Throwable) {
             Log.w(TAG, "CredentialManager init fallback: ${e.message}")
             null
@@ -69,43 +79,39 @@ class AmanahAuthManager(private val context: Context) {
     val authState: StateFlow<AmanahAuthState> = _authState.asStateFlow()
 
     init {
-        FirebaseSafeInitializer.init(context)
+        FirebaseSafeInitializer.init(appContext)
         checkCurrentAuthSession()
     }
 
     private fun checkCurrentAuthSession() {
         try {
-            val auth = firebaseAuth
-            val currentUser = auth?.currentUser
-            if (currentUser != null) {
+            val currentUser = firebaseAuth?.currentUser
+            if (currentUser != null && !currentUser.isAnonymous) {
                 _authState.value = AmanahAuthState(
                     status = AuthStatus.AUTHENTICATED,
                     user = mapFirebaseUser(currentUser)
                 )
             } else {
-                _authState.value = AmanahAuthState(
-                    status = AuthStatus.GUEST_MODE,
-                    user = AmanahUserProfile(
-                        uid = "guest_mukmin_local",
-                        displayName = "Mukmin (Mode Offline)",
-                        email = "offline@amanah.local",
-                        isAnonymous = true,
-                        isCloudConnected = false
-                    )
-                )
+                _authState.value = createGuestAuthState()
             }
         } catch (e: Throwable) {
             Log.i(TAG, "Offline guest mode active: ${e.message}")
-            _authState.value = AmanahAuthState(
-                status = AuthStatus.GUEST_MODE,
-                user = AmanahUserProfile(
-                    uid = "guest_mukmin_local",
-                    displayName = "Mukmin (Mode Offline)",
-                    isAnonymous = true,
-                    isCloudConnected = false
-                )
-            )
+            _authState.value = createGuestAuthState()
         }
+    }
+
+    private fun createGuestAuthState(errorMessage: String? = null): AmanahAuthState {
+        return AmanahAuthState(
+            status = AuthStatus.GUEST_MODE,
+            user = AmanahUserProfile(
+                uid = "guest_mukmin_local",
+                displayName = "Kas Mukmin (Lokal)",
+                email = "offline@amanah.syariah",
+                isAnonymous = true,
+                isCloudConnected = false
+            ),
+            errorMessage = errorMessage
+        )
     }
 
     private fun mapFirebaseUser(user: FirebaseUser): AmanahUserProfile {
@@ -115,182 +121,119 @@ class AmanahAuthManager(private val context: Context) {
             email = user.email ?: "",
             photoUrl = user.photoUrl?.toString(),
             isAnonymous = user.isAnonymous,
-            isCloudConnected = true
+            isCloudConnected = !user.isAnonymous
         )
     }
 
-    suspend fun signInWithEmailPassword(email: String, pass: String): Result<AmanahUserProfile> = withContext(Dispatchers.IO) {
-        if (email.isBlank() || pass.length < 6) {
-            _authState.value = _authState.value.copy(
-                status = AuthStatus.ERROR,
-                errorMessage = "Format email atau kata sandi tidak valid (min. 6 karakter)."
-            )
-            return@withContext Result.failure(Exception("Email/password tidak valid"))
-        }
-
-        val auth = firebaseAuth
-        if (auth == null) {
-            _authState.value = _authState.value.copy(
-                status = AuthStatus.ERROR,
-                errorMessage = "Layanan Cloud Firebase tidak aktif (berjalan pada database lokal)."
-            )
-            return@withContext Result.failure(Exception("FirebaseAuth tidak tersedia"))
-        }
-
-        _authState.value = _authState.value.copy(
-            status = AuthStatus.AUTHENTICATING,
-            errorMessage = null
-        )
-
-        try {
-            val authResult = auth.signInWithEmailAndPassword(email.trim(), pass).await()
-            val user = authResult.user ?: throw Exception("User tidak ditemukan")
-            val profile = mapFirebaseUser(user)
-
-            _authState.value = AmanahAuthState(
-                status = AuthStatus.AUTHENTICATED,
-                user = profile,
-                isSuccessFeedback = true
-            )
-            Result.success(profile)
+    private fun resolveServerClientId(explicitClientId: String = ""): String {
+        if (explicitClientId.isNotBlank()) return explicitClientId
+        val fromResources = try {
+            appContext.getString(R.string.default_web_client_id)
         } catch (e: Exception) {
-            Log.e(TAG, "Login email failed: ${e.message}", e)
-            val friendlyMsg = when {
-                e.message?.contains("password", ignoreCase = true) == true -> "Kata sandi salah. Silakan coba lagi."
-                e.message?.contains("no user", ignoreCase = true) == true -> "Akun tidak ditemukan. Silakan daftar akun baru."
-                else -> e.localizedMessage ?: "Gagal masuk ke akun Amanah"
-            }
-            _authState.value = _authState.value.copy(
-                status = AuthStatus.ERROR,
-                errorMessage = friendlyMsg
-            )
-            Result.failure(e)
+            Log.w(TAG, "default_web_client_id resource lookup failed: ${e.message}")
+            ""
         }
+        if (fromResources.isBlank()) {
+            throw IllegalStateException("Konfigurasi OAuth Google (default_web_client_id) tidak ditemukan.")
+        }
+        return fromResources
     }
 
-    suspend fun signUpWithEmailPassword(email: String, pass: String, name: String): Result<AmanahUserProfile> = withContext(Dispatchers.IO) {
-        if (email.isBlank() || pass.length < 6) {
-            _authState.value = _authState.value.copy(
-                status = AuthStatus.ERROR,
-                errorMessage = "Kata sandi minimal 6 karakter."
-            )
-            return@withContext Result.failure(Exception("Format input tidak valid"))
+    /**
+     * Silent One-Tap / previously authorized Google Sign-In attempt at app startup.
+     */
+    suspend fun trySilentGoogleSignIn(activityContext: Context): Result<AmanahUserProfile> = withContext(Dispatchers.IO) {
+        val auth = firebaseAuth ?: return@withContext Result.failure(IllegalStateException("FirebaseAuth tidak tersedia"))
+        if (auth.currentUser != null && !auth.currentUser!!.isAnonymous) {
+            val profile = mapFirebaseUser(auth.currentUser!!)
+            _authState.value = AmanahAuthState(status = AuthStatus.AUTHENTICATED, user = profile)
+            return@withContext Result.success(profile)
         }
-
-        val auth = firebaseAuth
-        if (auth == null) {
-            _authState.value = _authState.value.copy(
-                status = AuthStatus.ERROR,
-                errorMessage = "Layanan Cloud Firebase tidak aktif (berjalan pada database lokal)."
-            )
-            return@withContext Result.failure(Exception("FirebaseAuth tidak tersedia"))
-        }
-
-        _authState.value = _authState.value.copy(
-            status = AuthStatus.AUTHENTICATING,
-            errorMessage = null
-        )
 
         try {
-            val authResult = auth.createUserWithEmailAndPassword(email.trim(), pass).await()
-            val user = authResult.user ?: throw Exception("Pendaftaran akun gagal")
-            
-            // Update profile display name
-            val profileUpdate = com.google.firebase.auth.UserProfileChangeRequest.Builder()
-                .setDisplayName(name.ifBlank { "Mukmin Amanah" })
-                .build()
-            user.updateProfile(profileUpdate).await()
-
-            val profile = mapFirebaseUser(user)
-            _authState.value = AmanahAuthState(
-                status = AuthStatus.AUTHENTICATED,
-                user = profile,
-                isSuccessFeedback = true
-            )
-            Result.success(profile)
-        } catch (e: Exception) {
-            Log.e(TAG, "Sign up failed: ${e.message}", e)
-            _authState.value = _authState.value.copy(
-                status = AuthStatus.ERROR,
-                errorMessage = e.localizedMessage ?: "Gagal mendaftar akun baru"
-            )
-            Result.failure(e)
-        }
-    }
-
-    suspend fun signInWithGoogleCredential(webClientId: String = ""): Result<AmanahUserProfile> = withContext(Dispatchers.IO) {
-        val auth = firebaseAuth
-        val credMan = credentialManager
-        if (auth == null || credMan == null) {
-            val fallbackMsg = "Layanan Google Auth tidak tersedia di lingkungan ini."
-            _authState.value = _authState.value.copy(
-                status = AuthStatus.ERROR,
-                errorMessage = fallbackMsg
-            )
-            return@withContext Result.failure(Exception(fallbackMsg))
-        }
-
-        _authState.value = _authState.value.copy(
-            status = AuthStatus.AUTHENTICATING,
-            errorMessage = null
-        )
-
-        try {
-            val resolvedClientId = if (webClientId.isNotBlank()) {
-                webClientId
-            } else {
-                try {
-                    val resId = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
-                    if (resId != 0) context.getString(resId) else "998346721387-ajt4c4tidqklt9ef1l0q6k184487prjb.apps.googleusercontent.com"
-                } catch (_: Exception) {
-                    "998346721387-ajt4c4tidqklt9ef1l0q6k184487prjb.apps.googleusercontent.com"
-                }
-            }
-
+            val serverClientId = resolveServerClientId()
             val googleIdOption = GetGoogleIdOption.Builder()
-                .setFilterByAuthorizedAccounts(false)
-                .setAutoSelectEnabled(false)
-                .setServerClientId(resolvedClientId)
+                .setFilterByAuthorizedAccounts(true)
+                .setAutoSelectEnabled(true)
+                .setServerClientId(serverClientId)
                 .build()
 
             val request = GetCredentialRequest.Builder()
                 .addCredentialOption(googleIdOption)
                 .build()
 
+            val credMan = CredentialManager.create(activityContext)
             val result: GetCredentialResponse = credMan.getCredential(
-                context = context,
+                context = activityContext,
+                request = request
+            )
+            exchangeGoogleCredential(auth, result)
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (noCred: NoCredentialException) {
+            Log.d(TAG, "No previously authorized Google credential for silent sign-in: ${noCred.message}")
+            Result.failure(noCred)
+        } catch (e: Exception) {
+            Log.d(TAG, "Silent Google Sign-In skipped: ${e.message}")
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Explicit interactive Google Sign-In button flow using GetSignInWithGoogleOption and Activity context.
+     */
+    suspend fun signInWithGoogleCredential(
+        activityContext: Context,
+        webClientId: String = ""
+    ): Result<AmanahUserProfile> = withContext(Dispatchers.IO) {
+        val auth = firebaseAuth
+        if (auth == null) {
+            val fallbackMsg = "Layanan Firebase Auth tidak tersedia di perangkat ini."
+            _authState.value = _authState.value.copy(
+                status = AuthStatus.ERROR,
+                errorMessage = fallbackMsg
+            )
+            return@withContext Result.failure(IllegalStateException(fallbackMsg))
+        }
+
+        _authState.value = _authState.value.copy(
+            status = AuthStatus.AUTHENTICATING,
+            errorMessage = null
+        )
+
+        try {
+            val resolvedClientId = resolveServerClientId(webClientId)
+            val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(resolvedClientId)
+                .build()
+
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(signInWithGoogleOption)
+                .build()
+
+            val credMan = CredentialManager.create(activityContext)
+            val result: GetCredentialResponse = credMan.getCredential(
+                context = activityContext,
                 request = request
             )
 
-            val credential = result.credential
-            if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-                val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                val idToken = googleIdTokenCredential.idToken
-
-                val firebaseCred = GoogleAuthProvider.getCredential(idToken, null)
-                val authResult = auth.signInWithCredential(firebaseCred).await()
-                val user = authResult.user ?: throw Exception("Google auth user null")
-
-                val profile = mapFirebaseUser(user)
-                _authState.value = AmanahAuthState(
-                    status = AuthStatus.AUTHENTICATED,
-                    user = profile,
-                    isSuccessFeedback = true
-                )
-                Result.success(profile)
-            } else {
-                throw Exception("Jenis kredensial tidak didukung")
-            }
-        } catch (c: androidx.credentials.exceptions.GetCredentialCancellationException) {
+            exchangeGoogleCredential(auth, result)
+        } catch (ce: CancellationException) {
+            throw ce
+        } catch (c: GetCredentialCancellationException) {
             Log.w(TAG, "Google Sign-In cancelled by user: ${c.message}")
-            _authState.value = _authState.value.copy(
-                status = AuthStatus.UNAUTHENTICATED,
-                errorMessage = null
-            )
+            _authState.value = createGuestAuthState(errorMessage = null)
             Result.failure(c)
+        } catch (noCred: NoCredentialException) {
+            Log.w(TAG, "No Google accounts/credentials found on device: ${noCred.message}")
+            val msg = "Akun Google tidak ditemukan di perangkat ini. Pastikan Anda sudah masuk ke akun Google di setelan perangkat."
+            _authState.value = _authState.value.copy(
+                status = AuthStatus.ERROR,
+                errorMessage = msg
+            )
+            Result.failure(noCred)
         } catch (e: Exception) {
-            Log.w(TAG, "Google Sign In via CredentialManager skipped/failed: ${e.message}")
-            val fallbackMsg = e.localizedMessage ?: "Google Sign-In dibatalkan atau belum dikonfigurasi."
+            Log.w(TAG, "Google Sign-In via CredentialManager failed: ${e.message}", e)
+            val fallbackMsg = e.localizedMessage ?: "Google Sign-In gagal atau dibatalkan."
             _authState.value = _authState.value.copy(
                 status = AuthStatus.ERROR,
                 errorMessage = fallbackMsg
@@ -299,36 +242,47 @@ class AmanahAuthManager(private val context: Context) {
         }
     }
 
-    suspend fun continueAsGuest() {
-        _authState.value = AmanahAuthState(
-            status = AuthStatus.GUEST_MODE,
-            user = AmanahUserProfile(
-                uid = "guest_mukmin_local",
-                displayName = "Kas Mukmin (Lokal)",
-                email = "offline@amanah.syariah",
-                isAnonymous = true,
-                isCloudConnected = false
-            ),
-            errorMessage = null
-        )
+    private suspend fun exchangeGoogleCredential(
+        auth: FirebaseAuth,
+        result: GetCredentialResponse
+    ): Result<AmanahUserProfile> {
+        val credential = result.credential
+        if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+            val idToken = googleIdTokenCredential.idToken
+
+            val firebaseCred = GoogleAuthProvider.getCredential(idToken, null)
+            val authResult = auth.signInWithCredential(firebaseCred).await()
+            val user = authResult.user ?: throw IllegalStateException("Profil pengguna Firebase kosong setelah autentikasi Google.")
+
+            val profile = mapFirebaseUser(user)
+            _authState.value = AmanahAuthState(
+                status = AuthStatus.AUTHENTICATED,
+                user = profile,
+                errorMessage = null,
+                isSuccessFeedback = true
+            )
+            return Result.success(profile)
+        } else {
+            throw IllegalStateException("Jenis kredensial tidak didukung oleh Autentikasi Google.")
+        }
     }
 
-    suspend fun signOut() = withContext(Dispatchers.IO) {
+    suspend fun continueAsGuest() {
+        _authState.value = createGuestAuthState()
+    }
+
+    suspend fun signOut() = withContext(Dispatchers.IO + NonCancellable) {
         try {
             firebaseAuth?.signOut()
-            credentialManager?.clearCredentialState(ClearCredentialStateRequest())
         } catch (e: Exception) {
-            Log.e(TAG, "Sign out error: ${e.message}")
+            Log.e(TAG, "Firebase signOut error: ${e.message}")
         }
-        _authState.value = AmanahAuthState(
-            status = AuthStatus.GUEST_MODE,
-            user = AmanahUserProfile(
-                uid = "guest_mukmin_local",
-                displayName = "Kas Mukmin (Lokal)",
-                isAnonymous = true,
-                isCloudConnected = false
-            ),
-            errorMessage = null
-        )
+        try {
+            appCredentialManager?.clearCredentialState(ClearCredentialStateRequest())
+        } catch (e: Exception) {
+            Log.e(TAG, "ClearCredentialState error: ${e.message}")
+        }
+        _authState.value = createGuestAuthState()
     }
 }

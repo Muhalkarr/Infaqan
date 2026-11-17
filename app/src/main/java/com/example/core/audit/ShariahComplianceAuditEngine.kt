@@ -8,6 +8,7 @@ import java.util.Date
 
 enum class ShariahAuditStatus {
     COMPLIANT,
+    PURIFIED,
     SUSPICIOUS_RIBA,
     EXCESSIVE_ISRAF,
     SYUBHAT
@@ -26,6 +27,7 @@ data class AuditedTransactionItem(
 data class ShariahAuditSummary(
     val totalTransactionsAudited: Int,
     val compliantCount: Int,
+    val purifiedCount: Int = 0,
     val flaggedCount: Int,
     val complianceScorePercent: Int,
     val haulDaysRemaining: Int,
@@ -40,22 +42,53 @@ object ShariahComplianceAuditEngine {
         "riba", "kredit konven", "keterlambatan", "admin pinjaman"
     )
 
+    private val negationPrefixes = listOf(
+        "tanpa ", "bebas ", "tidak ", "tidak ada ", "bukan ", "nol ", "non ", "non-", "anti "
+    )
+
     private val israfKeywords = listOf(
         "foya", "clubbing", "judi", "taruhan", "slot", "konsumtif berlebih", "rokok", "vape"
     )
 
+    internal fun matchesKeywordNegationAware(textLower: String, keywords: List<String>): Boolean {
+        return keywords.any { keyword ->
+            val regex = Regex("""\b${Regex.escape(keyword)}\b""")
+            regex.findAll(textLower).any { match ->
+                val prefixWindow = textLower.substring((match.range.first - 14).coerceAtLeast(0), match.range.first)
+                val isNegated = negationPrefixes.any { neg -> prefixWindow.endsWith(neg) }
+                !isNegated
+            }
+        }
+    }
+
     fun auditAllEntries(state: AmanahLedgerUiState): ShariahAuditSummary {
         val entries = state.journalEntries
+        val purifiedIds = state.purifiedAuditEntryIds
         val auditedItems = mutableListOf<AuditedTransactionItem>()
 
         for (entry in entries) {
             val descLower = entry.description.lowercase()
             val totalAmount = entry.lines.sumOf { it.debit }
 
-            val containsRiba = ribaKeywords.any { descLower.contains(it) }
-            val containsIsraf = israfKeywords.any { descLower.contains(it) }
+            val isAlreadyPurified = entry.id in purifiedIds
+            val isDisbursementEntry = entry.transactionType == "INFAQ_PAYOUT"
+            val containsRiba = !isDisbursementEntry && matchesKeywordNegationAware(descLower, ribaKeywords)
+            val containsIsraf = !isDisbursementEntry && matchesKeywordNegationAware(descLower, israfKeywords)
 
             when {
+                isAlreadyPurified -> {
+                    auditedItems.add(
+                        AuditedTransactionItem(
+                            entryId = entry.id,
+                            date = entry.gregorianDate,
+                            description = entry.description,
+                            amount = totalAmount,
+                            status = ShariahAuditStatus.PURIFIED,
+                            reasonNote = "Mutasi telah ditindaklanjuti (disucikan via Tathhir atau diklarifikasi non-riba oleh pengguna).",
+                            recommendedAction = "Selesai disucikan / diklarifikasi. Jejak audit tetap tersimpan aman."
+                        )
+                    )
+                }
                 containsRiba -> {
                     auditedItems.add(
                         AuditedTransactionItem(
@@ -64,8 +97,8 @@ object ShariahComplianceAuditEngine {
                             description = entry.description,
                             amount = totalAmount,
                             status = ShariahAuditStatus.SUSPICIOUS_RIBA,
-                            reasonNote = "Terindikasi memuat unsur bunga tambahan / denda keterlambatan (riba nasi'ah).",
-                            recommendedAction = "Salurkan nilai bunga/denda ini ke rekening kas syubhat atau infaq fasilitas umum."
+                            reasonNote = "Terindikasi memuat kata kunci bunga/denda/riba. Periksa apakah memang mengandung unsur riba atau sekadar salah ketik.",
+                            recommendedAction = "Pilih 'Sucikan (Tathhir)' untuk menyalurkan nilai denda/bunga ke fasilitas umum, 'Edit Catatan' jika salah ketik, atau 'Tandai Aman' bila bukan riba."
                         )
                     )
                 }
@@ -78,12 +111,11 @@ object ShariahComplianceAuditEngine {
                             amount = totalAmount,
                             status = ShariahAuditStatus.EXCESSIVE_ISRAF,
                             reasonNote = "Terindikasi pengeluaran konsumtif yang berpotensi israf atau syubhat.",
-                            recommendedAction = "Evaluasi pos belanja dan perbanyak istighfar serta sedekah penyuci harta."
+                            recommendedAction = "Evaluasi pos belanja, edit keterangan bila perlu, atau lakukan penyucian/sedekah."
                         )
                     )
                 }
                 else -> {
-                    // Fully compliant
                     auditedItems.add(
                         AuditedTransactionItem(
                             entryId = entry.id,
@@ -100,7 +132,8 @@ object ShariahComplianceAuditEngine {
         }
 
         val total = auditedItems.size
-        val flagged = auditedItems.count { it.status != ShariahAuditStatus.COMPLIANT }
+        val purifiedCount = auditedItems.count { it.status == ShariahAuditStatus.PURIFIED }
+        val flagged = auditedItems.count { it.status != ShariahAuditStatus.COMPLIANT && it.status != ShariahAuditStatus.PURIFIED }
         val compliant = total - flagged
         val score = if (total > 0) ((compliant.toFloat() / total) * 100).toInt() else 100
 
@@ -114,6 +147,7 @@ object ShariahComplianceAuditEngine {
         return ShariahAuditSummary(
             totalTransactionsAudited = total,
             compliantCount = compliant,
+            purifiedCount = purifiedCount,
             flaggedCount = flagged,
             complianceScorePercent = score,
             haulDaysRemaining = daysRemaining,

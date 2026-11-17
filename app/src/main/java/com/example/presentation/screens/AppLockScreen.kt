@@ -1,5 +1,7 @@
 package com.example.presentation.screens
 
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -79,6 +81,10 @@ fun AppLockScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showRecoveryDialog by remember { mutableStateOf(false) }
     var biometricSuccessAnimation by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = true) {
+        (context as? Activity)?.moveTaskToBack(true)
+    }
 
     // Function to trigger native biometric prompt
     val triggerBiometricPrompt: () -> Unit = {

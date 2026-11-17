@@ -62,7 +62,7 @@ object DocumentExporter {
             val dateStr = shortDateFormat.format(e.gregorianDate)
             val desc = e.description.replace(";", ",")
             val type = e.transactionType
-            val amt = e.totalDebit
+            val amt = e.primaryAmount
             sb.append("$dateStr;${e.id};$desc;$type;$amt;${if (e.isBalanced) "SEIMBANG" else "INVALID"}\n")
         }
         sb.append("\n")
@@ -382,6 +382,357 @@ object DocumentExporter {
         return pdfFile
     }
 
+    fun createExportFile(
+        context: Context,
+        content: String,
+        prefix: String,
+        extension: String
+    ): File {
+        val outputDir = File(context.cacheDir, "exports").apply { mkdirs() }
+        val ext = if (extension.startsWith(".")) extension else ".$extension"
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val file = File(outputDir, "${prefix}_$timestamp$ext")
+        val contentWithBom = if (ext.equals(".csv", ignoreCase = true) && !content.startsWith("\uFEFF")) {
+            "\uFEFF$content"
+        } else {
+            content
+        }
+        file.writeText(contentWithBom, Charsets.UTF_8)
+        return file
+    }
+
+    /**
+     * Menyaring entri jurnal berdasarkan rentang tanggal milidetik.
+     */
+    fun filterJournalEntries(
+        entries: List<JournalEntry>,
+        startMillis: Long?,
+        endMillis: Long?
+    ): List<JournalEntry> {
+        return entries.filter { entry ->
+            val t = entry.gregorianDate.time
+            val afterStart = startMillis == null || t >= startMillis
+            val beforeEnd = endMillis == null || t <= endMillis
+            afterStart && beforeEnd
+        }
+    }
+
+    /**
+     * Menghasilkan teks CSV Riwayat Transaksi Jurnal (Entri Jurnal) Terfilter.
+     */
+    fun generateTransactionHistoryCsv(
+        entries: List<JournalEntry>,
+        accounts: List<Account>,
+        startDate: Date?,
+        endDate: Date?
+    ): String {
+        val accountMap = accounts.associateBy { it.id }
+        val sb = StringBuilder()
+        sb.append("=== RIWAYAT TRANSAKSI JURNAL (AMANAH LEDGER) ===\n")
+        sb.append("Tanggal Ekspor;${dateFormat.format(Date())}\n")
+        val periodStr = when {
+            startDate != null && endDate != null -> "${dateFormat.format(startDate)} s/d ${dateFormat.format(endDate)}"
+            startDate != null -> "Sejak ${dateFormat.format(startDate)}"
+            endDate != null -> "Hingga ${dateFormat.format(endDate)}"
+            else -> "Semua Waktu"
+        }
+        sb.append("Rentang Periode;$periodStr\n")
+        sb.append("Total Transaksi;${entries.size} entri\n\n")
+
+        sb.append("Tanggal;Waktu;ID Transaksi;Deskripsi;Tipe Transaksi;Akun Debit;Akun Kredit;Nominal Debit (Rp);Nominal Kredit (Rp);Status Seimbang\n")
+        val timeFormat = SimpleDateFormat("HH:mm", Locale("id", "ID"))
+        val dateOnlyFormat = SimpleDateFormat("dd/MM/yyyy", Locale("id", "ID"))
+
+        for (e in entries) {
+            val dStr = dateOnlyFormat.format(e.gregorianDate)
+            val tStr = timeFormat.format(e.gregorianDate)
+            val desc = e.description.replace(";", ",").replace("\n", " ")
+            val debitAccounts = e.lines.filter { it.debit > 0 }.joinToString(" + ") { accountMap[it.accountId]?.name ?: it.accountId }
+            val creditAccounts = e.lines.filter { it.credit > 0 }.joinToString(" + ") { accountMap[it.accountId]?.name ?: it.accountId }
+            val debitAmt = e.primaryAmount.toLong()
+            val creditAmt = e.totalCredit.toLong()
+            val isBalancedStr = if (e.isBalanced) "SEIMBANG" else "TIDAK SEIMBANG"
+            sb.append("$dStr;$tStr;${e.id};$desc;${e.transactionType};$debitAccounts;$creditAccounts;$debitAmt;$creditAmt;$isBalancedStr\n")
+        }
+
+        return sb.toString()
+    }
+
+    private fun escapeJson(str: String): String {
+        return str.replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+    }
+
+    /**
+     * Menghasilkan teks JSON Riwayat Transaksi Jurnal Terfilter.
+     */
+    fun generateTransactionHistoryJson(
+        entries: List<JournalEntry>,
+        accounts: List<Account>,
+        startDate: Date?,
+        endDate: Date?
+    ): String {
+        val accountMap = accounts.associateBy { it.id }
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val isoTimestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date())
+        val sDateStr = startDate?.let { "\"${isoFormat.format(it)}\"" } ?: "null"
+        val eDateStr = endDate?.let { "\"${isoFormat.format(it)}\"" } ?: "null"
+
+        val sb = StringBuilder()
+        sb.append("{\n")
+        sb.append("  \"report_type\": \"JOURNAL_TRANSACTION_HISTORY\",\n")
+        sb.append("  \"app\": \"Amanah Ledger\",\n")
+        sb.append("  \"exported_at\": \"$isoTimestamp\",\n")
+        sb.append("  \"period\": {\n")
+        sb.append("    \"start_date\": $sDateStr,\n")
+        sb.append("    \"end_date\": $eDateStr\n")
+        sb.append("  },\n")
+        sb.append("  \"total_records\": ${entries.size},\n")
+        sb.append("  \"transactions\": [\n")
+
+        val displayFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("id", "ID"))
+        for (i in entries.indices) {
+            val e = entries[i]
+            val isLast = (i == entries.size - 1)
+            sb.append("    {\n")
+            sb.append("      \"id\": \"${escapeJson(e.id)}\",\n")
+            sb.append("      \"timestamp\": ${e.gregorianDate.time},\n")
+            sb.append("      \"date_formatted\": \"${displayFormat.format(e.gregorianDate)}\",\n")
+            sb.append("      \"description\": \"${escapeJson(e.description)}\",\n")
+            sb.append("      \"transaction_type\": \"${e.transactionType}\",\n")
+            sb.append("      \"total_amount\": ${e.primaryAmount.toLong()},\n")
+            sb.append("      \"is_balanced\": ${e.isBalanced},\n")
+            sb.append("      \"journal_lines\": [\n")
+
+            for (j in e.lines.indices) {
+                val l = e.lines[j]
+                val lineLast = (j == e.lines.size - 1)
+                val accName = accountMap[l.accountId]?.name ?: l.accountId
+                sb.append("        {\n")
+                sb.append("          \"account_id\": \"${escapeJson(l.accountId)}\",\n")
+                sb.append("          \"account_name\": \"${escapeJson(accName)}\",\n")
+                sb.append("          \"debit\": ${l.debit.toLong()},\n")
+                sb.append("          \"credit\": ${l.credit.toLong()}\n")
+                sb.append("        }${if (lineLast) "" else ","}\n")
+            }
+            sb.append("      ]\n")
+            sb.append("    }${if (isLast) "" else ","}\n")
+        }
+
+        sb.append("  ]\n")
+        sb.append("}")
+        return sb.toString()
+    }
+
+    /**
+     * Menghasilkan teks CSV Laporan Ringkasan Finansial Kategori & Arus Kas.
+     */
+    fun generateFinancialSummaryCsv(
+        state: AmanahLedgerUiState,
+        startDate: Date?,
+        endDate: Date?
+    ): String {
+        val filteredEntries = filterJournalEntries(state.journalEntries, startDate?.time, endDate?.time)
+        val sb = StringBuilder()
+        sb.append("=== LAPORAN RINGKASAN FINANSIAL KATEGORI (AMANAH LEDGER) ===\n")
+        sb.append("Tanggal Ekspor;${dateFormat.format(Date())}\n")
+        val periodStr = when {
+            startDate != null && endDate != null -> "${dateFormat.format(startDate)} s/d ${dateFormat.format(endDate)}"
+            startDate != null -> "Sejak ${dateFormat.format(startDate)}"
+            endDate != null -> "Hingga ${dateFormat.format(endDate)}"
+            else -> "Semua Waktu"
+        }
+        sb.append("Rentang Periode;$periodStr\n")
+        sb.append("Nama Pemilik;${state.userNameKasMukmin}\n\n")
+
+        // 1. Rekapitulasi Pendapatan
+        var totalIncomeKasab = 0.0
+        var totalIncomeNonKasab = 0.0
+        for (entry in filteredEntries) {
+            if (entry.transactionType == "INFLOW") {
+                for (line in entry.lines) {
+                    val acc = state.getAccount(line.accountId)
+                    if (acc?.category == AccountCategory.INCOME_KASAB) totalIncomeKasab += line.credit
+                    if (acc?.category == AccountCategory.INCOME_NON_KASAB) totalIncomeNonKasab += line.credit
+                }
+            }
+        }
+        val totalIncome = totalIncomeKasab + totalIncomeNonKasab
+
+        sb.append("=== 1. REKAPITULASI PENDAPATAN (INFLOW) ===\n")
+        sb.append("Kategori Pendapatan;Nominal (Rp);Keterangan\n")
+        sb.append("Pendapatan Kasab (Gaji & Usaha Halal);${totalIncomeKasab.toLong()};Hasil ikhtiar/pekerjaan langsung\n")
+        sb.append("Pendapatan Non-Kasab (Hadiah/Bagi Hasil);${totalIncomeNonKasab.toLong()};Pemberian, warisan, atau pasif\n")
+        sb.append("TOTAL PENDAPATAN;${totalIncome.toLong()};Total penerimaan periode ini\n\n")
+
+        // 2. Rincian Pengeluaran Berdasarkan Kategori Akun
+        val expenseByCategory = mutableMapOf<String, Double>()
+        var totalInfaqDisbursed = 0.0
+        for (entry in filteredEntries) {
+            if (entry.transactionType == "EXPENSE") {
+                for (line in entry.lines) {
+                    if (line.debit > 0.0 && line.accountId != "acc_vault" && line.accountId != "acc_disbursed") {
+                        val accName = state.getAccount(line.accountId)?.name ?: line.accountId
+                        expenseByCategory[accName] = (expenseByCategory[accName] ?: 0.0) + line.debit
+                    }
+                }
+            } else if (entry.transactionType == "INFAQ_PAYOUT") {
+                totalInfaqDisbursed += entry.totalDebit
+            }
+        }
+        val totalConsumption = expenseByCategory.values.sum()
+        val totalOverallExpense = totalConsumption + totalInfaqDisbursed
+
+        sb.append("=== 2. RINCIAN PENGELUARAN & BEBAN (OUTFLOW) ===\n")
+        sb.append("Kategori Beban/Pengeluaran;Nominal (Rp);Persentase (%)\n")
+        for ((cat, amt) in expenseByCategory.entries.sortedByDescending { it.value }) {
+            val pct = if (totalConsumption > 0) ((amt / totalConsumption) * 100).toInt() else 0
+            sb.append("$cat;${amt.toLong()};$pct%\n")
+        }
+        sb.append("Subtotal Belanja & Kebutuhan;${totalConsumption.toLong()};100%\n")
+        sb.append("Penyaluran Infaq & Zakat;${totalInfaqDisbursed.toLong()};Tabarru'\n")
+        sb.append("TOTAL KESELURUHAN PENGELUARAN;${totalOverallExpense.toLong()};\n\n")
+
+        // 3. Arus Kas Bersih (Net Cash Flow)
+        val netCashFlow = totalIncome - totalOverallExpense
+        sb.append("=== 3. ARUS KAS BERSIH (NET CASH FLOW) ===\n")
+        sb.append("Indikator;Nominal (Rp);Status\n")
+        sb.append("Arus Kas Bersih (Net Flow);${netCashFlow.toLong()};${if (netCashFlow >= 0) "SURPLUS (HEMAT)" else "DEFISIT"}\n\n")
+
+        // 4. Saldo Kas & Posisi Aset Saat Ini
+        sb.append("=== 4. POSISI SALDO KANTONG KAS SAAT INI ===\n")
+        sb.append("Nama Kantong;Tipe Akun;Saldo Saat Ini (Rp)\n")
+        for (w in state.wallets) {
+            val bal = state.getWalletBalance(w.id)
+            sb.append("${w.name};${w.type.displayName};${bal.toLong()}\n")
+        }
+        sb.append("TOTAL SALDO KAS;;${state.totalWalletBalance.toLong()}\n\n")
+
+        // 5. Status Zakat Maal & Nisab
+        val nisab = state.nisabThreshold
+        val totalAssets = state.totalAssets
+        val isNisab = state.isNisabReached
+        sb.append("=== 5. HISAB NISAB ZAKAT MAAL ===\n")
+        sb.append("Indikator Zakat;Nilai\n")
+        sb.append("Total Harta Aset Terdata;Rp ${totalAssets.toLong()}\n")
+        sb.append("Batas Nisab 85g Emas;Rp ${nisab.toLong()}\n")
+        sb.append("Status Nisab;${if (isNisab) "MENCAPAI NISAB (Wajib Zakat jika Haul)" else "BELUM MENCAPAI NISAB"}\n")
+
+        return sb.toString()
+    }
+
+    /**
+     * Menghasilkan teks JSON Laporan Ringkasan Finansial Kategori & Arus Kas.
+     */
+    fun generateFinancialSummaryJson(
+        state: AmanahLedgerUiState,
+        startDate: Date?,
+        endDate: Date?
+    ): String {
+        val filteredEntries = filterJournalEntries(state.journalEntries, startDate?.time, endDate?.time)
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val isoTimestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date())
+        val sDateStr = startDate?.let { "\"${isoFormat.format(it)}\"" } ?: "null"
+        val eDateStr = endDate?.let { "\"${isoFormat.format(it)}\"" } ?: "null"
+
+        // 1. Income summary
+        var totalIncomeKasab = 0.0
+        var totalIncomeNonKasab = 0.0
+        for (entry in filteredEntries) {
+            if (entry.transactionType == "INFLOW") {
+                for (line in entry.lines) {
+                    val acc = state.getAccount(line.accountId)
+                    if (acc?.category == AccountCategory.INCOME_KASAB) totalIncomeKasab += line.credit
+                    if (acc?.category == AccountCategory.INCOME_NON_KASAB) totalIncomeNonKasab += line.credit
+                }
+            }
+        }
+        val totalIncome = totalIncomeKasab + totalIncomeNonKasab
+
+        // 2. Expense categories
+        val expenseByCategory = mutableMapOf<String, Double>()
+        var totalInfaqDisbursed = 0.0
+        for (entry in filteredEntries) {
+            if (entry.transactionType == "EXPENSE") {
+                for (line in entry.lines) {
+                    if (line.debit > 0.0 && line.accountId != "acc_vault" && line.accountId != "acc_disbursed") {
+                        val accName = state.getAccount(line.accountId)?.name ?: line.accountId
+                        expenseByCategory[accName] = (expenseByCategory[accName] ?: 0.0) + line.debit
+                    }
+                }
+            } else if (entry.transactionType == "INFAQ_PAYOUT") {
+                totalInfaqDisbursed += entry.totalDebit
+            }
+        }
+        val totalConsumption = expenseByCategory.values.sum()
+        val totalOverallExpense = totalConsumption + totalInfaqDisbursed
+        val netCashFlow = totalIncome - totalOverallExpense
+
+        val sb = StringBuilder()
+        sb.append("{\n")
+        sb.append("  \"report_type\": \"FINANCIAL_CATEGORY_SUMMARY\",\n")
+        sb.append("  \"app\": \"Amanah Ledger\",\n")
+        sb.append("  \"owner_name\": \"${escapeJson(state.userNameKasMukmin)}\",\n")
+        sb.append("  \"exported_at\": \"$isoTimestamp\",\n")
+        sb.append("  \"period\": {\n")
+        sb.append("    \"start_date\": $sDateStr,\n")
+        sb.append("    \"end_date\": $eDateStr\n")
+        sb.append("  },\n")
+        sb.append("  \"income_summary\": {\n")
+        sb.append("    \"income_kasab\": ${totalIncomeKasab.toLong()},\n")
+        sb.append("    \"income_non_kasab\": ${totalIncomeNonKasab.toLong()},\n")
+        sb.append("    \"total_income\": ${totalIncome.toLong()}\n")
+        sb.append("  },\n")
+        sb.append("  \"expense_summary\": {\n")
+        sb.append("    \"subtotal_consumption\": ${totalConsumption.toLong()},\n")
+        sb.append("    \"infaq_disbursed\": ${totalInfaqDisbursed.toLong()},\n")
+        sb.append("    \"total_expenses\": ${totalOverallExpense.toLong()},\n")
+        sb.append("    \"categories\": [\n")
+
+        val sortedExp = expenseByCategory.entries.sortedByDescending { it.value }
+        for (i in sortedExp.indices) {
+            val item = sortedExp[i]
+            val isLast = (i == sortedExp.size - 1)
+            val pct = if (totalConsumption > 0) ((item.value / totalConsumption) * 100).toInt() else 0
+            sb.append("      {\n")
+            sb.append("        \"category_name\": \"${escapeJson(item.key)}\",\n")
+            sb.append("        \"amount\": ${item.value.toLong()},\n")
+            sb.append("        \"percentage\": $pct\n")
+            sb.append("      }${if (isLast) "" else ","}\n")
+        }
+        sb.append("    ]\n")
+        sb.append("  },\n")
+        sb.append("  \"cash_flow\": {\n")
+        sb.append("    \"net_cash_flow\": ${netCashFlow.toLong()},\n")
+        sb.append("    \"status\": \"${if (netCashFlow >= 0) "SURPLUS" else "DEFICIT"}\"\n")
+        sb.append("  },\n")
+        sb.append("  \"wallet_balances\": [\n")
+        for (i in state.wallets.indices) {
+            val w = state.wallets[i]
+            val isLast = (i == state.wallets.size - 1)
+            val bal = state.getWalletBalance(w.id)
+            sb.append("    {\n")
+            sb.append("      \"wallet_id\": \"${escapeJson(w.id)}\",\n")
+            sb.append("      \"name\": \"${escapeJson(w.name)}\",\n")
+            sb.append("      \"type\": \"${escapeJson(w.type.displayName)}\",\n")
+            sb.append("      \"balance\": ${bal.toLong()}\n")
+            sb.append("    }${if (isLast) "" else ","}\n")
+        }
+        sb.append("  ],\n")
+        sb.append("  \"total_wallet_balance\": ${state.totalWalletBalance.toLong()},\n")
+        sb.append("  \"zakat_maal_status\": {\n")
+        sb.append("    \"total_assets\": ${state.totalAssets.toLong()},\n")
+        sb.append("    \"gold_price_per_gram\": ${state.goldPricePerGram.toLong()},\n")
+        sb.append("    \"nisab_threshold\": ${state.nisabThreshold.toLong()},\n")
+        sb.append("    \"is_nisab_reached\": ${state.isNisabReached}\n")
+        sb.append("  }\n")
+        sb.append("}")
+        return sb.toString()
+    }
+
     fun shareFile(context: Context, file: File, mimeType: String, title: String) {
         val uri: Uri = FileProvider.getUriForFile(
             context,
@@ -397,3 +748,4 @@ object DocumentExporter {
         context.startActivity(Intent.createChooser(shareIntent, title))
     }
 }
+

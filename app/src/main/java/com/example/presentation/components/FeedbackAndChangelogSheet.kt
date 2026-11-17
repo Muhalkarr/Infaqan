@@ -108,7 +108,7 @@ fun FeedbackAndChangelogSheet(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Pengembang: Muhalkarr • Amanah Ledger v2.5",
+                        text = "Pengembang: Muhalkarr • Amanah Ledger v2.6",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -127,7 +127,7 @@ fun FeedbackAndChangelogSheet(
             val tabs = listOf(
                 "Kirim Masukan",
                 "Riwayat Anda",
-                "Changelog (v0-v2.5)"
+                "Changelog (v0-v2.6)"
             )
 
             PrimaryTabRow(

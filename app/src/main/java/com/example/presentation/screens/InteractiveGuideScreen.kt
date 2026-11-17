@@ -34,9 +34,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.AutoMode
+import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CardGiftcard
@@ -51,6 +54,9 @@ import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.PlayArrow
@@ -62,6 +68,7 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Button
@@ -138,6 +145,13 @@ fun InteractiveGuideScreen(
     onNavigateToIslamicGrounding: () -> Unit = {},
     onNavigateToExportReport: () -> Unit = {},
     onNavigateToDualCalendar: () -> Unit = {},
+    onNavigateToAnalytics: () -> Unit = {},
+    onNavigateToZakatReport: () -> Unit = {},
+    onNavigateToBusinessZakat: () -> Unit = {},
+    onNavigateToGoldTracker: () -> Unit = {},
+    onNavigateToShariahAudit: () -> Unit = {},
+    onNavigateToShariahRules: () -> Unit = {},
+    onNavigateToReceiptArchive: () -> Unit = {},
     onOpenDrawer: () -> Unit = {}
 ) {
     val topics = remember {
@@ -333,6 +347,70 @@ fun InteractiveGuideScreen(
                 icon = Icons.Default.Tune,
                 badge = "UX & Hifzhul Mal",
                 actionButtonText = "Buka Pengaturan Terpusat"
+            ),
+            GuideTopic(
+                id = "topic_sli_analytics",
+                title = "25. Analisis & Audit Komprehensif SLI",
+                shortSubtitle = "SLI vs rasio pendapatan, uji manual & israf",
+                icon = Icons.Default.Analytics,
+                badge = "Audit SLI",
+                actionButtonText = "Buka Analisis & Israf"
+            ),
+            GuideTopic(
+                id = "topic_zakat_report",
+                title = "26. Laporan Zakat (Maal & Fitrah)",
+                shortSubtitle = "Rekap nisab, haul, tanggungan & harga beras",
+                icon = Icons.Default.Assessment,
+                badge = "Zakat Lengkap",
+                actionButtonText = "Buka Laporan Zakat"
+            ),
+            GuideTopic(
+                id = "topic_infaq_notifications",
+                title = "27. Notifikasi Pengingat Infaq Vault",
+                shortSubtitle = "Jadwal harian/mingguan & jam salur vault",
+                icon = Icons.Default.NotificationsActive,
+                badge = "Pengingat",
+                actionButtonText = "Atur Notifikasi Vault"
+            ),
+            GuideTopic(
+                id = "topic_business_zakat",
+                title = "28. Zakat Perniagaan & Saham Syariah",
+                shortSubtitle = "Hisab aset dagang, stok & efek syariah (DES)",
+                icon = Icons.Default.BusinessCenter,
+                badge = "Zakat Tijarah",
+                actionButtonText = "Buka Zakat Perniagaan"
+            ),
+            GuideTopic(
+                id = "topic_gold_shariah_audit",
+                title = "29. Pelacak Emas & Audit Syariah",
+                shortSubtitle = "Harga emas BAZNAS & health check bebas riba",
+                icon = Icons.Default.VerifiedUser,
+                badge = "Audit & Emas",
+                actionButtonText = "Buka Audit Syariah"
+            ),
+            GuideTopic(
+                id = "topic_rules_customization",
+                title = "30. Kustomisasi Modul, Kategori & Rules",
+                shortSubtitle = "24 sakelar fitur, pos belanja & Rules Studio",
+                icon = Icons.Default.Tune,
+                badge = "Personalisasi",
+                actionButtonText = "Buka Rules Studio"
+            ),
+            GuideTopic(
+                id = "topic_receipt_archive",
+                title = "31. Arsip Bukti Struk & Kuitansi",
+                shortSubtitle = "Galeri foto nota & lampiran transaksi aman",
+                icon = Icons.Default.PhotoLibrary,
+                badge = "Dokumentasi",
+                actionButtonText = "Buka Arsip Struk"
+            ),
+            GuideTopic(
+                id = "topic_widgets_themes",
+                title = "32. Widget Layar Utama & Tema Tampilan",
+                shortSubtitle = "Widget beranda Android, tema & skala teks",
+                icon = Icons.Default.Palette,
+                badge = "Widget & Tema",
+                actionButtonText = "Buka Pengaturan Tema"
             )
         )
     }
@@ -538,6 +616,20 @@ fun InteractiveGuideScreen(
                             21 -> TopicRezekiNonTunaiContent(onTryAction = { openModule(21, onNavigateToAddTransaction) })
                             22 -> TopicDualCalendarGuideContent(onTryAction = { openModule(22, onNavigateToDualCalendar) })
                             23 -> TopicDisplayModePrivacyContent(onTryAction = { openModule(23, onNavigateToSettings) })
+                            24 -> TopicSliAnalyticsGuideContent(onTryAction = { openModule(24, onNavigateToAnalytics) })
+                            25 -> TopicZakatReportGuideContent(onTryAction = { openModule(25, onNavigateToZakatReport) })
+                            26 -> TopicInfaqNotificationGuideContent(onTryAction = { openModule(26, onNavigateToSettings) })
+                            27 -> TopicBusinessZakatGuideContent(onTryAction = { openModule(27, onNavigateToBusinessZakat) })
+                            28 -> TopicGoldAndShariahAuditGuideContent(
+                                onOpenGoldTracker = { openModule(28, onNavigateToGoldTracker) },
+                                onOpenShariahAudit = { openModule(28, onNavigateToShariahAudit) }
+                            )
+                            29 -> TopicRulesAndCustomizationGuideContent(
+                                onOpenShariahRules = { openModule(29, onNavigateToShariahRules) },
+                                onOpenSettings = { openModule(29, onNavigateToSettings) }
+                            )
+                            30 -> TopicReceiptArchiveGuideContent(onTryAction = { openModule(30, onNavigateToReceiptArchive) })
+                            31 -> TopicWidgetsAndThemeGuideContent(onTryAction = { openModule(31, onNavigateToSettings) })
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -848,7 +940,7 @@ fun TopicInfaqKasabInteractiveContent(onTryAction: () -> Unit) {
                                 .clickable { testRate = r }
                         ) {
                             Box(modifier = Modifier.padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
-                                Text(l, fontSize = 11.sp, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal, color = if (isSel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(l, fontSize = 11.sp, fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal, color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }

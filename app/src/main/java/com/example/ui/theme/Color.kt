@@ -59,6 +59,30 @@ val TextPrimary = Color(0xFFF1F5F9)
 val TextSecondary = Color(0xFF94A3B8)
 val TextMuted = Color(0xFF64748B)
 
+// Cyber Terminal / Arknights Tactical Sci-Fi Palette (Dark)
+val CyberTerminalBackground = Color(0xFF080C0E) // Deep carbon obsidian command terminal
+val CyberTerminalSurface = Color(0xFF0F171A) // Industrial command console surface
+val CyberTerminalSurfaceVariant = Color(0xFF162326) // Elevated tactical container
+val CyberNeonGreen = Color(0xFF00FF9D) // Glowing terminal phosphor green
+val CyberNeonGreenDark = Color(0xFF00B36B) // Deeper neon green
+val CyberNeonGreenContainer = Color(0xFF003822) // High contrast dark green container
+val CyberTacticalGold = Color(0xFFFFD54F) // Tactical amber gold
+val CyberTacticalBorder = Color(0xFF1E3834) // Crisp wireframe grid border
+val CyberTerminalTextPrimary = Color(0xFFE8FFF5) // High legibility terminal white-green
+val CyberTerminalTextSecondary = Color(0xFF7BA69D) // Tactical muted telemetry cyan
+
+// Tactical Light Lab / Rhine Lab Clinical White Protocol (Light)
+val TacticalLightBackground = Color(0xFFF0F4F2) // Rhine Lab cleanroom technical light slate
+val TacticalLightSurface = Color(0xFFFFFFFF) // Clinical optical pure white
+val TacticalLightSurfaceVariant = Color(0xFFE4ECE9) // High-precision technical container
+val TacticalLightPrimary = Color(0xFF006D44) // Deep Technical Emerald (AAA contrast on white)
+val TacticalLightPrimaryContainer = Color(0xFFD0F0E2) // Soft cleanroom emerald wash
+val TacticalLightSecondary = Color(0xFFB86600) // Rhine Lab Technical Hazard Amber Gold
+val TacticalLightBorder = Color(0xFF76938C) // High-visibility crisp technical wireframe border
+val TacticalLightTextPrimary = Color(0xFF0A1412) // Deep Technical Obsidian Black (maximum readability)
+val TacticalLightTextSecondary = Color(0xFF334944) // Deep Telemetry Slate (high contrast)
+val TacticalLightLimeAccent = Color(0xFF84CC16) // Rhine Lab Lime Accent Pip
+
 val White80 = Color(0xCCFFFFFF)
 val White70 = Color(0xB3FFFFFF)
 val White60 = Color(0x99FFFFFF)

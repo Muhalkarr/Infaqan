@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Nightlight
@@ -99,6 +100,7 @@ fun DualCalendarScreen(
     viewModel: AmanahLedgerViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToAddTransactionWithDate: (Long) -> Unit,
+    onEditTransaction: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BackHandler { onNavigateBack() }
@@ -165,13 +167,13 @@ fun DualCalendarScreen(
     val entriesOnSelectedDate = transactionsByDateKey[selectedDateKey] ?: emptyList()
     val totalIncomeSelected = entriesOnSelectedDate
         .filter { it.transactionType == "INFLOW" || it.transactionType == "INCOME" }
-        .sumOf { it.totalDebit }
+        .sumOf { it.primaryAmount }
     val totalExpenseSelected = entriesOnSelectedDate
         .filter { it.transactionType == "EXPENSE" }
-        .sumOf { it.totalDebit }
+        .sumOf { it.primaryAmount }
     val totalInfaqSelected = entriesOnSelectedDate
         .filter { it.transactionType == "INFAQ_PAYOUT" || it.transactionType == "INFAQ_SEDEKAH" || it.transactionType == "ZAKAT" }
-        .sumOf { it.totalDebit }
+        .sumOf { it.primaryAmount }
 
     // Hijri date untuk tanggal terpilih
     val selectedHijriDate = remember(selectedCalendarDate, uiState.selectedHijriOffset) {
@@ -684,7 +686,11 @@ fun DualCalendarScreen(
                 }
             } else {
                 items(entriesOnSelectedDate, key = { it.id }) { entry ->
-                    TransactionDayItemCard(entry = entry, nf = nf)
+                    TransactionDayItemCard(
+                        entry = entry,
+                        nf = nf,
+                        onEditClick = { onEditTransaction(entry.id) }
+                    )
                 }
             }
 
@@ -893,6 +899,7 @@ private fun DailyStatChip(
 private fun TransactionDayItemCard(
     entry: JournalEntry,
     nf: NumberFormat,
+    onEditClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isIncome = entry.transactionType == "INFLOW" || entry.transactionType == "INCOME"
@@ -925,52 +932,94 @@ private fun TransactionDayItemCard(
         shape = RoundedCornerShape(12.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = badgeColor.copy(alpha = 0.15f)
-                    ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 12.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = badgeColor.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = typeLabel,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = badgeColor,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
                         Text(
-                            text = typeLabel,
+                            text = "Jam $timeFormatted WIB",
                             fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = badgeColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Jam $timeFormatted WIB",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = entry.description.ifBlank { "Transaksi Kas Syariah" },
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
+
                 Text(
-                    text = entry.description.ifBlank { "Transaksi Kas Syariah" },
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    text = "${if (isIncome) "+Rp " else if (isExpense) "-Rp " else "Rp "}${nf.format(entry.primaryAmount)}",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Black,
+                    color = badgeColor,
+                    maxLines = 1
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
-            Text(
-                text = "${if (isIncome) "+Rp " else if (isExpense) "-Rp " else "Rp "}${nf.format(entry.totalDebit)}",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Black,
-                color = badgeColor
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    onClick = onEditClick,
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    modifier = Modifier.testTag("calendar_edit_btn_${entry.id}")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Catatan",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Text(
+                            text = "Edit Catatan",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
         }
     }
 }

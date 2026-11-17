@@ -10,7 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.CyberNeonGreen
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
@@ -61,16 +64,27 @@ fun BudgetSettingsSection(
 
         Spacer(modifier = Modifier.height(6.dp))
 
+        val isTactical = state.themeMode.isTactical
+        val cardInnerShape = if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(10.dp)
+
         FinancialGoalMode.entries.forEach { mode ->
             val isSelected = state.selectedGoalMode == mode
             Surface(
-                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(10.dp),
-                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+                },
+                shape = cardInnerShape,
+                border = if (isSelected) {
+                    androidx.compose.foundation.BorderStroke(1.2.dp, MaterialTheme.colorScheme.primary)
+                } else {
+                    if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)) else null
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 3.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(cardInnerShape)
                     .clickable { onSetFinancialGoalMode(mode) }
             ) {
                 Row(
@@ -192,6 +206,7 @@ fun SecuritySettingsSection(
     onSetAutoLockInterval: (AutoLockInterval) -> Unit,
     onLockAppNow: () -> Unit
 ) {
+    val isTactical = state.themeMode.isTactical
     SettingsSectionCard(
         title = "Keamanan & Kunci Aplikasi",
         subtitle = "Proteksi PIN 6-digit, sidik jari, dan interval auto-lock",
@@ -216,18 +231,27 @@ fun SecuritySettingsSection(
                     color = if (state.securityConfig.isPinEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                 )
             }
+            val btnShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
             Button(
                 onClick = onNavigateToSecuritySettings,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (state.securityConfig.isPinEnabled) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary
+                    containerColor = if (state.securityConfig.isPinEnabled) {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
                 ),
-                shape = RoundedCornerShape(8.dp),
+                shape = btnShape,
                 modifier = Modifier.testTag("settings_open_security_center_button")
             ) {
                 Text(
                     text = if (state.securityConfig.isPinEnabled) "Kelola PIN" else "Atur PIN",
                     fontSize = 12.sp,
-                    color = if (state.securityConfig.isPinEnabled) MaterialTheme.colorScheme.onSurface else Color.White
+                    color = if (state.securityConfig.isPinEnabled) {
+                        if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onPrimary
+                    }
                 )
             }
         }
@@ -254,6 +278,7 @@ fun SecuritySettingsSection(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(6.dp))
+            val intervalChipShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(6.dp)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -261,12 +286,16 @@ fun SecuritySettingsSection(
                 AutoLockInterval.entries.forEach { interval ->
                     val isSelected = state.securityConfig.autoLockInterval == interval
                     Surface(
-                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(6.dp),
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        shape = intervalChipShape,
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.2.dp, MaterialTheme.colorScheme.primary) else null,
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(6.dp))
+                            .clip(intervalChipShape)
                             .clickable { onSetAutoLockInterval(interval) }
                             .padding(vertical = 6.dp)
                     ) {
@@ -294,7 +323,11 @@ fun SecuritySettingsSection(
             OutlinedButton(
                 onClick = onLockAppNow,
                 modifier = Modifier.fillMaxWidth().testTag("settings_lock_now_button"),
-                shape = RoundedCornerShape(8.dp)
+                shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp),
+                border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)) else null,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
             ) {
                 Icon(imageVector = Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(8.dp))

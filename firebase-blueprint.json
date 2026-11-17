@@ -2,12 +2,29 @@
   "entities": {
     "AmanahUser": {
       "title": "AmanahUser",
-      "description": "User profile metadata, Sedekah Subuh streaks, and aggregate statistics",
+      "description": "User profile metadata, Cloud Backup snapshot manifest, Sedekah Subuh streaks, embedded mutations, and app preferences",
       "type": "object",
       "properties": {
         "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp() when synced"
+        },
+        "updatedAtMillis": {
           "type": "number",
-          "description": "Timestamp in milliseconds when user stats were last synced"
+          "description": "Client epoch timestamp in milliseconds for snapshot display"
+        },
+        "deviceName": {
+          "type": "string",
+          "description": "Device model label that uploaded the cloud snapshot"
+        },
+        "totalBackedUpItems": {
+          "type": "number",
+          "description": "Total entity count across the 9 synchronized subcollections"
+        },
+        "backupChecksum": {
+          "type": "string",
+          "description": "SHA-256 verification checksum for snapshot integrity"
         },
         "sedekahStreak": {
           "type": "number",
@@ -24,6 +41,26 @@
         "sedekahDays": {
           "type": "number",
           "description": "Total number of distinct days Sedekah Subuh was fulfilled"
+        },
+        "sedekahLastMillis": {
+          "type": "number",
+          "description": "Timestamp of last Sedekah Subuh contribution"
+        },
+        "sedekahHistoryJson": {
+          "type": "string",
+          "description": "JSON map of date strings to Sedekah Subuh amounts"
+        },
+        "walletMutationsJson": {
+          "type": "string",
+          "description": "JSON array of intra-wallet transfer mutation records"
+        },
+        "ibadahDepositsJson": {
+          "type": "string",
+          "description": "JSON array of Ibadah Goal funding deposit records"
+        },
+        "preferencesJson": {
+          "type": "string",
+          "description": "JSON serialized BackupPreferencesSnapshot including notification, security, theme, and shariah configs"
         }
       },
       "required": ["updatedAt"]
@@ -33,45 +70,19 @@
       "description": "Financial wallet or bank account in Sharia double-entry ledger",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier of wallet"
-        },
-        "name": {
-          "type": "string",
-          "description": "Display name of wallet (e.g. Dompet Tunai, Bank Syariah)"
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of wallet account (CASH, BANK_SYARIAH, E_WALLET, GOLD_EMAS, INVESTMENT_DEPOSITO)"
-        },
-        "institutionName": {
-          "type": "string",
-          "description": "Name of Islamic bank or financial institution"
-        },
-        "accountNumber": {
-          "type": "string",
-          "description": "Account number or identifier"
-        },
-        "linkedAccountId": {
-          "type": "string",
-          "description": "Linked chart of account ID"
-        },
-        "colorHex": {
-          "type": "number",
-          "description": "Visual color representation in ARGB hex"
-        },
-        "isDefault": {
-          "type": "boolean",
-          "description": "Whether this is the default operational wallet"
-        },
-        "notes": {
-          "type": "string",
-          "description": "Additional notes about this wallet"
-        },
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "institutionName": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "linkedAccountId": { "type": "string" },
+        "colorHex": { "type": "number" },
+        "isDefault": { "type": "boolean" },
+        "notes": { "type": "string" },
         "updatedAt": {
-          "type": "number",
-          "description": "Timestamp in milliseconds when record was updated"
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()"
         }
       },
       "required": ["id", "name", "type", "updatedAt"]
@@ -81,45 +92,19 @@
       "description": "Double-entry Sharia ledger transaction entry with Hijri date metadata",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique transaction ID"
-        },
-        "dateMillis": {
-          "type": "number",
-          "description": "Transaction Gregorian timestamp in milliseconds"
-        },
-        "hijriYear": {
-          "type": "number",
-          "description": "Hijri calendar year"
-        },
-        "hijriMonth": {
-          "type": "number",
-          "description": "Hijri calendar month (1-12)"
-        },
-        "hijriDay": {
-          "type": "number",
-          "description": "Hijri calendar day (1-30)"
-        },
-        "description": {
-          "type": "string",
-          "description": "Transaction description or narasi"
-        },
-        "transactionType": {
-          "type": "string",
-          "description": "Transaction category (INCOME, EXPENSE, TRANSFER, INFAQ_SEDEKAH, ZAKAT, QARDH)"
-        },
-        "linesJson": {
-          "type": "string",
-          "description": "JSON serialized debit/credit journal posting lines"
-        },
-        "receiptJson": {
-          "type": "string",
-          "description": "JSON metadata for receipt proof attachment"
-        },
+        "id": { "type": "string" },
+        "dateMillis": { "type": "number" },
+        "hijriYear": { "type": "number" },
+        "hijriMonth": { "type": "number" },
+        "hijriDay": { "type": "number" },
+        "description": { "type": "string" },
+        "transactionType": { "type": "string" },
+        "linesJson": { "type": "string" },
+        "receiptJson": { "type": "string" },
         "updatedAt": {
-          "type": "number",
-          "description": "Timestamp in milliseconds when entry was updated"
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()"
         }
       },
       "required": ["id", "dateMillis", "hijriYear", "hijriMonth", "hijriDay", "description", "transactionType", "linesJson", "updatedAt"]
@@ -129,49 +114,20 @@
       "description": "Target Islamic spiritual financial accumulation goal",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique goal ID"
-        },
-        "type": {
-          "type": "string",
-          "description": "Goal type (QURBAN_KAMBING, QURBAN_SAPI, UMRAH_MANDIRI, HAJI_REGULER, WAKAF_PRODUKTIF, AQIQAH, DANA_DARURAT_SYARIAH)"
-        },
-        "title": {
-          "type": "string",
-          "description": "Title of the ibadah target"
-        },
-        "targetAmount": {
-          "type": "number",
-          "description": "Target funding requirement in IDR"
-        },
-        "currentAccumulated": {
-          "type": "number",
-          "description": "Current funds accumulated in IDR"
-        },
-        "targetHijri": {
-          "type": "string",
-          "description": "Target date in Hijri calendar representation"
-        },
-        "monthsRemaining": {
-          "type": "number",
-          "description": "Estimated months remaining until target deadline"
-        },
-        "linkedWalletId": {
-          "type": "string",
-          "description": "Wallet where goal funds are allocated"
-        },
-        "notes": {
-          "type": "string",
-          "description": "Spiritual notes or intentions (niyyah)"
-        },
-        "isCompleted": {
-          "type": "boolean",
-          "description": "Whether goal target has been achieved"
-        },
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAccumulated": { "type": "number" },
+        "targetHijri": { "type": "string" },
+        "monthsRemaining": { "type": "number" },
+        "linkedWalletId": { "type": "string" },
+        "notes": { "type": "string" },
+        "isCompleted": { "type": "boolean" },
         "updatedAt": {
-          "type": "number",
-          "description": "Timestamp in milliseconds when goal was updated"
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()"
         }
       },
       "required": ["id", "type", "title", "targetAmount", "currentAccumulated", "updatedAt"]
@@ -181,62 +137,152 @@
       "description": "Benevolent interest-free Islamic debt/loan (Qardh Hasan)",
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique qardh record ID"
-        },
-        "type": {
-          "type": "string",
-          "description": "Loan type (PAYABLE_HUTANG, RECEIVABLE_PIUTANG)"
-        },
-        "counterpartyName": {
-          "type": "string",
-          "description": "Name of the borrower or lender"
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "Total principal amount of the loan"
-        },
-        "remainingAmount": {
-          "type": "number",
-          "description": "Remaining outstanding balance to be settled"
-        },
-        "agreementDateMillis": {
-          "type": "number",
-          "description": "Timestamp when loan agreement was made"
-        },
-        "dueDateMillis": {
-          "type": "number",
-          "description": "Timestamp when loan is expected to be repaid"
-        },
-        "witnessName": {
-          "type": "string",
-          "description": "Names of witnesses (Saksi akad syariah)"
-        },
-        "notes": {
-          "type": "string",
-          "description": "Terms or conditions of the benevolent loan"
-        },
-        "status": {
-          "type": "string",
-          "description": "Loan status (ACTIVE, FULLY_PAID, FORGIVEN_INFAQ)"
-        },
-        "installmentsJson": {
-          "type": "string",
-          "description": "JSON history of repayment installments"
-        },
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "counterpartyName": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "remainingAmount": { "type": "number" },
+        "agreementDateMillis": { "type": "number" },
+        "dueDateMillis": { "type": "number" },
+        "witnessName": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": { "type": "string" },
+        "installmentsJson": { "type": "string" },
         "updatedAt": {
-          "type": "number",
-          "description": "Timestamp in milliseconds when record was updated"
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()"
         }
       },
       "required": ["id", "type", "counterpartyName", "totalAmount", "remainingAmount", "agreementDateMillis", "status", "updatedAt"]
+    },
+    "BudgetAllocation": {
+      "title": "BudgetAllocation",
+      "description": "Monthly Sharia spending budget cap and threshold per expense category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "accountId": { "type": "string" },
+        "categoryName": { "type": "string" },
+        "monthlyLimit": { "type": "number" },
+        "iconKey": { "type": "string" },
+        "alertThresholdPercent": { "type": "number" },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["id", "accountId", "categoryName", "monthlyLimit", "updatedAt"]
+    },
+    "InfaqRule": {
+      "title": "InfaqRule",
+      "description": "Automated Infaq calculation and Friday/Ramadan multiplier rule",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "targetCategory": { "type": "string" },
+        "calculationType": { "type": "string" },
+        "rate": { "type": "number" },
+        "fixedAmount": { "type": "number" },
+        "roundUpStep": { "type": "number" },
+        "enableFridayMultiplier": { "type": "boolean" },
+        "enableRamadanMultiplier": { "type": "boolean" },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["id", "title", "targetCategory", "calculationType", "rate", "updatedAt"]
+    },
+    "RecurringTransaction": {
+      "title": "RecurringTransaction",
+      "description": "Scheduled recurring bill, salary, or routine obligation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string" },
+        "amount": { "type": "number" },
+        "categoryAccountId": { "type": "string" },
+        "assetAccountId": { "type": "string" },
+        "frequency": { "type": "string" },
+        "dayOfMonthOrWeek": { "type": "number" },
+        "customInfaqRate": { "type": "number" },
+        "enableRoundUp": { "type": "boolean" },
+        "roundUpStep": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "autoExecute": { "type": "boolean" },
+        "lastExecutedDateMillis": { "type": "number" },
+        "lastExecutedPeriodKey": { "type": "string" },
+        "lastExecutionTimestamp": { "type": "number" },
+        "nextDueDateMillis": { "type": "number" },
+        "note": { "type": "string" },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["id", "title", "type", "amount", "categoryAccountId", "assetAccountId", "frequency", "dayOfMonthOrWeek", "nextDueDateMillis", "updatedAt"]
+    },
+    "InfaqDistributionRecord": {
+      "title": "InfaqDistributionRecord",
+      "description": "Disbursement record from Virtual Infaq Vault to Asnaf recipients",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "amount": { "type": "number" },
+        "recipientName": { "type": "string" },
+        "asnafCategory": { "type": "string" },
+        "distributionDateMillis": { "type": "number" },
+        "hijriDateString": { "type": "string" },
+        "sourceAccountId": { "type": "string" },
+        "programName": { "type": "string" },
+        "receiptNumber": { "type": "string" },
+        "notes": { "type": "string" },
+        "isVerified": { "type": "boolean" },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["id", "amount", "recipientName", "asnafCategory", "distributionDateMillis", "sourceAccountId", "updatedAt"]
+    },
+    "RezekiNonTunaiRecord": {
+      "title": "RezekiNonTunaiRecord",
+      "description": "Non-cash blessing/gift record with optional gratitude infaq settlement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "giverName": { "type": "string" },
+        "category": { "type": "string" },
+        "estimatedValue": { "type": "number" },
+        "suggestedInfaqRate": { "type": "number" },
+        "suggestedInfaqAmount": { "type": "number" },
+        "isPaidInfaq": { "type": "boolean" },
+        "paidJournalEntryId": { "type": "string" },
+        "dateMillis": { "type": "number" },
+        "hijriDateString": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAtMillis": { "type": "number" },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp written via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": ["id", "title", "category", "estimatedValue", "dateMillis", "updatedAt"]
     }
   },
   "firestore": {
     "/amanah_users/{userId}": {
       "schema": "AmanahUser",
-      "description": "User profile metadata, Sedekah Subuh streaks, and statistics"
+      "description": "User profile metadata, Cloud Backup snapshot manifest, Sedekah Subuh streaks, and app preferences"
     },
     "/amanah_users/{userId}/wallets/{walletId}": {
       "schema": "WalletAccount",
@@ -253,6 +299,26 @@
     "/amanah_users/{userId}/qardh_records/{recordId}": {
       "schema": "QardhRecord",
       "description": "Benevolent interest-free loans tracking (Qardh Hasan)"
+    },
+    "/amanah_users/{userId}/budgets/{budgetId}": {
+      "schema": "BudgetAllocation",
+      "description": "Monthly category budgets and spending thresholds"
+    },
+    "/amanah_users/{userId}/infaq_rules/{ruleId}": {
+      "schema": "InfaqRule",
+      "description": "Automated Infaq deduction and multiplier rules"
+    },
+    "/amanah_users/{userId}/recurring_transactions/{recurringId}": {
+      "schema": "RecurringTransaction",
+      "description": "Scheduled recurring transactions and reminders"
+    },
+    "/amanah_users/{userId}/infaq_distributions/{distributionId}": {
+      "schema": "InfaqDistributionRecord",
+      "description": "Virtual Infaq Vault distribution records"
+    },
+    "/amanah_users/{userId}/rezeki_non_tunai/{rezekiId}": {
+      "schema": "RezekiNonTunaiRecord",
+      "description": "Non-cash blessing and gratitude infaq records"
     }
   }
 }

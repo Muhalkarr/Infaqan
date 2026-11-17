@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -72,6 +73,8 @@ data class MonthlyDataPoint(
 fun SpendingTrendLineChart(
     journalEntries: List<JournalEntry>,
     budgets: List<BudgetAllocation>,
+    isMasked: Boolean = false,
+    isTactical: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val numberFormat = remember {
@@ -151,11 +154,14 @@ fun SpendingTrendLineChart(
     val secondaryColor = MaterialTheme.colorScheme.secondary
     val errorColor = MaterialTheme.colorScheme.error
 
+    val cardShape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp)
+    val badgeShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .testTag("spending_trend_line_chart_card"),
-        shape = RoundedCornerShape(16.dp),
+        shape = cardShape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
     ) {
@@ -184,7 +190,7 @@ fun SpendingTrendLineChart(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = badgeShape,
                     color = EmeraldDark.copy(alpha = 0.3f),
                     border = androidx.compose.foundation.BorderStroke(1.dp, primaryColor.copy(alpha = 0.4f))
                 ) {
@@ -225,7 +231,7 @@ fun SpendingTrendLineChart(
             if (selectedPointIndex != null && selectedPointIndex in monthlyData.indices) {
                 val point = monthlyData[selectedPointIndex!!]
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = badgeShape,
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth()
@@ -243,13 +249,13 @@ fun SpendingTrendLineChart(
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(
-                                text = "Masuk: Rp ${numberFormat.format(point.incomeAmount)}",
+                                text = if (isMasked) "Masuk: Rp •••" else "Masuk: Rp ${numberFormat.format(point.incomeAmount)}",
                                 fontSize = 11.sp,
                                 color = primaryColor,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = "Keluar: Rp ${numberFormat.format(point.expenseAmount)}",
+                                text = if (isMasked) "Keluar: Rp •••" else "Keluar: Rp ${numberFormat.format(point.expenseAmount)}",
                                 fontSize = 11.sp,
                                 color = errorColor,
                                 fontWeight = FontWeight.SemiBold

@@ -100,6 +100,11 @@ import com.example.ui.theme.GoldLight
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
 import com.example.ui.theme.White70
+import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.TacticalShariahIntegrityBanner
+import com.example.ui.theme.CyberNeonGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,66 +121,91 @@ fun BudgetAllocationScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("budget_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+            if (state.themeMode.isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Pemisahan Anggaran",
+                    subCode = "BUDGET//ANTI-ISRAF-02",
+                    onBack = onNavigateBack,
+                    trailingActions = {
+                        IconButton(
+                            onClick = {
+                                editingBudget = null
+                                showAddEditDialog = true
+                            },
+                            modifier = Modifier.testTag("add_budget_top_button")
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = "Tambah Anggaran", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("budget_menu_sidebar_button")
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu Sidebar", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
-                },
-                title = {
-                    Column {
-                        Text(
-                            text = "Pemisahan Anggaran Bulanan",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Batas Maksimal Pengeluaran & Anti-Israf",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                )
+            } else {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("budget_back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    title = {
+                        Column {
+                            Text(
+                                text = "Pemisahan Anggaran Bulanan",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Batas Maksimal Pengeluaran & Anti-Israf",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                editingBudget = null
+                                showAddEditDialog = true
+                            },
+                            modifier = Modifier.testTag("add_budget_top_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Tambah Anggaran",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("budget_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            editingBudget = null
-                            showAddEditDialog = true
-                        },
-                        modifier = Modifier.testTag("add_budget_top_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Tambah Anggaran",
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("budget_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            )
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -1073,7 +1103,7 @@ fun SpendingPatternOptimizerSection(
                                     text = mode.title.split("(").first().trim(),
                                     fontSize = 10.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1
                                 )
                                 Text(

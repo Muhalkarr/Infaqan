@@ -12,11 +12,27 @@ data class ChangelogVersion(
 object ChangelogRegistry {
     val versions: List<ChangelogVersion> = listOf(
         ChangelogVersion(
+            version = "v2.6",
+            releaseDate = "Oktober 2026",
+            title = "Perampingan UI/UX, Center Docked (+), Sidebar Adaptif & Rezeki Non-Tunai",
+            isLatest = true,
+            tag = "Pembaruan Terkini",
+            highlights = listOf(
+                "🔘 Center Docked Action Button (+): Tombol catat transaksi utama terintegrasi rapi dan simetris di tengah bilah bawah, mengeliminasi tombol melayang di pojok layar.",
+                "⚡ Tombol Masuk & Keluar Cepat di Beranda: Tombol 'Masuk' dan 'Keluar' kini langsung membuka formulir dengan tipe transaksi yang sesuai secara instan.",
+                "🧭 Sidebar Navigasi Adaptif (Mode Ringkas vs Lengkap): Mode Ringkas menyaring menu menjadi 3 seksi intuitif (~9 menu esensial) ramah awam, sementara Mode Lengkap dilengkapi Collapsible Accordion animasi.",
+                "🎁 Fitur Rezeki Non-Tunai & Infaq Syukur: Pencatatan traktiran makan, hadiah, atau parsel tanpa mengubah saldo kas dompet, lengkap dengan kalkulasi saran Infaq Syukur sukarela.",
+                "🌙 Kalender Ganda (Dual Calendar Hijriyah & Masehi): Konversi tarikh Islam Ummul Qura & Kemenag, penanda puasa sunnah, dan hisab haul zakat 354 hari.",
+                "📚 Ekspansi Panduan Interaktif (24 Topik Lengkap): Penambahan modul Rezeki Non-Tunai, Kalender Hijriyah, dan Privasi Saldo berlandaskan dalil Al-Qur'an dan Hadits Shahih.",
+                "⚡ Optimasi Performa & Predictive Back: Dukungan animasi kembali modern Android 13/14+ dan perampingan disk I/O logging untuk mengurangi lag ponsel."
+            )
+        ),
+        ChangelogVersion(
             version = "v2.5",
             releaseDate = "September 2026",
             title = "Kamera Struk, Identitas Muhalkarr, Shake Feedback & Perbaikan Numpad",
-            isLatest = true,
-            tag = "Pembaruan Terkini",
+            isLatest = false,
+            tag = "Stabil",
             highlights = listOf(
                 "📸 Integrasi Kamera Struk Belanja Langsung: Memotret nota/struk kas fisik saat pencatatan pengeluaran dengan kompresi hemat memori otomatis.",
                 "✍️ Pembaruan Identitas Pengembang: Atribusi resmi developer diperbarui menjadi Muhalkarr.",

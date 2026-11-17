@@ -27,6 +27,8 @@ import com.example.core.faraidh.FaraidhEngine
 import com.example.core.faraidh.FaraidhShare
 import com.example.core.faraidh.HeirInput
 import com.example.core.state.AmanahLedgerViewModel
+import com.example.presentation.components.ExperimentalBadge
+import com.example.presentation.components.ExperimentalNoticeCard
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -89,7 +91,13 @@ fun FaraidhScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Kalkulator Waris Syariah", fontWeight = FontWeight.Bold)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("Kalkulator Waris Syariah", fontWeight = FontWeight.Bold)
+                            ExperimentalBadge(text = "🧪 Eksperimen")
+                        }
                         Text(
                             "Faraidh Engine (QS. An-Nisa: 11-12, 176)",
                             style = MaterialTheme.typography.labelSmall,
@@ -131,6 +139,15 @@ fun FaraidhScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(top = 12.dp, bottom = 40.dp)
         ) {
+            // Notice Banner Fitur Eksperimen
+            item {
+                ExperimentalNoticeCard(
+                    title = "Simulasi Hisab Faraidh Syar'i",
+                    subtitle = "Modul Eksperimen & Edukasi Kewarisan Islam",
+                    description = "Perhitungan ini merupakan simulasi algoritma fikih mawaris (Ashabul Furudh, Ashabah, 'Awl, Radd, dan Hijab). Pembagian harta warisan riil wajib diverifikasi dan diputuskan bersama alim ulama atau instansi Pengadilan Agama setempat."
+                )
+            }
+
             // Dalil Card Lengkap Fiqih Waris (Al-Qur'an & As-Sunnah)
             item {
                 var isDalilExpanded by remember { mutableStateOf(false) }

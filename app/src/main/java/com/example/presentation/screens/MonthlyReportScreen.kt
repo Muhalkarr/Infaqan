@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.ui.theme.isTactical
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
@@ -27,8 +29,12 @@ import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
@@ -43,6 +49,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -51,6 +58,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -73,6 +81,8 @@ import coil.compose.AsyncImage
 import com.example.core.calendar.HijriCalendarEngine
 import com.example.core.calendar.HijriDate
 import com.example.core.report.FinancialPdfGenerator
+import com.example.core.report.PdfCalendarMode
+import com.example.core.report.PdfDateRange
 import com.example.core.state.AmanahLedgerViewModel
 import java.io.File
 import java.text.NumberFormat
@@ -91,9 +101,11 @@ fun MonthlyReportScreen(
     viewModel: AmanahLedgerViewModel,
     onNavigateBack: () -> Unit,
     onOpenDrawer: () -> Unit = {},
-    onNavigateToReceiptArchive: (() -> Unit)? = null
+    onNavigateToReceiptArchive: (() -> Unit)? = null,
+    onEditTransaction: (String) -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val isTactical = state.themeMode.isTactical
     val context = LocalContext.current
 
     val currentCal = remember { Calendar.getInstance() }
@@ -105,13 +117,30 @@ fun MonthlyReportScreen(
     var selectedHijriYear by remember { mutableIntStateOf(currentHijri.year) }
     var generatedPdfFile by remember { mutableStateOf<File?>(null) }
     var isGenerating by remember { mutableStateOf(false) }
+    var showMonthlyEditorialPreview by remember { mutableStateOf(false) }
+    var monthlyPdfDateRange by remember(
+        isHijriCalendarBasis,
+        selectedHijriMonth,
+        selectedHijriYear,
+        state.selectedHijriOffset
+    ) {
+        mutableStateOf(
+            if (isHijriCalendarBasis) {
+                PdfDateRange.forHijriMonth(selectedHijriYear, selectedHijriMonth, state.selectedHijriOffset)
+            } else {
+                PdfDateRange.allTime(PdfCalendarMode.MASEHI)
+            }
+        )
+    }
 
     // Transaction Pagination & Filter State
     var searchQuery by remember { mutableStateOf("") }
     var selectedTypeFilter by remember { mutableStateOf("SEMUA") }
     var onlyWithReceipts by remember { mutableStateOf(false) }
+    var showAllPeriodsInJournal by remember { mutableStateOf(false) }
     var currentPage by remember { mutableIntStateOf(1) }
     var previewReceiptPath by remember { mutableStateOf<String?>(null) }
+    var entryToDelete by remember { mutableStateOf<com.example.core.accounting.JournalEntry?>(null) }
     val pageSize = 8
 
     val reportCal = remember(selectedMonth, selectedYear) {
@@ -152,16 +181,16 @@ fun MonthlyReportScreen(
     }
 
     val periodIncome = remember(periodEntries) {
-        periodEntries.filter { it.transactionType == "INFLOW" || it.transactionType == "INCOME" }.sumOf { it.totalDebit }
+        periodEntries.filter { it.transactionType == "INFLOW" || it.transactionType == "INCOME" }.sumOf { it.primaryAmount }
     }
     val periodExpense = remember(periodEntries) {
-        periodEntries.filter { it.transactionType == "EXPENSE" }.sumOf { it.totalDebit }
+        periodEntries.filter { it.transactionType == "EXPENSE" }.sumOf { it.primaryAmount }
     }
     val periodInfaq = remember(periodEntries) {
-        periodEntries.filter { it.transactionType.contains("INFAQ") || it.transactionType == "ZAKAT" }.sumOf { it.totalDebit }
+        periodEntries.filter { it.transactionType.contains("INFAQ") || it.transactionType == "ZAKAT" }.sumOf { it.primaryAmount }
     }
     val periodInternalTransfer = remember(periodEntries) {
-        periodEntries.filter { it.transactionType == "TRANSFER" }.sumOf { it.totalDebit }
+        periodEntries.filter { it.transactionType == "TRANSFER" }.sumOf { it.primaryAmount }
     }
 
     fun formatRupiah(amount: Double): String {
@@ -233,7 +262,7 @@ fun MonthlyReportScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth().testTag("monthly_report_basis_card"),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(14.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(
@@ -246,14 +275,14 @@ fun MonthlyReportScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(10.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .padding(3.dp)
                         ) {
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp))
                                     .background(if (!isHijriCalendarBasis) MaterialTheme.colorScheme.primary else Color.Transparent)
                                     .clickable {
                                         isHijriCalendarBasis = false
@@ -267,14 +296,14 @@ fun MonthlyReportScreen(
                                     text = "Kalender Masehi",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (!isHijriCalendarBasis) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (!isHijriCalendarBasis) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
 
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp))
                                     .background(if (isHijriCalendarBasis) MaterialTheme.colorScheme.primary else Color.Transparent)
                                     .clickable {
                                         isHijriCalendarBasis = true
@@ -288,7 +317,7 @@ fun MonthlyReportScreen(
                                     text = "Kalender Hijriyah 🌙",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isHijriCalendarBasis) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (isHijriCalendarBasis) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -373,7 +402,7 @@ fun MonthlyReportScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp),
                     border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -422,7 +451,8 @@ fun MonthlyReportScreen(
                                             context = context,
                                             state = state,
                                             targetMonth = selectedMonth,
-                                            targetYear = selectedYear
+                                            targetYear = selectedYear,
+                                            dateRange = monthlyPdfDateRange
                                         )
                                         generatedPdfFile = file
                                         FinancialPdfGenerator.viewPdfReport(context, file)
@@ -433,8 +463,11 @@ fun MonthlyReportScreen(
                                         isGenerating = false
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(10.dp),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(44.dp)
@@ -452,7 +485,8 @@ fun MonthlyReportScreen(
                                             context = context,
                                             state = state,
                                             targetMonth = selectedMonth,
-                                            targetYear = selectedYear
+                                            targetYear = selectedYear,
+                                            dateRange = monthlyPdfDateRange
                                         )
                                         generatedPdfFile = file
                                         FinancialPdfGenerator.sharePdfReport(context, file)
@@ -460,7 +494,7 @@ fun MonthlyReportScreen(
                                         Toast.makeText(context, "Gagal membagikan PDF: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 },
-                                shape = RoundedCornerShape(10.dp),
+                                shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(10.dp),
                                 modifier = Modifier
                                     .weight(0.9f)
                                     .height(44.dp)
@@ -470,6 +504,25 @@ fun MonthlyReportScreen(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text("Bagikan", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                             }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = { showMonthlyEditorialPreview = true },
+                            shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .testTag("monthly_preview_editorial_pdf_button")
+                        ) {
+                            Icon(imageVector = Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Pratinjau Halaman & Ubah Redaksi (${state.pdfEditorialConfig.stylePreset.badge})",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp
+                            )
                         }
                     }
                 }
@@ -493,7 +546,7 @@ fun MonthlyReportScreen(
                     Card(
                         modifier = Modifier.weight(1f),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(12.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
@@ -506,7 +559,7 @@ fun MonthlyReportScreen(
                     Card(
                         modifier = Modifier.weight(1f),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(12.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
@@ -526,7 +579,7 @@ fun MonthlyReportScreen(
                     Card(
                         modifier = Modifier.weight(1f),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(12.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
@@ -539,7 +592,7 @@ fun MonthlyReportScreen(
                     Card(
                         modifier = Modifier.weight(1f),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(12.dp),
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                     ) {
                         Column(modifier = Modifier.padding(12.dp)) {
@@ -556,7 +609,7 @@ fun MonthlyReportScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -607,7 +660,7 @@ fun MonthlyReportScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(5.dp)
-                                            .clip(RoundedCornerShape(3.dp)),
+                                            .clip(if (isTactical) CutCornerShape(2.dp) else RoundedCornerShape(3.dp)),
                                         color = if (isOver) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                                     )
@@ -631,7 +684,7 @@ fun MonthlyReportScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -656,6 +709,41 @@ fun MonthlyReportScreen(
                                 Text("Rp ${formatRupiah(state.totalDisbursedInfaq)}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        val sliAnalysis = state.infaqSliAnalysis
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text("SLI (Infaq / Konsumsi)", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "${String.format(Locale.forLanguageTag("id-ID"), "%.1f", sliAnalysis.sliConsumptionBasedPercent)}%",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Rasio Infaq / Pendapatan", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "${String.format(Locale.forLanguageTag("id-ID"), "%.1f", sliAnalysis.infaqToTotalIncomePercent)}%",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text("Sisa Wajib Salur Vault", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "Rp ${formatRupiah(sliAnalysis.vaultRemainingPayable)}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -665,7 +753,7 @@ fun MonthlyReportScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -705,7 +793,7 @@ fun MonthlyReportScreen(
                                 }
                             },
                             singleLine = true,
-                            shape = RoundedCornerShape(10.dp),
+                            shape = if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(10.dp),
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -733,6 +821,23 @@ fun MonthlyReportScreen(
                                     )
                                 )
                             }
+
+                            FilterChip(
+                                selected = showAllPeriodsInJournal,
+                                onClick = {
+                                    showAllPeriodsInJournal = !showAllPeriodsInJournal
+                                    currentPage = 1
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(13.dp))
+                                },
+                                label = { Text("Semua Periode (Arsip)", fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onTertiaryContainer
+                                ),
+                                modifier = Modifier.testTag("journal_all_periods_chip")
+                            )
 
                             FilterChip(
                                 selected = onlyWithReceipts,
@@ -769,8 +874,13 @@ fun MonthlyReportScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Filter items dari periode bulan terpilih
-                        val filteredList = periodEntries.filter { entry ->
+                        // Filter items dari periode bulan terpilih atau seluruh riwayat (Arsip)
+                        val sourceEntries = if (showAllPeriodsInJournal) {
+                            state.journalEntries.sortedByDescending { it.gregorianDate.time }
+                        } else {
+                            periodEntries
+                        }
+                        val filteredList = sourceEntries.filter { entry ->
                             val matchesType = when (selectedTypeFilter) {
                                 "SEMUA" -> true
                                 "EXPENSE" -> entry.transactionType.equals("EXPENSE", ignoreCase = true)
@@ -812,37 +922,69 @@ fun MonthlyReportScreen(
                                     val isIncome = entry.transactionType.equals("INFLOW", ignoreCase = true) || entry.transactionType.equals("INCOME", ignoreCase = true)
                                     val isExpense = entry.transactionType.equals("EXPENSE", ignoreCase = true)
                                     val dateStr = SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(entry.gregorianDate)
-                                    val primaryAccountId = entry.lines.firstOrNull { it.accountId.startsWith("acc_") }?.accountId
-                                    val walletName = state.wallets.find { it.id == primaryAccountId }?.name ?: "Dompet Kas"
-                                    val displayAmount = entry.totalDebit
+                                    val walletName = state.wallets.firstOrNull { w ->
+                                        entry.lines.any { it.accountId == w.linkedAccountId }
+                                    }?.name ?: entry.lines.firstOrNull { line ->
+                                        line.accountId != "acc_disbursed" && state.accounts.any { it.id == line.accountId }
+                                    }?.let { line ->
+                                        state.getAccount(line.accountId)?.name
+                                    } ?: "Dompet Kas"
+                                    val displayAmount = entry.primaryAmount
 
                                     Card(
-                                        shape = RoundedCornerShape(10.dp),
+                                        shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(10.dp),
                                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Row(
+                                        Column(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(10.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
+                                                .padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            Column(modifier = Modifier.weight(1f)) {
-                                                Text(entry.description, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Text(dateStr, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                    Text(" • ", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                                    Text(walletName, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary)
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.Top
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .padding(end = 12.dp)
+                                                ) {
+                                                    Text(entry.description, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Text(dateStr, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        Text(" • ", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                        Text(walletName, fontSize = 10.sp, color = MaterialTheme.colorScheme.primary)
+                                                    }
                                                 }
+
+                                                Text(
+                                                    text = "${if (isIncome) "+" else if (isExpense) "-" else ""}Rp ${formatRupiah(displayAmount)}",
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 13.5.sp,
+                                                    color = when {
+                                                        isIncome -> MaterialTheme.colorScheme.primary
+                                                        isExpense -> MaterialTheme.colorScheme.error
+                                                        else -> MaterialTheme.colorScheme.secondary
+                                                    },
+                                                    maxLines = 1
+                                                )
                                             }
 
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.End,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
                                                 val imagePath = entry.receiptAttachment?.imagePath
                                                 if (imagePath != null) {
                                                     IconButton(
                                                         onClick = { previewReceiptPath = imagePath },
-                                                        modifier = Modifier.size(32.dp)
+                                                        modifier = Modifier.size(48.dp)
                                                     ) {
                                                         Icon(
                                                             Icons.Default.Receipt,
@@ -853,17 +995,33 @@ fun MonthlyReportScreen(
                                                     }
                                                     Spacer(modifier = Modifier.width(4.dp))
                                                 }
-
-                                                Text(
-                                                    text = "${if (isIncome) "+" else if (isExpense) "-" else ""}Rp ${formatRupiah(displayAmount)}",
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 13.sp,
-                                                    color = when {
-                                                        isIncome -> MaterialTheme.colorScheme.primary
-                                                        isExpense -> MaterialTheme.colorScheme.error
-                                                        else -> MaterialTheme.colorScheme.secondary
-                                                    }
-                                                )
+                                                IconButton(
+                                                    onClick = { onEditTransaction(entry.id) },
+                                                    modifier = Modifier
+                                                        .size(48.dp)
+                                                        .testTag("journal_edit_btn_${entry.id}")
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Edit,
+                                                        contentDescription = "Edit Catatan",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                IconButton(
+                                                    onClick = { entryToDelete = entry },
+                                                    modifier = Modifier
+                                                        .size(48.dp)
+                                                        .testTag("journal_delete_btn_${entry.id}")
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.Delete,
+                                                        contentDescription = "Hapus Catatan",
+                                                        tint = MaterialTheme.colorScheme.error,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -881,7 +1039,7 @@ fun MonthlyReportScreen(
                                 OutlinedButton(
                                     onClick = { if (currentPage > 1) currentPage-- },
                                     enabled = currentPage > 1,
-                                    shape = RoundedCornerShape(8.dp)
+                                    shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
                                 ) {
                                     Text("Sebelumnya", fontSize = 11.sp)
                                 }
@@ -895,7 +1053,7 @@ fun MonthlyReportScreen(
                                 OutlinedButton(
                                     onClick = { if (currentPage < totalPages) currentPage++ },
                                     enabled = currentPage < totalPages,
-                                    shape = RoundedCornerShape(8.dp)
+                                    shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
                                 ) {
                                     Text("Berikutnya", fontSize = 11.sp)
                                 }
@@ -925,13 +1083,61 @@ fun MonthlyReportScreen(
                             contentDescription = "Bukti Kuitansi",
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(12.dp))
                         )
                     }
                 },
                 confirmButton = {
                     Button(onClick = { previewReceiptPath = null }) {
                         Text("Tutup")
+                    }
+                }
+            )
+        }
+
+        if (showMonthlyEditorialPreview) {
+            PdfEditorialPreviewDialog(
+                target = PdfReportTarget.MONTHLY_REPORT,
+                uiState = state,
+                initialTab = 0,
+                targetMonth = selectedMonth,
+                targetYear = selectedYear,
+                dateRange = monthlyPdfDateRange,
+                onDateRangeChanged = {
+                    monthlyPdfDateRange = it
+                    generatedPdfFile = null
+                },
+                onDismiss = { showMonthlyEditorialPreview = false },
+                onSaveAsDefault = { newConfig ->
+                    viewModel.updatePdfEditorialConfig(newConfig)
+                }
+            )
+        }
+
+        entryToDelete?.let { target ->
+            AlertDialog(
+                onDismissRequest = { entryToDelete = null },
+                title = { Text("Hapus Catatan Transaksi?", fontWeight = FontWeight.Bold) },
+                text = {
+                    Text(
+                        "Catatan '${target.description}' akan dihapus dari buku besar dan saldo kas terkait akan otomatis dipulihkan.",
+                        fontSize = 13.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.deleteJournalEntry(target.id)
+                            entryToDelete = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Ya, Hapus")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { entryToDelete = null }) {
+                        Text("Batal")
                     }
                 }
             )

@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.shariah.*
 import com.example.core.state.AmanahLedgerViewModel
+import com.example.presentation.components.ExperimentalBadge
+import com.example.presentation.components.ExperimentalNoticeCard
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,12 +56,18 @@ fun ShariahRulesCustomizationScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(
-                            text = "Pusat Kustomisasi Syariah",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Pusat Kustomisasi Syariah",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            ExperimentalBadge(text = "🧪 Eksperimen")
+                        }
                         Text(
                             text = "Rules Engine & Acuan Hukum Islam",
                             fontSize = 11.sp,
@@ -141,6 +149,14 @@ fun ShariahRulesCustomizationScreen(
                         }
                     },
                     modifier = Modifier.testTag("tab_dalil_rulings")
+                )
+            }
+
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                ExperimentalNoticeCard(
+                    title = "Kustomisasi Rules Engine Syariah",
+                    subtitle = "Modul Eksperimen Parameter Fikih Lanjutan",
+                    description = "Penyesuaian variabel hisab (nisab kustom, toleransi haul, rasio dividen, dan pembulatan) akan langsung mengubah formula kalkulasi seluruh transaksi Anda. Harap berhati-hati dalam mengubah acuan baku fikih."
                 )
             }
 

@@ -2,6 +2,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Global safety net: deny all access by default unless explicitly permitted below
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -10,96 +19,309 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
     function isValidUser(data) {
-      return data.updatedAt is number
+      return isValidTimestamp(data.updatedAt)
+        && data.keys().hasAll(['updatedAt'])
+        && data.keys().hasOnly([
+          'updatedAt', 'updatedAtMillis', 'deviceName', 'totalBackedUpItems', 'backupChecksum',
+          'sedekahStreak', 'sedekahLongest', 'sedekahTotal', 'sedekahDays',
+          'sedekahLastMillis', 'sedekahHistoryJson', 'walletMutationsJson',
+          'ibadahDepositsJson', 'preferencesJson'
+        ])
+        && (!('updatedAtMillis' in data) || data.updatedAtMillis is number)
+        && (!('deviceName' in data) || (data.deviceName is string && data.deviceName.size() <= 150))
+        && (!('totalBackedUpItems' in data) || data.totalBackedUpItems is number)
+        && (!('backupChecksum' in data) || (data.backupChecksum is string && data.backupChecksum.size() <= 128))
         && (!('sedekahStreak' in data) || data.sedekahStreak is number)
         && (!('sedekahLongest' in data) || data.sedekahLongest is number)
         && (!('sedekahTotal' in data) || data.sedekahTotal is number)
-        && (!('sedekahDays' in data) || data.sedekahDays is number);
+        && (!('sedekahDays' in data) || data.sedekahDays is number)
+        && (!('sedekahLastMillis' in data) || data.sedekahLastMillis is number)
+        && (!('sedekahHistoryJson' in data) || (data.sedekahHistoryJson is string && data.sedekahHistoryJson.size() <= 500000))
+        && (!('walletMutationsJson' in data) || (data.walletMutationsJson is string && data.walletMutationsJson.size() <= 500000))
+        && (!('ibadahDepositsJson' in data) || (data.ibadahDepositsJson is string && data.ibadahDepositsJson.size() <= 500000))
+        && (!('preferencesJson' in data) || (data.preferencesJson is string && data.preferencesJson.size() <= 100000));
     }
 
-    function isValidWallet(data) {
-      return data.id is string && data.id.size() > 0
-        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
-        && data.type is string
-        && (!('institutionName' in data) || data.institutionName is string)
-        && (!('accountNumber' in data) || data.accountNumber is string)
-        && (!('linkedAccountId' in data) || data.linkedAccountId is string)
+    function isValidWallet(data, docId) {
+      return isValidId(docId)
+        && data.keys().hasAll(['id', 'name', 'type', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'name', 'type', 'institutionName', 'accountNumber',
+          'linkedAccountId', 'colorHex', 'isDefault', 'notes', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 150
+        && data.type is string && data.type.size() > 0 && data.type.size() <= 50
+        && (!('institutionName' in data) || (data.institutionName is string && data.institutionName.size() <= 150))
+        && (!('accountNumber' in data) || (data.accountNumber is string && data.accountNumber.size() <= 100))
+        && (!('linkedAccountId' in data) || (data.linkedAccountId is string && data.linkedAccountId.size() <= 128))
         && (!('colorHex' in data) || data.colorHex is number)
         && (!('isDefault' in data) || data.isDefault is bool)
-        && (!('notes' in data) || data.notes is string)
-        && data.updatedAt is number;
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000))
+        && isValidTimestamp(data.updatedAt);
     }
 
-    function isValidJournalEntry(data) {
-      return data.id is string && data.id.size() > 0
+    function isValidJournalEntry(data, docId) {
+      return isValidId(docId)
+        && data.keys().hasAll([
+          'id', 'dateMillis', 'hijriYear', 'hijriMonth', 'hijriDay',
+          'description', 'transactionType', 'linesJson', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'dateMillis', 'hijriYear', 'hijriMonth', 'hijriDay',
+          'description', 'transactionType', 'linesJson', 'receiptJson', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
         && data.dateMillis is number
         && data.hijriYear is number
         && data.hijriMonth is number
         && data.hijriDay is number
-        && data.description is string && data.description.size() <= 500
-        && data.transactionType is string
-        && data.linesJson is string
-        && (!('receiptJson' in data) || data.receiptJson is string)
-        && data.updatedAt is number;
+        && data.description is string && data.description.size() <= 1000
+        && data.transactionType is string && data.transactionType.size() > 0 && data.transactionType.size() <= 50
+        && data.linesJson is string && data.linesJson.size() <= 100000
+        && (!('receiptJson' in data) || (data.receiptJson is string && data.receiptJson.size() <= 100000))
+        && isValidTimestamp(data.updatedAt);
     }
 
-    function isValidIbadahGoal(data) {
-      return data.id is string && data.id.size() > 0
-        && data.type is string
-        && data.title is string && data.title.size() > 0 && data.title.size() <= 100
+    function isValidIbadahGoal(data, docId) {
+      return isValidId(docId)
+        && data.keys().hasAll(['id', 'type', 'title', 'targetAmount', 'currentAccumulated', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'type', 'title', 'targetAmount', 'currentAccumulated',
+          'targetHijri', 'monthsRemaining', 'linkedWalletId', 'notes', 'isCompleted', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.type is string && data.type.size() > 0 && data.type.size() <= 50
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 150
         && data.targetAmount is number
         && data.currentAccumulated is number
-        && (!('targetHijri' in data) || data.targetHijri is string)
+        && (!('targetHijri' in data) || (data.targetHijri is string && data.targetHijri.size() <= 64))
         && (!('monthsRemaining' in data) || data.monthsRemaining is number)
-        && (!('linkedWalletId' in data) || data.linkedWalletId is string)
-        && (!('notes' in data) || data.notes is string)
+        && (!('linkedWalletId' in data) || (data.linkedWalletId is string && data.linkedWalletId.size() <= 128))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000))
         && (!('isCompleted' in data) || data.isCompleted is bool)
-        && data.updatedAt is number;
+        && isValidTimestamp(data.updatedAt);
     }
 
-    function isValidQardhRecord(data) {
-      return data.id is string && data.id.size() > 0
-        && data.type is string
-        && data.counterpartyName is string && data.counterpartyName.size() > 0 && data.counterpartyName.size() <= 100
+    function isValidQardhRecord(data, docId) {
+      return isValidId(docId)
+        && data.keys().hasAll([
+          'id', 'type', 'counterpartyName', 'totalAmount', 'remainingAmount',
+          'agreementDateMillis', 'status', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'type', 'counterpartyName', 'totalAmount', 'remainingAmount',
+          'agreementDateMillis', 'dueDateMillis', 'witnessName', 'notes',
+          'status', 'installmentsJson', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.type is string && data.type.size() > 0 && data.type.size() <= 50
+        && data.counterpartyName is string && data.counterpartyName.size() > 0 && data.counterpartyName.size() <= 150
         && data.totalAmount is number
         && data.remainingAmount is number
         && data.agreementDateMillis is number
         && (!('dueDateMillis' in data) || data.dueDateMillis is number)
-        && (!('witnessName' in data) || data.witnessName is string)
-        && (!('notes' in data) || data.notes is string)
-        && data.status is string
-        && (!('installmentsJson' in data) || data.installmentsJson is string)
-        && data.updatedAt is number;
+        && (!('witnessName' in data) || (data.witnessName is string && data.witnessName.size() <= 150))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000))
+        && data.status is string && data.status.size() > 0 && data.status.size() <= 50
+        && (!('installmentsJson' in data) || (data.installmentsJson is string && data.installmentsJson.size() <= 100000))
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidBudget(data, docId) {
+      return isValidId(docId)
+        && data.keys().hasAll(['id', 'accountId', 'categoryName', 'monthlyLimit', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'accountId', 'categoryName', 'monthlyLimit',
+          'iconKey', 'alertThresholdPercent', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.accountId is string && data.accountId.size() > 0 && data.accountId.size() <= 128
+        && data.categoryName is string && data.categoryName.size() > 0 && data.categoryName.size() <= 150
+        && data.monthlyLimit is number
+        && (!('iconKey' in data) || (data.iconKey is string && data.iconKey.size() <= 64))
+        && (!('alertThresholdPercent' in data) || data.alertThresholdPercent is number)
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidInfaqRule(data, docId) {
+      return isValidId(docId)
+        && data.keys().hasAll(['id', 'title', 'targetCategory', 'calculationType', 'rate', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'title', 'targetCategory', 'calculationType', 'rate',
+          'fixedAmount', 'roundUpStep', 'enableFridayMultiplier', 'enableRamadanMultiplier', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 150
+        && data.targetCategory is string && data.targetCategory.size() > 0 && data.targetCategory.size() <= 50
+        && data.calculationType is string && data.calculationType.size() > 0 && data.calculationType.size() <= 50
+        && data.rate is number
+        && (!('fixedAmount' in data) || data.fixedAmount is number)
+        && (!('roundUpStep' in data) || data.roundUpStep is number)
+        && (!('enableFridayMultiplier' in data) || data.enableFridayMultiplier is bool)
+        && (!('enableRamadanMultiplier' in data) || data.enableRamadanMultiplier is bool)
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidRecurringTransaction(data, docId) {
+      return isValidId(docId)
+        && data.keys().hasAll([
+          'id', 'title', 'type', 'amount', 'categoryAccountId', 'assetAccountId',
+          'frequency', 'dayOfMonthOrWeek', 'nextDueDateMillis', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'title', 'type', 'amount', 'categoryAccountId', 'assetAccountId',
+          'frequency', 'dayOfMonthOrWeek', 'customInfaqRate', 'enableRoundUp', 'roundUpStep',
+          'isActive', 'autoExecute', 'lastExecutedDateMillis', 'lastExecutedPeriodKey',
+          'lastExecutionTimestamp', 'nextDueDateMillis', 'note', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 150
+        && data.type is string && data.type.size() > 0 && data.type.size() <= 50
+        && data.amount is number
+        && data.categoryAccountId is string && data.categoryAccountId.size() > 0 && data.categoryAccountId.size() <= 128
+        && data.assetAccountId is string && data.assetAccountId.size() > 0 && data.assetAccountId.size() <= 128
+        && data.frequency is string && data.frequency.size() > 0 && data.frequency.size() <= 50
+        && data.dayOfMonthOrWeek is number
+        && (!('customInfaqRate' in data) || data.customInfaqRate is number)
+        && (!('enableRoundUp' in data) || data.enableRoundUp is bool)
+        && (!('roundUpStep' in data) || data.roundUpStep is number)
+        && (!('isActive' in data) || data.isActive is bool)
+        && (!('autoExecute' in data) || data.autoExecute is bool)
+        && (!('lastExecutedDateMillis' in data) || data.lastExecutedDateMillis is number)
+        && (!('lastExecutedPeriodKey' in data) || (data.lastExecutedPeriodKey is string && data.lastExecutedPeriodKey.size() <= 64))
+        && (!('lastExecutionTimestamp' in data) || data.lastExecutionTimestamp is number)
+        && data.nextDueDateMillis is number
+        && (!('note' in data) || (data.note is string && data.note.size() <= 2000))
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidInfaqDistribution(data, docId) {
+      return isValidId(docId)
+        && data.keys().hasAll([
+          'id', 'amount', 'recipientName', 'asnafCategory',
+          'distributionDateMillis', 'sourceAccountId', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'amount', 'recipientName', 'asnafCategory',
+          'distributionDateMillis', 'hijriDateString', 'sourceAccountId',
+          'programName', 'receiptNumber', 'notes', 'isVerified', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.amount is number
+        && data.recipientName is string && data.recipientName.size() <= 150
+        && data.asnafCategory is string && data.asnafCategory.size() > 0 && data.asnafCategory.size() <= 50
+        && data.distributionDateMillis is number
+        && (!('hijriDateString' in data) || (data.hijriDateString is string && data.hijriDateString.size() <= 64))
+        && data.sourceAccountId is string && data.sourceAccountId.size() > 0 && data.sourceAccountId.size() <= 128
+        && (!('programName' in data) || (data.programName is string && data.programName.size() <= 150))
+        && (!('receiptNumber' in data) || (data.receiptNumber is string && data.receiptNumber.size() <= 100))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000))
+        && (!('isVerified' in data) || data.isVerified is bool)
+        && isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidRezekiNonTunai(data, docId) {
+      return isValidId(docId)
+        && data.keys().hasAll(['id', 'title', 'category', 'estimatedValue', 'dateMillis', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'title', 'giverName', 'category', 'estimatedValue',
+          'suggestedInfaqRate', 'suggestedInfaqAmount', 'isPaidInfaq',
+          'paidJournalEntryId', 'dateMillis', 'hijriDateString',
+          'notes', 'createdAtMillis', 'updatedAt'
+        ])
+        && data.id is string && data.id == docId
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 150
+        && (!('giverName' in data) || (data.giverName is string && data.giverName.size() <= 150))
+        && data.category is string && data.category.size() > 0 && data.category.size() <= 50
+        && data.estimatedValue is number
+        && (!('suggestedInfaqRate' in data) || data.suggestedInfaqRate is number)
+        && (!('suggestedInfaqAmount' in data) || data.suggestedInfaqAmount is number)
+        && (!('isPaidInfaq' in data) || data.isPaidInfaq is bool)
+        && (!('paidJournalEntryId' in data) || (data.paidJournalEntryId is string && data.paidJournalEntryId.size() <= 128))
+        && data.dateMillis is number
+        && (!('hijriDateString' in data) || (data.hijriDateString is string && data.hijriDateString.size() <= 64))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000))
+        && (!('createdAtMillis' in data) || data.createdAtMillis is number)
+        && isValidTimestamp(data.updatedAt);
     }
 
     match /amanah_users/{userId} {
-      allow get, list: if isOwner(userId);
-      allow create, update: if isOwner(userId) && isValidUser(request.resource.data);
-      allow delete: if isOwner(userId);
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create, update: if isValidId(userId) && isOwner(userId) && isValidUser(incoming());
+      allow delete: if isValidId(userId) && isOwner(userId);
 
       match /wallets/{walletId} {
-        allow get, list: if isOwner(userId);
-        allow create, update: if isOwner(userId) && isValidWallet(request.resource.data);
-        allow delete: if isOwner(userId);
+        allow get: if isValidId(walletId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidWallet(incoming(), walletId);
+        allow delete: if isValidId(walletId) && isOwner(userId);
       }
 
       match /journal_entries/{entryId} {
-        allow get, list: if isOwner(userId);
-        allow create, update: if isOwner(userId) && isValidJournalEntry(request.resource.data);
-        allow delete: if isOwner(userId);
+        allow get: if isValidId(entryId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidJournalEntry(incoming(), entryId);
+        allow delete: if isValidId(entryId) && isOwner(userId);
       }
 
       match /ibadah_goals/{goalId} {
-        allow get, list: if isOwner(userId);
-        allow create, update: if isOwner(userId) && isValidIbadahGoal(request.resource.data);
-        allow delete: if isOwner(userId);
+        allow get: if isValidId(goalId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidIbadahGoal(incoming(), goalId);
+        allow delete: if isValidId(goalId) && isOwner(userId);
       }
 
       match /qardh_records/{recordId} {
-        allow get, list: if isOwner(userId);
-        allow create, update: if isOwner(userId) && isValidQardhRecord(request.resource.data);
-        allow delete: if isOwner(userId);
+        allow get: if isValidId(recordId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidQardhRecord(incoming(), recordId);
+        allow delete: if isValidId(recordId) && isOwner(userId);
+      }
+
+      match /budgets/{budgetId} {
+        allow get: if isValidId(budgetId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidBudget(incoming(), budgetId);
+        allow delete: if isValidId(budgetId) && isOwner(userId);
+      }
+
+      match /infaq_rules/{ruleId} {
+        allow get: if isValidId(ruleId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidInfaqRule(incoming(), ruleId);
+        allow delete: if isValidId(ruleId) && isOwner(userId);
+      }
+
+      match /recurring_transactions/{recurringId} {
+        allow get: if isValidId(recurringId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidRecurringTransaction(incoming(), recurringId);
+        allow delete: if isValidId(recurringId) && isOwner(userId);
+      }
+
+      match /infaq_distributions/{distributionId} {
+        allow get: if isValidId(distributionId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidInfaqDistribution(incoming(), distributionId);
+        allow delete: if isValidId(distributionId) && isOwner(userId);
+      }
+
+      match /rezeki_non_tunai/{rezekiId} {
+        allow get: if isValidId(rezekiId) && isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidRezekiNonTunai(incoming(), rezekiId);
+        allow delete: if isValidId(rezekiId) && isOwner(userId);
       }
     }
   }

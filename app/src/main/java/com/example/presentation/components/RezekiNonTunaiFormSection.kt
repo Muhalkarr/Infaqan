@@ -39,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -51,7 +52,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import com.example.core.rezeki.RezekiCategory
+import com.example.core.rezeki.RezekiInfaqAction
+import com.example.core.wallet.WalletAccount
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -70,6 +79,12 @@ fun RezekiNonTunaiFormSection(
     onInfaqRateChange: (Double) -> Unit,
     notes: String,
     onNotesChange: (String) -> Unit,
+    infaqAction: RezekiInfaqAction = RezekiInfaqAction.ALLOCATE_TO_VAULT,
+    onInfaqActionChange: (RezekiInfaqAction) -> Unit = {},
+    wallets: List<WalletAccount> = emptyList(),
+    selectedWalletId: String = "",
+    onSelectedWalletIdChange: (String) -> Unit = {},
+    getWalletBalance: (String) -> Double = { 0.0 },
     onSubmit: () -> Unit,
     isSaving: Boolean = false,
     modifier: Modifier = Modifier
@@ -364,7 +379,233 @@ fun RezekiNonTunaiFormSection(
             }
         }
 
-        // 7. Catatan / Doa Kebaikan
+        // 7. Tindakan Pemenuhan Infaq Syukur (Infaq Vault vs Tunai vs Nanti)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            shape = RoundedCornerShape(14.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (infaqAction == RezekiInfaqAction.ALLOCATE_TO_VAULT) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Savings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Pemenuhan Infaq Syukur",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.5.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Text(
+                    text = "Pilih bagaimana Anda ingin mencatatkan infaq syukur sebesar Rp ${nf.format(suggestedInfaq.toLong())}:",
+                    fontSize = 11.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // 3 Opsi Kartu
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Opsi 1: ALLOCATE_TO_VAULT (Rekomendasi)
+                    val isVault = infaqAction == RezekiInfaqAction.ALLOCATE_TO_VAULT
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { onInfaqActionChange(RezekiInfaqAction.ALLOCATE_TO_VAULT) }
+                            .testTag("rezeki_action_vault_option"),
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isVault) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            if (isVault) 1.5.dp else 1.dp,
+                            if (isVault) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Savings,
+                                contentDescription = null,
+                                tint = if (isVault) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Alokasikan ke Infaq Vault Bulanan",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.5.sp,
+                                        color = if (isVault) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                                            .padding(horizontal = 5.dp, vertical = 2.dp)
+                                    ) {
+                                        Text("Rekomendasi", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                }
+                                Text(
+                                    text = "Menambah saldo komitmen Infaq Vault bulanan Anda. Disalurkan nanti saat hisab bersamaan, tanpa memotong kas riil seketika.",
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Opsi 2: PAY_DIRECT_NOW
+                    val isCash = infaqAction == RezekiInfaqAction.PAY_DIRECT_NOW
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { onInfaqActionChange(RezekiInfaqAction.PAY_DIRECT_NOW) }
+                            .testTag("rezeki_action_cash_option"),
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isCash) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            if (isCash) 1.5.dp else 1.dp,
+                            if (isCash) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalAlignment = Alignment.Top
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Payment,
+                                    contentDescription = null,
+                                    tint = if (isCash) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Tunaikan Tunai Sekarang",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.5.sp,
+                                        color = if (isCash) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Keluarkan langsung dari salah satu kantong kas riil Anda saat ini juga.",
+                                        fontSize = 11.sp,
+                                        lineHeight = 15.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            // Jika memilih tunai sekarang, pilih kantong kas
+                            if (isCash && wallets.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text(
+                                    text = "Pilih Kantong Kas Sumber Infaq:",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    wallets.forEach { w ->
+                                        val isSelectedW = w.id == selectedWalletId || (selectedWalletId.isEmpty() && w == wallets.first())
+                                        val bal = getWalletBalance(w.id)
+                                        FilterChip(
+                                            selected = isSelectedW,
+                                            onClick = { onSelectedWalletIdChange(w.id) },
+                                            label = {
+                                                Text(
+                                                    text = "${w.name} (Rp ${nf.format(bal.toLong())})",
+                                                    fontSize = 11.sp
+                                                )
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Default.AccountBalanceWallet,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Opsi 3: SKIP_FOR_NOW
+                    val isSkip = infaqAction == RezekiInfaqAction.SKIP_FOR_NOW
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { onInfaqActionChange(RezekiInfaqAction.SKIP_FOR_NOW) }
+                            .testTag("rezeki_action_skip_option"),
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isSkip) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            if (isSkip) 1.5.dp else 1.dp,
+                            if (isSkip) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.BookmarkBorder,
+                                contentDescription = null,
+                                tint = if (isSkip) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Hanya Catat Rezeki (Nanti Saja)",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.5.sp,
+                                    color = if (isSkip) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Simpan riwayat rezeki tanpa menambahkan komitmen infaq sekarang.",
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 8. Catatan / Doa Kebaikan
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 text = "Catatan & Doa untuk Pemberi (Opsional)",
@@ -393,7 +634,18 @@ fun RezekiNonTunaiFormSection(
             )
         }
 
-        // 8. Tombol Simpan
+        // 9. Tombol Simpan Adaptif
+        val buttonText = when (infaqAction) {
+            RezekiInfaqAction.ALLOCATE_TO_VAULT -> "Catat Rezeki & Alokasikan ke Infaq Vault"
+            RezekiInfaqAction.PAY_DIRECT_NOW -> "Catat Rezeki & Tunaikan Infaq Tunai"
+            RezekiInfaqAction.SKIP_FOR_NOW -> "Simpan Catatan Rezeki Saja"
+        }
+        val buttonIcon = when (infaqAction) {
+            RezekiInfaqAction.ALLOCATE_TO_VAULT -> Icons.Default.Savings
+            RezekiInfaqAction.PAY_DIRECT_NOW -> Icons.Default.Payment
+            RezekiInfaqAction.SKIP_FOR_NOW -> Icons.Default.Check
+        }
+
         Button(
             onClick = onSubmit,
             modifier = Modifier
@@ -408,13 +660,13 @@ fun RezekiNonTunaiFormSection(
             enabled = !isSaving && title.isNotBlank() && estimatedValue > 0
         ) {
             Icon(
-                imageVector = Icons.Default.Check,
+                imageVector = buttonIcon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Catat Rezeki & Tawarkan Infaq",
+                text = buttonText,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )

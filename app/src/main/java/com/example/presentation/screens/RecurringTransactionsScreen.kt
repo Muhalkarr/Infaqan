@@ -50,6 +50,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.CyberNeonGreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -101,50 +105,66 @@ fun RecurringTransactionsScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Jadwal Transaksi Rutin",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = "Otomasi Gaji, Tagihan & Infaq Bulanan",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            if (state.themeMode.isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Jadwal Transaksi Rutin",
+                    subCode = "AUTO//SCHED-04",
+                    onBack = onNavigateBack,
+                    trailingActions = {
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("recurring_menu_sidebar_button")
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu Sidebar", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("recurring_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("recurring_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
+            } else {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "Jadwal Transaksi Rutin",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = "Otomasi Gaji, Tagihan & Infaq Bulanan",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("recurring_back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("recurring_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -245,7 +265,10 @@ fun RecurringTransactionsScreen(
                                         viewModel.processAllDueRecurringTransactions()
                                         executionSuccessMsg = "Berhasil memproses ${state.dueRecurringCount} transaksi jatuh tempo!"
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondary,
+                                        contentColor = MaterialTheme.colorScheme.onSecondary
+                                    ),
                                     shape = RoundedCornerShape(10.dp),
                                     modifier = Modifier.testTag("process_all_due_button")
                                 ) {
@@ -253,7 +276,7 @@ fun RecurringTransactionsScreen(
                                         text = "Eksekusi Semua (${state.dueRecurringCount})",
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSecondary
                                     )
                                 }
                             }
@@ -591,7 +614,7 @@ fun RecurringTransactionFormDialog(
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isIncome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = if (isIncome) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f).testTag("select_recurring_income")
@@ -606,7 +629,7 @@ fun RecurringTransactionFormDialog(
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (!isIncome) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (!isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = if (!isIncome) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f).testTag("select_recurring_expense")
@@ -703,7 +726,7 @@ fun RecurringTransactionFormDialog(
                                             text = label,
                                             fontSize = 10.sp,
                                             fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }

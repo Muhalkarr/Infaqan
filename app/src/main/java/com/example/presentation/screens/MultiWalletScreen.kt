@@ -74,6 +74,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.TacticalShariahIntegrityBanner
+import com.example.ui.theme.CyberNeonGreen
+import com.example.ui.theme.ChakraPetchFontFamily
+import com.example.ui.theme.ShareTechMonoFontFamily
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -119,66 +127,81 @@ fun MultiWalletScreen(
     var showTransferDialog by remember { mutableStateOf(false) }
     var editingWallet by remember { mutableStateOf<WalletAccount?>(null) }
 
+    val isTactical = state.themeMode.isTactical
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Multi-Kantong Rekening",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Text(
-                            text = "Pemisahan Fisik Saldo & Mutasi Antar-Akun",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            if (isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Multi-Kantong Rekening",
+                    subCode = "WLT//VAULT-03",
+                    onBack = onNavigateBack,
+                    trailingActions = {
+                        IconButton(
+                            onClick = { showTransferDialog = true },
+                            modifier = Modifier.testTag("wallet_top_transfer_button")
+                        ) {
+                            Icon(Icons.Default.SwapHoriz, contentDescription = "Mutasi Saldo", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("wallet_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("wallet_screen_back_button")
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = { showTransferDialog = true },
-                        modifier = Modifier.testTag("wallet_top_transfer_button")
-                    ) {
-                        Icon(Icons.Default.SwapHoriz, contentDescription = "Mutasi Saldo", tint = MaterialTheme.colorScheme.secondary)
-                    }
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("wallet_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showAddWalletDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Tambah Kantong", fontWeight = FontWeight.Bold) },
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
-                modifier = Modifier
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .testTag("add_wallet_fab")
-            )
+            } else {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "Multi-Kantong Rekening",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                            Text(
+                                text = "Pemisahan Fisik Saldo & Mutasi Antar-Akun",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("wallet_screen_back_button")
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { showTransferDialog = true },
+                            modifier = Modifier.testTag("wallet_top_transfer_button")
+                        ) {
+                            Icon(Icons.Default.SwapHoriz, contentDescription = "Mutasi Saldo", tint = MaterialTheme.colorScheme.secondary)
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("wallet_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+            }
         }
     ) { paddingValues ->
         Column(
@@ -186,15 +209,22 @@ fun MultiWalletScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            if (isTactical) {
+                TacticalShariahIntegrityBanner(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    subtitle = "PEMISAHAN FISIK SALDO WADI'AH & MUDHARABAH SECURE"
+                )
+            }
+
             // Header Summary Card
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 ),
-                shape = RoundedCornerShape(16.dp),
+                shape = if (isTactical) CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp) else RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Row(
@@ -636,7 +666,7 @@ private fun WalletCardItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WalletFormBottomSheet(
+internal fun WalletFormBottomSheet(
     initialWallet: WalletAccount?,
     initialBalance: Double,
     assetAccounts: List<Account>,

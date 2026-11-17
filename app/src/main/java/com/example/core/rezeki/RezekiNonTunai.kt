@@ -18,6 +18,12 @@ enum class RezekiCategory(val displayName: String, val iconName: String) {
     OTHER("Manfaat Lainnya", "VolunteerActivism")
 }
 
+enum class RezekiInfaqAction(val title: String, val subtitle: String) {
+    ALLOCATE_TO_VAULT("Alokasikan ke Infaq Vault", "Tambahkan ke saldo Infaq Vault bulanan untuk disalurkan nanti"),
+    PAY_DIRECT_NOW("Tunaikan Tunai Sekarang", "Keluarkan langsung dari saldo kantong kas riil saat ini"),
+    SKIP_FOR_NOW("Catat Rezeki Saja", "Simpan catatan rezeki tanpa menunaikan atau mengalokasikan infaq saat ini")
+}
+
 data class RezekiNonTunaiRecord(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
@@ -32,7 +38,10 @@ data class RezekiNonTunaiRecord(
     val hijriDateString: String = "",
     val notes: String = "",
     val createdAtMillis: Long = System.currentTimeMillis()
-)
+) {
+    val isVaultAllocated: Boolean
+        get() = isPaidInfaq && (paidJournalEntryId?.startsWith("vault_") == true || notes.contains("[Infaq Vault]"))
+}
 
 @Entity(tableName = "rezeki_non_tunai")
 data class RezekiNonTunaiEntity(

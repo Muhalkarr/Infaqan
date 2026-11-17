@@ -1027,19 +1027,23 @@ fun TopicExportReportContent(onTryAction: () -> Unit) {
                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("📄 ", fontSize = 14.sp)
-                            Text("Format PDF Resmi: Laporan arus kas, laba rugi, dan rasio kedermawanan lengkap dengan kop syariah.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text("PDF Laporan Utama Lengkap (All-in-One): Mencakup Neraca, Rincian Kasab/Non-Kasab, Analisa SLI komprehensif, Zakat Profesi/Perniagaan, Sedekah Subuh, dan Detail Akun Jurnal.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("✍️ ", fontSize = 14.sp)
+                            Text("Pratinjau & Kustomisasi Redaksi PDF: Ubah gaya bahasa (Formal, Akuntan, Personal, Taktis), sunting judul tiap bagian, dan cek pratinjau sebelum ekspor.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("📅 ", fontSize = 14.sp)
+                            Text("Filter Tanggal Masehi & Hijriyah: Tentukan rentang periode laporan dari kapan ke kapannya sesuai kalender Masehi maupun bulan Hijriyah.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("📊 ", fontSize = 14.sp)
-                            Text("Format CSV / Excel: Data mutasi mentah yang kompatibel untuk analisis lebih lanjut di komputer.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("📈 ", fontSize = 14.sp)
-                            Text("Spiritual Liquidity Index (SLI): Statistik persentase infaq terhadap pemasukan kasab.", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                            Text("Format CSV / Excel: Data mutasi mentah yang kompatibel untuk analisis lanjutan di komputer.", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🔒 ", fontSize = 14.sp)
-                            Text("Privasi 100% Offline: Dokumen dibuat langsung di perangkat tanpa diunggah ke server pihak ketiga.", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
+                            Text("Privasi 100% Offline & Sensor Saldo: Mendukung penyamaran nominal otomatis dan dibuat langsung di perangkat tanpa server eksternal.", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                         }
                     }
                 }
@@ -1058,10 +1062,10 @@ fun TopicExportReportContent(onTryAction: () -> Unit) {
             title = "Langkah Praktis Ekspor Laporan Keuangan:",
             steps = listOf(
                 "Buka menu Ekspor Laporan dari tombol di bawah.",
-                "Pilih rentang tanggal audit keuangan (Bulan Ini, Tahun Ini, atau Kustom).",
-                "Pilih format yang diinginkan: 'Cetak PDF Syariah' untuk dokumen siap baca atau 'Ekspor CSV' untuk olah data spreadsheet.",
-                "Periksa metrik Spiritual Liquidity Index (SLI) dan rasio kedermawanan Anda.",
-                "File dokumen langsung tersimpan di folder unduhan perangkat secara aman dan 100% privat offline."
+                "Tentukan rentang periode (Masehi atau Kalender Hijriyah: Bulan Ini, Tahun Ini, atau Kustom Dari–Sampai).",
+                "Pilih jenis laporan seperti 'Laporan Utama Lengkap (All-in-One)', 'Laporan Bulanan', atau 'Ekspor CSV'.",
+                "Pada layar Pratinjau PDF, sesuaikan gaya redaksi dan judul bagian sesuai kebutuhan Anda sebelum mengunduh.",
+                "File dokumen langsung tersimpan di perangkat secara aman dan 100% privat offline."
             )
         )
 

@@ -41,10 +41,16 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.CreditCard
+import com.example.core.wallet.WalletAccount
+import com.example.core.wallet.WalletType
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
@@ -109,8 +115,14 @@ import com.example.core.rezeki.RezekiCategory
 import com.example.core.rezeki.RezekiNonTunaiRecord
 import com.example.presentation.components.RezekiNonTunaiFormSection
 import com.example.presentation.components.TunaikanInfaqSyukurDialog
+import com.example.presentation.screens.settings.ExpenseCategoryQuickBottomSheet
+import androidx.compose.material.icons.filled.Tune
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.ui.theme.EmeraldDark
+import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.CyberNeonGreen
 import com.example.ui.theme.White12
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
@@ -138,11 +150,14 @@ fun AddTransactionScreen(
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    val isTactical = state.themeMode.isTactical
 
     val existingEntry = remember(editEntryId, state.journalEntries) {
         if (editEntryId != null) viewModel.getJournalEntry(editEntryId) else null
     }
     val isEditMode = existingEntry != null
+    val isSpecialEditMode = isEditMode && existingEntry != null &&
+        existingEntry.transactionType !in listOf("INFLOW", "INCOME", "EXPENSE")
 
     val draft by viewModel.transactionDraft.collectAsState()
     val hasActiveDraft = remember(existingEntry, draft, defaultType) {
@@ -154,7 +169,7 @@ fun AddTransactionScreen(
         if (hasActiveDraft) draft.isIncome
         else if (defaultType == "EXPENSE") false
         else if (defaultType == "INCOME" || defaultType == "INFLOW") true
-        else if (existingEntry != null) existingEntry.transactionType != "EXPENSE"
+        else if (existingEntry != null) existingEntry.transactionType in listOf("INFLOW", "INCOME")
         else false // Default pencatatan baru adalah Pengeluaran
     }
     val initialDate = remember(existingEntry, hasActiveDraft) {
@@ -164,9 +179,14 @@ fun AddTransactionScreen(
     val initialAmountText = remember(existingEntry, hasActiveDraft) {
         if (hasActiveDraft) draft.amountText
         else if (existingEntry == null) ""
-        else {
-            if (existingEntry.transactionType == "INFLOW") {
-                val gross = existingEntry.lines.firstOrNull { state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_gold", "acc_ewallet", "acc_other_asset") }?.debit
+        else if (existingEntry.transactionType !in listOf("INFLOW", "INCOME", "EXPENSE")) {
+            val total = existingEntry.totalDebit
+            if (total > 0) {
+                if (total % 1.0 == 0.0) total.toLong().toString() else total.toString()
+            } else ""
+        } else {
+            if (existingEntry.transactionType == "INFLOW" || existingEntry.transactionType == "INCOME") {
+                val gross = existingEntry.lines.firstOrNull { state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_bank_konven", "acc_bank_special", "acc_gold", "acc_ewallet", "acc_other_asset") }?.debit
                     ?: existingEntry.lines.firstOrNull { it.accountId in listOf("acc_salary", "acc_trade", "acc_gift", "acc_rikaz", "acc_syubhat") }?.credit
                     ?: 0.0
                 if (gross > 0) {
@@ -187,9 +207,9 @@ fun AddTransactionScreen(
     val initialCategory = remember(existingEntry, hasActiveDraft, defaultType, initialIsIncome) {
         if (hasActiveDraft && defaultType == null) draft.selectedCategoryAccountId
         else if (existingEntry == null) {
-            if (initialIsIncome) "acc_salary" else "acc_living"
+            if (initialIsIncome) "acc_salary" else (state.visibleExpenseAccounts.firstOrNull()?.id ?: "acc_living")
         } else {
-            if (existingEntry.transactionType == "INFLOW") {
+            if (existingEntry.transactionType == "INFLOW" || existingEntry.transactionType == "INCOME") {
                 existingEntry.lines.firstOrNull { it.credit > 0 && it.accountId in listOf("acc_salary", "acc_trade", "acc_gift", "acc_rikaz", "acc_syubhat") }?.accountId ?: "acc_salary"
             } else {
                 existingEntry.lines.firstOrNull { it.debit > 0 && it.accountId != "acc_disbursed" }?.accountId ?: "acc_living"
@@ -198,19 +218,23 @@ fun AddTransactionScreen(
     }
     val initialAsset = remember(existingEntry, hasActiveDraft) {
         if (hasActiveDraft) draft.selectedAssetAccountId
-        else if (existingEntry == null) "acc_bank"
+        else if (existingEntry == null) {
+            state.wallets.firstOrNull { it.isDefault }?.linkedAccountId
+                ?: state.wallets.firstOrNull()?.linkedAccountId
+                ?: "acc_cash"
+        }
         else {
-            if (existingEntry.transactionType == "INFLOW") {
-                existingEntry.lines.firstOrNull { it.debit > 0 && (state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_gold", "acc_ewallet", "acc_other_asset")) }?.accountId ?: "acc_bank"
+            if (existingEntry.transactionType == "INFLOW" || existingEntry.transactionType == "INCOME") {
+                existingEntry.lines.firstOrNull { it.debit > 0 && (state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_bank_konven", "acc_bank_special", "acc_gold", "acc_ewallet", "acc_other_asset")) }?.accountId ?: "acc_bank"
             } else {
-                existingEntry.lines.firstOrNull { it.credit > 0 && (state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_gold", "acc_ewallet", "acc_other_asset")) }?.accountId ?: "acc_cash"
+                existingEntry.lines.firstOrNull { it.credit > 0 && (state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_bank_konven", "acc_bank_special", "acc_gold", "acc_ewallet", "acc_other_asset")) }?.accountId ?: "acc_cash"
             }
         }
     }
     val initialRate = remember(existingEntry, hasActiveDraft) {
         if (hasActiveDraft) draft.infaqRate
-        else if (existingEntry != null && existingEntry.transactionType == "INFLOW") {
-            val gross = existingEntry.lines.firstOrNull { state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_gold", "acc_ewallet", "acc_other_asset") }?.debit ?: 0.0
+        else if (existingEntry != null && (existingEntry.transactionType == "INFLOW" || existingEntry.transactionType == "INCOME")) {
+            val gross = existingEntry.lines.firstOrNull { state.getAccount(it.accountId)?.category == AccountCategory.ASSET || it.accountId in listOf("acc_cash", "acc_bank", "acc_bank_konven", "acc_bank_special", "acc_gold", "acc_ewallet", "acc_other_asset") }?.debit ?: 0.0
             val infaq = existingEntry.lines.firstOrNull { it.accountId == "acc_vault" }?.credit ?: 0.0
             if (gross > 0) (infaq / gross) else 0.05
         } else 0.05
@@ -230,6 +254,8 @@ fun AddTransactionScreen(
     var rezekiEstimatedValueText by remember { mutableStateOf("") }
     var rezekiInfaqRate by remember { mutableDoubleStateOf(0.05) }
     var rezekiNotes by remember { mutableStateOf("") }
+    var rezekiInfaqAction by remember { mutableStateOf(com.example.core.rezeki.RezekiInfaqAction.ALLOCATE_TO_VAULT) }
+    var rezekiSelectedWalletId by remember { mutableStateOf("") }
     var savedRezekiRecordForInfaq by remember { mutableStateOf<RezekiNonTunaiRecord?>(null) }
     var isSavingRezeki by remember { mutableStateOf(false) }
     var selectedDate by remember(initialDate) { mutableStateOf(initialDate) }
@@ -239,8 +265,37 @@ fun AddTransactionScreen(
     // Dropdown States
     var selectedCategoryAccountId by remember(initialCategory) { mutableStateOf(initialCategory) }
     var selectedAssetAccountId by remember(initialAsset) { mutableStateOf(initialAsset) }
+    var selectedWalletId by remember(existingEntry, hasActiveDraft, state.wallets) {
+        val draftWallet = if (hasActiveDraft && draft.selectedWalletId.isNotBlank()) {
+            state.wallets.firstOrNull { it.id == draft.selectedWalletId }
+        } else null
+        val matched = draftWallet
+            ?: state.wallets.firstOrNull { it.linkedAccountId == initialAsset && it.isDefault }
+            ?: state.wallets.firstOrNull { it.linkedAccountId == initialAsset }
+        val fallback = state.wallets.firstOrNull { it.isDefault } ?: state.wallets.firstOrNull()
+        mutableStateOf(matched?.id ?: fallback?.id ?: "")
+    }
+    var showAddWalletSheet by remember { mutableStateOf(false) }
     var categoryDropdownExpanded by remember { mutableStateOf(false) }
     var assetDropdownExpanded by remember { mutableStateOf(false) }
+    var showExpenseCustomizationSheet by remember { mutableStateOf(false) }
+
+    val currentSelectedWallet = remember(selectedWalletId, selectedAssetAccountId, state.wallets) {
+        state.wallets.firstOrNull { it.id == selectedWalletId }
+            ?: state.wallets.firstOrNull { it.linkedAccountId == selectedAssetAccountId }
+            ?: state.wallets.firstOrNull { it.isDefault }
+            ?: state.wallets.firstOrNull()
+    }
+    LaunchedEffect(currentSelectedWallet) {
+        currentSelectedWallet?.let {
+            if (selectedAssetAccountId != it.linkedAccountId) {
+                selectedAssetAccountId = it.linkedAccountId
+            }
+            if (selectedWalletId != it.id) {
+                selectedWalletId = it.id
+            }
+        }
+    }
 
     LaunchedEffect(defaultType) {
         if (defaultType == "EXPENSE") {
@@ -265,8 +320,26 @@ fun AddTransactionScreen(
     var showRikazDalilDialog by remember { mutableStateOf(false) }
 
     // Round-up options for expense
+    val initialRoundUpStep = remember(existingEntry, hasActiveDraft) {
+        if (hasActiveDraft) {
+            draft.roundUpStep
+        } else if (existingEntry != null && existingEntry.transactionType == "EXPENSE") {
+            val existingRoundUp = existingEntry.lines.firstOrNull { it.accountId == "acc_vault" }?.credit ?: 0.0
+            val existingExpense = existingEntry.lines.firstOrNull { it.debit > 0 && it.accountId != "acc_disbursed" }?.debit ?: 0.0
+            if (existingRoundUp > 0.0 && existingExpense > 0.0) {
+                val totalCharged = existingExpense + existingRoundUp
+                listOf(1000.0, 2000.0, 5000.0, 10000.0, 50000.0, 100000.0).firstOrNull { step ->
+                    existingRoundUp < step && (totalCharged % step == 0.0)
+                } ?: 5000.0
+            } else {
+                5000.0
+            }
+        } else {
+            5000.0
+        }
+    }
     var enableRoundUp by remember(initialEnableRoundUp) { mutableStateOf(initialEnableRoundUp) }
-    var roundUpStep by remember(hasActiveDraft) { mutableDoubleStateOf(if (hasActiveDraft) draft.roundUpStep else 5000.0) }
+    var roundUpStep by remember(initialRoundUpStep) { mutableDoubleStateOf(initialRoundUpStep) }
 
     // Receipt Attachment State
     var attachReceipt by remember(hasActiveDraft) { mutableStateOf(if (hasActiveDraft) draft.attachReceipt else (existingEntry?.receiptAttachment != null)) }
@@ -280,7 +353,7 @@ fun AddTransactionScreen(
     // Auto-save form draft whenever fields change to prevent data loss on app-switch or backgrounding
     LaunchedEffect(
         amountText, descriptionText, isIncome, selectedCategoryAccountId,
-        selectedAssetAccountId, infaqRate, enableRoundUp, roundUpStep,
+        selectedAssetAccountId, selectedWalletId, infaqRate, enableRoundUp, roundUpStep,
         attachReceipt, receiptMerchant, receiptRefNumber, receiptType,
         receiptNotes, receiptImagePath, selectedDate
     ) {
@@ -296,6 +369,7 @@ fun AddTransactionScreen(
                         descriptionText = descriptionText,
                         selectedCategoryAccountId = selectedCategoryAccountId,
                         selectedAssetAccountId = selectedAssetAccountId,
+                        selectedWalletId = selectedWalletId,
                         infaqRate = infaqRate,
                         enableRoundUp = enableRoundUp,
                         roundUpStep = roundUpStep,
@@ -385,7 +459,15 @@ fun AddTransactionScreen(
             )
         } else null
 
-        if (isIncome) {
+        if (isSpecialEditMode && editEntryId != null) {
+            viewModel.updateSpecialJournalEntry(
+                entryId = editEntryId,
+                newAmount = amountValue,
+                newDescription = desc,
+                newDate = selectedDate,
+                receiptAttachment = receipt
+            )
+        } else if (isIncome) {
             val rateToUse = when (selectedCategoryAccountId) {
                 "acc_rikaz" -> 0.20
                 "acc_syubhat" -> 1.00
@@ -441,7 +523,7 @@ fun AddTransactionScreen(
         }
         AppDebugLogger.logUserAction(
             "Pencatatan Transaksi",
-            "Menyimpan ${if (isIncome) "Pemasukan" else "Pengeluaran"}: Rp ${amountValue.toLong()} ('$desc')"
+            "Menyimpan ${if (isSpecialEditMode) "Perubahan Jurnal (${existingEntry?.transactionType})" else if (isIncome) "Pemasukan" else "Pengeluaran"}: Rp ${amountValue.toLong()} ('$desc')"
         )
         viewModel.clearTransactionDraft()
         onNavigateBack()
@@ -463,77 +545,111 @@ fun AddTransactionScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                navigationIcon = {
-                    IconButton(
-                        onClick = handleCancelAndExit,
-                        modifier = Modifier.testTag("back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                title = {
-                    Column {
-                        Text(
-                            text = if (isEditMode) "Ubah Transaksi Syariah" else if (isRezekiNonTunai) "Catat Rezeki Non-Tunai" else "Catat Transaksi Berpasangan",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        if (isEditMode) {
-                            Text(
-                                text = "Mode Modifikasi Jurnal & Neraca",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                        } else if (isRezekiNonTunai) {
-                            Text(
-                                text = "Pemberian, Hadiah & Traktiran Berkah",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else if (hasActiveDraft) {
-                            Text(
-                                text = "Draf input otomatis dipulihkan",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+            if (state.themeMode.isTactical) {
+                val headerTitle = if (isEditMode) "MODIFIKASI TRANSAKSI" else if (isRezekiNonTunai) "MANIFEST REZEKI NON-TUNAI" else "CATAT ENTRI JURNAL"
+                val subCode = if (isRezekiNonTunai) "REZ//GIFT-05" else if (isIncome) "INFLOW//KASAB-01" else "OUTFLOW//EXPENSE-02"
+                TacticalSubScreenHeader(
+                    title = headerTitle,
+                    subCode = subCode,
+                    onBack = handleCancelAndExit,
+                    trailingActions = {
+                        if (isEditMode && editEntryId != null) {
+                            IconButton(
+                                onClick = { showDeleteConfirmDialog = true },
+                                modifier = Modifier.testTag("delete_transaction_icon_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Hapus Transaksi",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
-                    }
-                },
-                actions = {
-                    if (isEditMode && editEntryId != null) {
                         IconButton(
-                            onClick = { showDeleteConfirmDialog = true },
-                            modifier = Modifier.testTag("delete_transaction_icon_button")
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("add_tx_menu_sidebar_button")
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Hapus Transaksi",
-                                tint = MaterialTheme.colorScheme.error
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("add_tx_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                )
+            } else {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    navigationIcon = {
+                        IconButton(
+                            onClick = handleCancelAndExit,
+                            modifier = Modifier.testTag("back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    title = {
+                        Column {
+                            Text(
+                                text = if (isEditMode) "Ubah Transaksi Syariah" else if (isRezekiNonTunai) "Catat Rezeki Non-Tunai" else "Catat Transaksi Berpasangan",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (isEditMode) {
+                                Text(
+                                    text = "Mode Modifikasi Jurnal & Neraca",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                            } else if (isRezekiNonTunai) {
+                                Text(
+                                    text = "Pemberian, Hadiah & Traktiran Berkah",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else if (hasActiveDraft) {
+                                Text(
+                                    text = "Draf input otomatis dipulihkan",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        if (isEditMode && editEntryId != null) {
+                            IconButton(
+                                onClick = { showDeleteConfirmDialog = true },
+                                modifier = Modifier.testTag("delete_transaction_icon_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Hapus Transaksi",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("add_tx_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                }
-            )
-        }
+                )
+            }
+        },
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -574,7 +690,7 @@ fun AddTransactionScreen(
                             text = "Pemasukan",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isIncomeSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isIncomeSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -599,7 +715,7 @@ fun AddTransactionScreen(
                             text = "Pengeluaran",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isExpenseSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isExpenseSelected) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -625,13 +741,13 @@ fun AddTransactionScreen(
                                 imageVector = Icons.Default.CardGiftcard,
                                 contentDescription = null,
                                 modifier = Modifier.size(15.dp),
-                                tint = if (isRezekiNonTunai) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = if (isRezekiNonTunai) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = "Rezeki Hadiah",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isRezekiNonTunai) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isRezekiNonTunai) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -662,7 +778,7 @@ fun AddTransactionScreen(
                             text = "Pemasukan (Rezeki)",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isIncome) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
@@ -683,7 +799,7 @@ fun AddTransactionScreen(
                             text = "Pengeluaran (Konsumsi)",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (!isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (!isIncome) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -941,11 +1057,18 @@ fun AddTransactionScreen(
                     onInfaqRateChange = { rezekiInfaqRate = it },
                     notes = rezekiNotes,
                     onNotesChange = { rezekiNotes = it },
+                    infaqAction = rezekiInfaqAction,
+                    onInfaqActionChange = { rezekiInfaqAction = it },
+                    wallets = state.wallets,
+                    selectedWalletId = rezekiSelectedWalletId.ifEmpty { state.wallets.firstOrNull()?.id ?: "" },
+                    onSelectedWalletIdChange = { rezekiSelectedWalletId = it },
+                    getWalletBalance = { state.getWalletBalance(it) },
                     isSaving = isSavingRezeki,
                     onSubmit = {
                         val estimatedVal = rezekiEstimatedValueText.toDoubleOrNull() ?: 0.0
                         if (rezekiTitle.isNotBlank() && estimatedVal > 0) {
                             isSavingRezeki = true
+                            val chosenWallet = rezekiSelectedWalletId.ifEmpty { state.wallets.firstOrNull()?.id ?: "" }
                             viewModel.recordRezekiNonTunai(
                                 title = rezekiTitle,
                                 giverName = rezekiGiver,
@@ -954,9 +1077,11 @@ fun AddTransactionScreen(
                                 suggestedInfaqRate = rezekiInfaqRate,
                                 notes = rezekiNotes,
                                 dateMillis = selectedDate.time,
+                                infaqAction = rezekiInfaqAction,
+                                targetWalletId = chosenWallet,
                                 onSuccess = { recorded ->
                                     isSavingRezeki = false
-                                    savedRezekiRecordForInfaq = recorded
+                                    onNavigateBack()
                                 }
                             )
                         }
@@ -1010,13 +1135,87 @@ fun AddTransactionScreen(
                 )
             )
 
+            if (isSpecialEditMode && existingEntry != null) {
+                val typeTitle = when (existingEntry.transactionType) {
+                    "TRANSFER" -> "Mutasi Transfer Antar Kantong"
+                    "INFAQ_PAYOUT" -> "Penyaluran Infaq / Tathhir"
+                    "ZAKAT" -> "Pembayaran Zakat"
+                    "INFAQ_SEDEKAH" -> "Sedekah & Infaq Langsung"
+                    else -> "Jurnal Khusus (${existingEntry.transactionType})"
+                }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f))
+                ) {
+                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "Edit Catatan: $typeTitle",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            text = "Anda dapat mengubah tanggal, nominal, keterangan (misal memperbaiki salah ketik), dan lampiran bukti kapan saja tanpa merusak pasangan akun buku besar.",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            }
+
+            if (!isSpecialEditMode) {
             // 4. Category Dropdown
             val availableCategories = if (isIncome) {
                 state.accounts.filter {
                     it.category == AccountCategory.INCOME_KASAB || it.category == AccountCategory.INCOME_NON_KASAB
                 }
             } else {
-                state.accounts.filter { it.category == AccountCategory.EXPENSE }
+                state.visibleExpenseAccounts
+            }
+
+            // Otomatis sesuaikan akun terpilih bila kategori sebelumnya dinonaktifkan
+            androidx.compose.runtime.LaunchedEffect(isIncome, availableCategories) {
+                if (existingEntry == null && availableCategories.none { it.id == selectedCategoryAccountId }) {
+                    availableCategories.firstOrNull()?.let {
+                        selectedCategoryAccountId = it.id
+                    }
+                }
+            }
+
+            if (!isIncome) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Kategori Pengeluaran",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    TextButton(
+                        onClick = { showExpenseCustomizationSheet = true },
+                        modifier = Modifier.testTag("manage_expense_categories_shortcut_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Tune,
+                            contentDescription = null,
+                            modifier = Modifier.size(13.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Sesuaikan (${availableCategories.size} aktif)",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
             }
 
             ExposedDropdownMenuBox(
@@ -1063,21 +1262,80 @@ fun AddTransactionScreen(
                             }
                         )
                     }
+
+                    if (!isIncome) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Tune,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "⚙️ Atur Kategori Pengeluaran...",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            },
+                            onClick = {
+                                categoryDropdownExpanded = false
+                                showExpenseCustomizationSheet = true
+                            },
+                            modifier = Modifier.testTag("dropdown_manage_categories_item")
+                        )
+                    }
                 }
             }
 
-            // 5. Asset Account (Kas / Bank / Emas)
-            val assetAccounts = state.accounts.filter { it.category == AccountCategory.ASSET }
+            // 5. Multi-Kantong Rekening (Sumber Dana / Rekening Masuk)
+            // Prioritas 1:1 Sinkronisasi dengan Multi-Kantong Aktif Pengguna
             ExposedDropdownMenuBox(
                 expanded = assetDropdownExpanded,
                 onExpandedChange = { assetDropdownExpanded = !assetDropdownExpanded }
             ) {
                 val currentAsset = state.getAccount(selectedAssetAccountId)
+                val displayAccountText = when {
+                    currentSelectedWallet != null -> "${currentSelectedWallet.name} • Rp ${formatRupiah(state.getWalletBalance(currentSelectedWallet.id))}"
+                    currentAsset != null -> "${currentAsset.name} • Rp ${formatRupiah(state.getAccountBalance(currentAsset.id))}"
+                    else -> "Pilih Kantong / Rekening"
+                }
+
                 OutlinedTextField(
-                    value = currentAsset?.name ?: "Pilih Akun Aset",
+                    value = displayAccountText,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text(if (isIncome) "Masuk ke Rekening/Kas" else "Sumber Dana (Kas/Bank)", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    label = {
+                        Text(
+                            if (isIncome) "Masuk ke Rekening / Kantong" else "Sumber Dana Kantong (Kas/Bank)",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    leadingIcon = {
+                        val wIcon = when (currentSelectedWallet?.type) {
+                            WalletType.CASH -> Icons.Default.MonetizationOn
+                            WalletType.BANK_SYARIAH, WalletType.BANK_KONVENSIONAL -> Icons.Default.AccountBalance
+                            WalletType.E_WALLET -> Icons.Default.QrCode
+                            WalletType.GOLD_ASSET -> Icons.Default.Savings
+                            WalletType.SPECIAL_SAVINGS -> Icons.Default.CreditCard
+                            else -> Icons.Default.AccountBalanceWallet
+                        }
+                        val iconTint = if (currentSelectedWallet != null) Color(currentSelectedWallet.colorHex) else MaterialTheme.colorScheme.primary
+                        Icon(
+                            imageVector = wIcon,
+                            contentDescription = null,
+                            tint = iconTint,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = assetDropdownExpanded) },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -1097,31 +1355,186 @@ fun AddTransactionScreen(
                     onDismissRequest = { assetDropdownExpanded = false },
                     modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                 ) {
-                    assetAccounts.forEach { acc ->
-                        val accBal = state.getAccountBalance(acc.id)
+                    // 1. DAFTAR MULTI-KANTONG AKTIF PENGGUNA (1:1 SINKRONISASI)
+                    if (state.wallets.isNotEmpty()) {
                         DropdownMenuItem(
+                            enabled = false,
                             text = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                Text(
+                                    text = "MULTI-KANTONG REKENING AKTIF (${state.wallets.size})",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    letterSpacing = 0.5.sp
+                                )
+                            },
+                            onClick = {}
+                        )
+
+                        state.wallets.forEach { wallet ->
+                            val wBal = state.getWalletBalance(wallet.id)
+                            val isSelected = wallet.id == currentSelectedWallet?.id || (currentSelectedWallet == null && wallet.linkedAccountId == selectedAssetAccountId)
+                            val walletColor = Color(wallet.colorHex)
+                            val wIcon = when (wallet.type) {
+                                WalletType.CASH -> Icons.Default.MonetizationOn
+                                WalletType.BANK_SYARIAH, WalletType.BANK_KONVENSIONAL -> Icons.Default.AccountBalance
+                                WalletType.E_WALLET -> Icons.Default.QrCode
+                                WalletType.GOLD_ASSET -> Icons.Default.Savings
+                                WalletType.SPECIAL_SAVINGS -> Icons.Default.CreditCard
+                                else -> Icons.Default.AccountBalanceWallet
+                            }
+
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(walletColor.copy(alpha = 0.15f)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = wIcon,
+                                                    contentDescription = null,
+                                                    tint = walletColor,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                            Column {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Text(
+                                                        text = wallet.name,
+                                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                                        fontSize = 13.sp,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                    )
+                                                    if (wallet.isDefault) {
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Surface(
+                                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                                            shape = RoundedCornerShape(3.dp)
+                                                        ) {
+                                                            Text(
+                                                                text = "UTAMA",
+                                                                fontSize = 8.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.primary,
+                                                                modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                                Text(
+                                                    text = "${wallet.institutionName} • ${wallet.type.displayName}",
+                                                    fontSize = 10.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                        Text(
+                                            text = "Rp ${formatRupiah(wBal)}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (wBal < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    AmanahHapticEngine.performKeyClick(haptic, context)
+                                    selectedWalletId = wallet.id
+                                    selectedAssetAccountId = wallet.linkedAccountId
+                                    assetDropdownExpanded = false
+                                },
+                                modifier = Modifier.background(
+                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else Color.Transparent
+                                )
+                            )
+                        }
+                    } else {
+                        // Fallback jika belum memiliki kantong: hanya tampilkan akun aset operasional
+                        // (Sembunyikan Piutang Qardh Hasan & Virtual Vault)
+                        val operationalAccounts = state.accounts.filter {
+                            it.category == AccountCategory.ASSET &&
+                            it.id != "acc_receivable" &&
+                            it.id != "acc_vault"
+                        }
+                        operationalAccounts.forEach { acc ->
+                            val accBal = state.getAccountBalance(acc.id)
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(acc.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+                                        Text(
+                                            text = "Rp ${formatRupiah(accBal)}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (accBal < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    AmanahHapticEngine.performKeyClick(haptic, context)
+                                    selectedAssetAccountId = acc.id
+                                    assetDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+
+                    // 2. OPSI TAMBAH KANTONG BARU SECARA INSTAN
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(acc.name, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
-                                    Text(
-                                        text = "Rp ${formatRupiah(accBal)}",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = if (accBal < 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                    Icon(
+                                        imageVector = Icons.Default.AddCircleOutline,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
-                            },
-                            onClick = {
-                                AmanahHapticEngine.performKeyClick(haptic, context)
-                                selectedAssetAccountId = acc.id
-                                assetDropdownExpanded = false
+                                Text(
+                                    text = "+ Tambah Kantong Rekening Baru",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
                             }
-                        )
-                    }
+                        },
+                        onClick = {
+                            AmanahHapticEngine.performKeyClick(haptic, context)
+                            assetDropdownExpanded = false
+                            showAddWalletSheet = true
+                        },
+                        modifier = Modifier.testTag("add_wallet_instant_action")
+                    )
                 }
             }
 
@@ -1170,7 +1583,7 @@ fun AddTransactionScreen(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Saldo ${currentAsset?.name ?: "Akun"}: Rp ${formatRupiah(effectiveAvailableBalance)} | Belanja: Rp ${formatRupiah(amountValue)}",
+                                    text = "Saldo ${currentSelectedWallet?.name ?: currentAsset?.name ?: "Kantong"}: Rp ${formatRupiah(effectiveAvailableBalance)} | Belanja: Rp ${formatRupiah(amountValue)}",
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -1338,7 +1751,7 @@ fun AddTransactionScreen(
                                                 text = label,
                                                 fontSize = 11.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
                                     }
@@ -1576,7 +1989,7 @@ fun AddTransactionScreen(
                                                 text = if (stepVal >= 1000.0) "${(stepVal / 1000).toInt()}k" else "${stepVal.toInt()}",
                                                 fontSize = 11.sp,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                             )
                                         }
                                     }
@@ -1623,6 +2036,7 @@ fun AddTransactionScreen(
                     }
                 }
             }
+            } // end if (!isSpecialEditMode)
 
             // 7. Description Field
             OutlinedTextField(
@@ -1940,21 +2354,21 @@ fun AddTransactionScreen(
                         return@Button
                     }
 
-                    if (!isIncome && willDeficitBalance) {
+                    if (!isSpecialEditMode && !isIncome && willDeficitBalance) {
                         if (state.isDeficitProtectionEnabled) {
                             showDeficitBlockedDialog = true
                         } else {
                             showDeficitWarningConfirmDialog = true
                         }
-                    } else if (!isIncome && willExceedBudget) {
+                    } else if (!isSpecialEditMode && !isIncome && willExceedBudget) {
                         showOverBudgetWarningDialog = true
                     } else {
                         executeSaveTransaction()
                     }
                 },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isIncome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-                    contentColor = Color.White
+                    containerColor = if (isSpecialEditMode || isIncome) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                    contentColor = if (isSpecialEditMode || isIncome) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onError
                 ),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
@@ -2007,12 +2421,13 @@ fun AddTransactionScreen(
                 savedRezekiRecordForInfaq = null
                 onNavigateBack()
             },
-            onConfirm = { walletId, amount, note ->
+            onConfirm = { walletId, amount, note, isAllocateToVault ->
                 viewModel.tunaikanInfaqSyukur(
                     rezekiId = record.id,
                     walletId = walletId,
                     infaqAmount = amount,
-                    note = note
+                    note = note,
+                    isAllocateToVault = isAllocateToVault
                 )
                 savedRezekiRecordForInfaq = null
                 onNavigateBack()
@@ -2211,7 +2626,7 @@ fun AddTransactionScreen(
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Sumber Dana:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(currentAsset?.name ?: "Akun Kas", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Text(currentSelectedWallet?.name ?: currentAsset?.name ?: "Akun Kas", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Saldo Tersedia:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -2292,7 +2707,7 @@ fun AddTransactionScreen(
                         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Sumber Dana:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(currentAsset?.name ?: "Akun Kas", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Text(currentSelectedWallet?.name ?: currentAsset?.name ?: "Akun Kas", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Saldo Saat Ini:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -2576,6 +2991,42 @@ if (showNumpadBottomSheet) {
         }
     }
 
+    if (showAddWalletSheet) {
+        val operationalAssetAccounts = state.accounts.filter {
+            it.category == AccountCategory.ASSET && it.id != "acc_receivable" && it.id != "acc_vault"
+        }
+        WalletFormBottomSheet(
+            initialWallet = null,
+            initialBalance = 0.0,
+            assetAccounts = operationalAssetAccounts,
+            onCreateAccount = { name, code ->
+                viewModel.addNewAssetAccount(name, code)
+            },
+            onDismiss = { showAddWalletSheet = false },
+            onSave = { newWallet, targetBalance ->
+                viewModel.saveWalletWithBalance(newWallet, targetBalance, isEdit = false)
+                selectedWalletId = newWallet.id
+                selectedAssetAccountId = newWallet.linkedAccountId
+                showAddWalletSheet = false
+            }
+        )
+    }
 
+    if (showExpenseCustomizationSheet) {
+        ExpenseCategoryQuickBottomSheet(
+            state = state,
+            onDismiss = { showExpenseCustomizationSheet = false },
+            onToggleCategory = { viewModel.toggleExpenseCategoryVisibility(it) },
+            onApplyPreset = { viewModel.applyExpenseCategoryPreset(it) },
+            onAddNewCategory = { name, desc ->
+                val newId = viewModel.addNewExpenseAccount(name, desc)
+                if (newId.isNotBlank()) {
+                    selectedCategoryAccountId = newId
+                }
+            },
+            onDeleteCustomCategory = { viewModel.deleteCustomExpenseCategory(it) },
+            onResetToDefault = { viewModel.resetExpenseCategoriesToDefault() }
+        )
+    }
 }
 

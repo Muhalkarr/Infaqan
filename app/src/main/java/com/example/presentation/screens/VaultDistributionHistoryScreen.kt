@@ -19,7 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.ui.theme.isTactical
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
@@ -70,6 +72,11 @@ import com.example.ui.theme.GoldLight
 import com.example.ui.theme.White38
 import com.example.ui.theme.White60
 import com.example.ui.theme.White70
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.example.presentation.components.InfaqVaultReminderCard
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.rememberAppCardShape
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -81,6 +88,9 @@ fun VaultDistributionHistoryScreen(
     onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val isTactical = state.themeMode.isTactical
+    val cardShape = rememberAppCardShape(14)
     var selectedAsnafFilter by remember { mutableStateOf<AsnafCategory?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var showDisburseDialog by remember { mutableStateOf(false) }
@@ -100,60 +110,90 @@ fun VaultDistributionHistoryScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("vault_history_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+            if (isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Riwayat Penyaluran Vault",
+                    subCode = "ZIS//VAULT-HIST",
+                    onBack = onNavigateBack,
+                    trailingActions = {
+                        IconButton(
+                            onClick = { showDisburseDialog = true },
+                            modifier = Modifier.testTag("disburse_action_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.VolunteerActivism,
+                                contentDescription = "Salurkan Infaq",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("vault_history_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
-                },
-                title = {
-                    Column {
-                        Text(
-                            text = "Riwayat Penyaluran Vault",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Transparansi & Akuntabilitas Tabarru'",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                )
+            } else {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("vault_history_back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    title = {
+                        Column {
+                            Text(
+                                text = "Riwayat Penyaluran Vault",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Transparansi & Akuntabilitas Tabarru'",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { showDisburseDialog = true },
+                            modifier = Modifier.testTag("disburse_action_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.VolunteerActivism,
+                                contentDescription = "Salurkan Infaq",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("vault_history_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                },
-                actions = {
-                    IconButton(
-                        onClick = { showDisburseDialog = true },
-                        modifier = Modifier.testTag("disburse_action_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.VolunteerActivism,
-                            contentDescription = "Salurkan Infaq",
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("vault_history_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            )
+                )
+            }
         }
     ) { paddingValues ->
         LazyColumn(
@@ -172,6 +212,26 @@ fun VaultDistributionHistoryScreen(
                     totalDisbursed = totalDisbursed,
                     mustahiqCount = totalMustahiqCount,
                     onDisburseClick = { showDisburseDialog = true }
+                )
+            }
+
+            // 1B. Scheduled Push Notification Reminder for Virtual Infaq Vault
+            item {
+                InfaqVaultReminderCard(
+                    config = state.infaqVaultReminderConfig,
+                    vaultBalance = state.virtualInfaqVaultBalance,
+                    rules = state.rules,
+                    onUpdateConfig = { viewModel.updateInfaqVaultReminderConfig(it) },
+                    onSendTestNotification = {
+                        viewModel.sendTestInfaqVaultNotification(context) { sent ->
+                            Toast.makeText(
+                                context,
+                                if (sent) "Notifikasi pengingat Infaq Vault dikirim!"
+                                else "Gagal mengirim notifikasi. Periksa izin notifikasi aplikasi.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
                 )
             }
 
@@ -241,7 +301,7 @@ fun VaultDistributionHistoryScreen(
                         item {
                             val isAll = selectedAsnafFilter == null
                             Surface(
-                                shape = RoundedCornerShape(20.dp),
+                                shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(20.dp),
                                 color = if (isAll) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                 border = BorderStroke(1.dp, if (isAll) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.clickable { selectedAsnafFilter = null }
@@ -250,7 +310,7 @@ fun VaultDistributionHistoryScreen(
                                     text = "Semua (${state.infaqDistributions.size})",
                                     fontSize = 11.sp,
                                     fontWeight = if (isAll) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isAll) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isAll) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 )
                             }
@@ -260,7 +320,7 @@ fun VaultDistributionHistoryScreen(
                             val isSelected = selectedAsnafFilter == asnaf
                             val count = state.infaqDistributions.count { it.asnafCategory == asnaf }
                             Surface(
-                                shape = RoundedCornerShape(20.dp),
+                                shape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(20.dp),
                                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                                 border = BorderStroke(1.dp, if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.clickable { selectedAsnafFilter = asnaf }
@@ -269,7 +329,7 @@ fun VaultDistributionHistoryScreen(
                                     text = "${asnaf.displayName} ($count)",
                                     fontSize = 11.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                 )
                             }

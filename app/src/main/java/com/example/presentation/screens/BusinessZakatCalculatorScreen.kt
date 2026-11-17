@@ -78,6 +78,8 @@ import androidx.compose.ui.unit.sp
 import com.example.core.accounting.AccountCategory
 import com.example.core.gold.GoldPriceManager
 import com.example.core.state.AmanahLedgerViewModel
+import com.example.presentation.components.ExperimentalBadge
+import com.example.presentation.components.ExperimentalNoticeCard
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -131,7 +133,7 @@ fun BusinessZakatCalculatorScreen(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text("Zakat Bisnis & Saham Syariah", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                            Icon(Icons.Default.Verified, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                            ExperimentalBadge(text = "🧪 Eksperimen")
                         }
                         Text("Kaidah 'Urudh At-Tijarah, Skrining DES OJK & Pembersihan Dividen", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                     }
@@ -180,6 +182,14 @@ fun BusinessZakatCalculatorScreen(
                             Text("Saham & Reksadana", fontSize = 11.sp, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal)
                         }
                     }
+                )
+            }
+
+            Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                ExperimentalNoticeCard(
+                    title = "Hisab Zakat Bisnis & Perniagaan",
+                    subtitle = "Modul Eksperimen Akuntansi Fikih Usaha",
+                    description = "Penghitungan aktiva lancar dikurangi kewajiban usaha dan rasio dividen non-halal memerlukan ketelitian laporan keuangan. Pastikan telah mencocokkan nilai persediaan riil dan piutang lancar usaha Anda."
                 )
             }
 

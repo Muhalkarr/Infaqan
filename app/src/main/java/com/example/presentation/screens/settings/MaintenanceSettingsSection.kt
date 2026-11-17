@@ -4,6 +4,7 @@ package com.example.presentation.screens.settings
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,7 +16,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.ui.theme.LocalAppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.CyberNeonGreen
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -79,13 +84,17 @@ fun MaintenanceSettingsSection(
     onOpenFeedbackSheet: ((Int) -> Unit)? = null
 ) {
     
+    val isTactical = state.themeMode.isTactical
+    val btnShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
     var showAboutDialog by remember { mutableStateOf(false) }
     
     if (showAboutDialog) {
         AlertDialog(
             onDismissRequest = { showAboutDialog = false },
+            shape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
             icon = { Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text("Tentang Aplikasi", fontWeight = FontWeight.Bold) },
+            title = { Text("Tentang Aplikasi", fontWeight = FontWeight.Bold, color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -101,17 +110,18 @@ fun MaintenanceSettingsSection(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider()
+                    HorizontalDivider(color = if (isTactical) MaterialTheme.colorScheme.outline.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         "Dikembangkan Oleh:",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary
+                        color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                     )
                     Text(
                         "Muhalkarr",
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "muhammadabdulkholikarrasyid@gmail.com",
@@ -139,7 +149,11 @@ fun MaintenanceSettingsSection(
                                 onOpenFeedbackSheet?.invoke(0)
                             },
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = btnShape,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
                         ) {
                             Text("Kirim Masukan", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
@@ -149,7 +163,11 @@ fun MaintenanceSettingsSection(
                                 onOpenFeedbackSheet?.invoke(2)
                             },
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = btnShape,
+                            border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)) else null,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
                         ) {
                             Text("Changelog", fontSize = 11.sp)
                         }
@@ -157,7 +175,14 @@ fun MaintenanceSettingsSection(
                 }
             },
             confirmButton = {
-                Button(onClick = { showAboutDialog = false }) {
+                Button(
+                    onClick = { showAboutDialog = false },
+                    shape = btnShape,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isTactical) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+                        contentColor = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
                     Text("Tutup")
                 }
             }
@@ -166,7 +191,7 @@ fun MaintenanceSettingsSection(
 
     SettingsSectionCard(
         title = "Masukan & Log Pembaruan (Changelog)",
-        subtitle = "Saran pengembangan, laporan kendala, dan riwayat pembaruan aplikasi v0-v2.5",
+        subtitle = "Saran pengembangan, laporan kendala, dan riwayat pembaruan aplikasi v0-v2.6",
         icon = Icons.Default.Feedback
     ) {
         SettingsSwitchRow(
@@ -181,11 +206,14 @@ fun MaintenanceSettingsSection(
 
         Button(
             onClick = { onOpenFeedbackSheet?.invoke(0) },
-            shape = RoundedCornerShape(8.dp),
+            shape = btnShape,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag("settings_open_feedback_button"),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             Icon(imageVector = Icons.Default.Feedback, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(8.dp))
@@ -245,8 +273,11 @@ fun MaintenanceSettingsSection(
         // Backup & Restore
         Button(
             onClick = onNavigateToBackupRestore,
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            ),
+            shape = btnShape,
             modifier = Modifier.fillMaxWidth().testTag("settings_backup_restore_button")
         ) {
             Icon(imageVector = Icons.Default.Security, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -260,9 +291,10 @@ fun MaintenanceSettingsSection(
         OutlinedButton(
             onClick = onNavigateToDebugTerminal,
             colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = Color(0xFF38BDF8)
+                contentColor = if (isTactical) MaterialTheme.colorScheme.primary else Color(0xFF0284C7)
             ),
-            shape = RoundedCornerShape(8.dp),
+            border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)) else null,
+            shape = btnShape,
             modifier = Modifier.fillMaxWidth().testTag("settings_debug_terminal_button")
         ) {
             Icon(imageVector = Icons.Default.Terminal, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -271,13 +303,15 @@ fun MaintenanceSettingsSection(
         }
 
         Spacer(modifier = Modifier.height(6.dp))
-        Spacer(modifier = Modifier.height(6.dp))
 
         // Tentang & Hak Cipta
         OutlinedButton(
             onClick = { showAboutDialog = true },
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            ),
+            border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)) else null,
+            shape = btnShape,
             modifier = Modifier.fillMaxWidth().testTag("settings_about_button")
         ) {
             Icon(imageVector = Icons.Default.Info, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -285,6 +319,7 @@ fun MaintenanceSettingsSection(
             Text("Identitas Pengembang & Hak Cipta", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
         }
 
+        Spacer(modifier = Modifier.height(6.dp))
 
         // Salin Ringkasan Jurnal
         OutlinedButton(
@@ -292,7 +327,11 @@ fun MaintenanceSettingsSection(
                 clipboardManager.setText(AnnotatedString(summaryText))
                 Toast.makeText(context, "Ringkasan Buku Kas disalin ke Clipboard!", Toast.LENGTH_SHORT).show()
             },
-            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            ),
+            border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)) else null,
+            shape = btnShape,
             modifier = Modifier.fillMaxWidth().testTag("settings_copy_summary_button")
         ) {
             Icon(imageVector = Icons.AutoMirrored.Filled.ReceiptLong, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -306,7 +345,8 @@ fun MaintenanceSettingsSection(
         OutlinedButton(
             onClick = onRequestResetConfirmation,
             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-            shape = RoundedCornerShape(8.dp),
+            border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.6f)) else null,
+            shape = btnShape,
             modifier = Modifier.fillMaxWidth().testTag("settings_reset_data_button")
         ) {
             Icon(imageVector = Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -319,8 +359,11 @@ fun MaintenanceSettingsSection(
         // Muat Ulang Data Sampel / Dummy
         OutlinedButton(
             onClick = onLoadDummyData,
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            ),
+            border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)) else null,
+            shape = btnShape,
             modifier = Modifier.fillMaxWidth().testTag("settings_load_dummy_button")
         ) {
             Icon(imageVector = Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -336,10 +379,22 @@ fun EditProfileDialog(
     onDismiss: () -> Unit,
     onSave: (String) -> Unit
 ) {
+    val isTactical = LocalAppThemeMode.current.isTactical
+    val dialogShape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp)
+    val btnShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
     var tempName by remember { mutableStateOf(initialName) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ubah Nama Akun Kas") },
+        shape = dialogShape,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                "Ubah Nama Akun Kas",
+                fontWeight = FontWeight.Bold,
+                color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+        },
         text = {
             Column {
                 Text(
@@ -363,14 +418,21 @@ fun EditProfileDialog(
                     if (tempName.isNotBlank()) onSave(tempName.trim())
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                shape = btnShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text("Simpan")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal")
+            TextButton(
+                onClick = onDismiss,
+                shape = btnShape
+            ) {
+                Text("Batal", color = if (isTactical) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary)
             }
         }
     )
@@ -382,10 +444,23 @@ fun EditInitialDateDialog(
     onDismiss: () -> Unit,
     onSave: (String) -> Unit
 ) {
+    val isTactical = LocalAppThemeMode.current.isTactical
+    val dialogShape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp)
+    val btnShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
+    val chipShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(6.dp)
     var tempDate by remember { mutableStateOf(initialDate) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ubah Tanggal Awal Buku Kas") },
+        shape = dialogShape,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                "Ubah Tanggal Awal Buku Kas",
+                fontWeight = FontWeight.Bold,
+                color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+        },
         text = {
             Column {
                 Text(
@@ -414,16 +489,18 @@ fun EditInitialDateDialog(
                     listOf("Hari Ini" to todayStr, "Awal Bulan" to startOfMonthStr, "Awal Tahun" to startOfYearStr).forEach { (label, dateVal) ->
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = chipShape,
+                            border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)) else null,
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(chipShape)
                                 .clickable { tempDate = dateVal }
                                 .padding(vertical = 4.dp)
                         ) {
                             Text(
                                 text = label,
                                 fontSize = 10.sp,
+                                color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -438,14 +515,21 @@ fun EditInitialDateDialog(
                     if (tempDate.isNotBlank()) onSave(tempDate.trim())
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                shape = btnShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text("Simpan")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal")
+            TextButton(
+                onClick = onDismiss,
+                shape = btnShape
+            ) {
+                Text("Batal", color = if (isTactical) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary)
             }
         }
     )
@@ -457,10 +541,22 @@ fun EditInitialBalanceDialog(
     onDismiss: () -> Unit,
     onSave: (Double) -> Unit
 ) {
+    val isTactical = LocalAppThemeMode.current.isTactical
+    val dialogShape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp)
+    val btnShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
     var tempBalanceStr by remember { mutableStateOf(initialBalance.toLong().toString()) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ubah Saldo Awal (Modal Awal)") },
+        shape = dialogShape,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                "Ubah Saldo Awal (Modal Awal)",
+                fontWeight = FontWeight.Bold,
+                color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+        },
         text = {
             Column {
                 Text(
@@ -485,14 +581,21 @@ fun EditInitialBalanceDialog(
                     if (parsed != null && parsed >= 0) onSave(parsed)
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                shape = btnShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text("Terapkan")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal")
+            TextButton(
+                onClick = onDismiss,
+                shape = btnShape
+            ) {
+                Text("Batal", color = if (isTactical) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary)
             }
         }
     )
@@ -505,10 +608,23 @@ fun EditGoldPriceDialog(
     onDismiss: () -> Unit,
     onSave: (Double) -> Unit
 ) {
+    val isTactical = LocalAppThemeMode.current.isTactical
+    val dialogShape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp)
+    val btnShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
+    val chipShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(6.dp)
     var tempPriceStr by remember { mutableStateOf(currentGoldPrice.toLong().toString()) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ubah Harga Acuan Emas") },
+        shape = dialogShape,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                "Ubah Harga Acuan Emas",
+                fontWeight = FontWeight.Bold,
+                color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+        },
         text = {
             Column {
                 Text(
@@ -532,16 +648,18 @@ fun EditGoldPriceDialog(
                     listOf(1450000L, 1485000L, 1500000L).forEach { p ->
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
+                            shape = chipShape,
+                            border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)) else null,
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(chipShape)
                                 .clickable { tempPriceStr = p.toString() }
                                 .padding(vertical = 4.dp)
                         ) {
                             Text(
                                 text = "Rp ${nf.format(p / 1000)}k",
                                 fontSize = 10.sp,
+                                color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -557,14 +675,21 @@ fun EditGoldPriceDialog(
                     if (parsed != null && parsed > 0) onSave(parsed)
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                shape = btnShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text("Terapkan")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal")
+            TextButton(
+                onClick = onDismiss,
+                shape = btnShape
+            ) {
+                Text("Batal", color = if (isTactical) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary)
             }
         }
     )
@@ -575,10 +700,16 @@ fun ResetConfirmationDialog(
     onDismiss: () -> Unit,
     onConfirmReset: () -> Unit
 ) {
+    val isTactical = LocalAppThemeMode.current.isTactical
+    val dialogShape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp)
+    val btnShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
+
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = dialogShape,
+        containerColor = MaterialTheme.colorScheme.surface,
         icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-        title = { Text("Hapus Semua Data Dummy?") },
+        title = { Text("Hapus Semua Data Dummy?", fontWeight = FontWeight.Bold) },
         text = {
             Text(
                 "Tindakan ini akan menghapus seluruh data contoh/dummy (transaksi jurnal kas, kantong rekening, anggaran belanja, target ibadah, hutang/piutang qardh, dan riwayat sedekah subuh) sehingga buku kas Anda menjadi bersih 100% untuk mulai mencatat keuangan pribadi secara riil.\n\nCatatan: Anda dapat memuat ulang data contoh kapan saja melalui tombol 'Muat Ulang Data Contoh'.",
@@ -591,6 +722,7 @@ fun ResetConfirmationDialog(
                     onConfirmReset()
                     onDismiss()
                 },
+                shape = btnShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.testTag("confirm_reset_dummy_button")
             ) {
@@ -598,8 +730,11 @@ fun ResetConfirmationDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal")
+            TextButton(
+                onClick = onDismiss,
+                shape = btnShape
+            ) {
+                Text("Batal", color = if (isTactical) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary)
             }
         }
     )
@@ -612,16 +747,35 @@ fun ExportSummaryDialog(
     context: Context,
     onDismiss: () -> Unit
 ) {
+    val isTactical = LocalAppThemeMode.current.isTactical
+    val dialogShape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp)
+    val btnShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
+    val boxShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ringkasan Buku Kas") },
+        shape = dialogShape,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                "Ringkasan Buku Kas",
+                fontWeight = FontWeight.Bold,
+                color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+            )
+        },
         text = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp)
                     .verticalScroll(rememberScrollState())
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                    .background(
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        boxShape
+                    )
+                    .then(
+                        if (isTactical) Modifier.border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f), boxShape) else Modifier
+                    )
                     .padding(12.dp)
             ) {
                 Text(
@@ -639,14 +793,21 @@ fun ExportSummaryDialog(
                     Toast.makeText(context, "Ringkasan Buku Kas berhasil disalin!", Toast.LENGTH_SHORT).show()
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                shape = btnShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text("Salin Teks")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Tutup")
+            TextButton(
+                onClick = onDismiss,
+                shape = btnShape
+            ) {
+                Text("Tutup", color = if (isTactical) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary)
             }
         }
     )

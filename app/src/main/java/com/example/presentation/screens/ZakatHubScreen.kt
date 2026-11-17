@@ -25,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
@@ -49,6 +50,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
@@ -59,6 +61,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.CyberNeonGreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -83,10 +89,12 @@ import com.example.core.receipt.ReceiptType
 import com.example.core.state.AmanahLedgerViewModel
 import com.example.core.ui.AmanahHapticEngine
 import com.example.core.wallet.WalletAccount
+import com.example.core.zakat.ZakatFitrahDefaults
 import com.example.core.zakat.ZakatFitrahFamilyCalculation
 import com.example.core.zakat.ZakatMaalCalculation
 import com.example.core.zakat.ZakatPerniagaanCalculation
 import com.example.core.zakat.ZakatProfesiCalculation
+import com.example.presentation.components.ExperimentalNoticeCard
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -97,14 +105,16 @@ import java.util.Locale
 fun ZakatHubScreen(
     viewModel: AmanahLedgerViewModel,
     onNavigateBack: () -> Unit,
-    onOpenDrawer: () -> Unit = {}
+    onOpenDrawer: () -> Unit = {},
+    onNavigateToZakatReport: () -> Unit = {},
+    initialTab: Int = 0
 ) {
     val state by viewModel.uiState.collectAsState()
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember(initialTab) { mutableStateOf(initialTab.coerceIn(0, 4)) }
     var showDisburseModal by remember { mutableStateOf(false) }
     var showGoldEditDialog by remember { mutableStateOf(false) }
     var disburseAmountPreset by remember { mutableStateOf(0.0) }
@@ -116,45 +126,61 @@ fun ZakatHubScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "Kalkulator Zakat Komprehensif",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Text(
-                            text = "Zakat Maal (Aset/Tabungan), Profesi, Perniagaan, & Fitrah",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            if (state.themeMode.isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Kalkulator Zakat",
+                    subCode = "ZIS//NISAB-85G",
+                    onBack = onNavigateBack,
+                    trailingActions = {
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("zakat_screen_menu_sidebar_button")
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu Sidebar", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("zakat_screen_back_button")
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("zakat_screen_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
+            } else {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "Kalkulator Zakat Komprehensif",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                            Text(
+                                text = "Zakat Maal (Aset/Tabungan), Profesi, Perniagaan, & Fitrah",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("zakat_screen_back_button")
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali")
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("zakat_screen_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+            }
         }
     ) { paddingValues ->
         Column(
@@ -247,7 +273,7 @@ fun ZakatHubScreen(
                         AmanahHapticEngine.performKeyClick(haptic, context)
                         selectedTab = 2
                     },
-                    text = { Text("Perniagaan", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) },
+                    text = { Text("Perniagaan 🧪", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) },
                     modifier = Modifier.testTag("tab_zakat_perniagaan")
                 )
                 Tab(
@@ -279,6 +305,7 @@ fun ZakatHubScreen(
                         ibadahGoals = state.ibadahGoals,
                         onUpdate = { viewModel.updateZakatMaal(it) },
                         onSyncFromDatabase = { viewModel.syncZakatMaalFromDatabase() },
+                        onNavigateToZakatReport = onNavigateToZakatReport,
                         onTunaikan = { amt ->
                             disburseAmountPreset = amt
                             disburseTitlePreset = "Zakat Maal (Simpanan & Tabungan)"
@@ -306,9 +333,10 @@ fun ZakatHubScreen(
                     3 -> ZakatFitrahTab(
                         calc = state.zakatFitrah,
                         onUpdate = { viewModel.updateZakatFitrah(it) },
+                        onNavigateToZakatReport = onNavigateToZakatReport,
                         onTunaikan = { amt ->
                             disburseAmountPreset = amt
-                            disburseTitlePreset = "Zakat Fitrah Keluarga (${state.zakatFitrah.familyMemberCount} Jiwa)"
+                            disburseTitlePreset = "Zakat Fitrah Keluarga (${state.zakatFitrah.activeDependentsCount} Jiwa)"
                             showDisburseModal = true
                         }
                     )
@@ -621,6 +649,13 @@ private fun ZakatPerniagaanTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        // Notice Banner Fitur Eksperimen
+        ExperimentalNoticeCard(
+            title = "Hisab Zakat Perniagaan ('Urudh At-Tijarah)",
+            subtitle = "Modul Eksperimen Akuntansi Usaha",
+            description = "Hisab tijarah dihitung dari (Kas Usaha + Nilai Stok Dagang + Piutang Lancar) dikurangi Utang Usaha Jatuh Tempo. Pastikan nominal yang diinput sesuai dengan pembukuan riil usaha Anda."
+        )
+
         // Result Banner
         Card(
             colors = CardDefaults.cardColors(
@@ -741,11 +776,12 @@ private fun ZakatPerniagaanTab(
 private fun ZakatFitrahTab(
     calc: ZakatFitrahFamilyCalculation,
     onUpdate: (ZakatFitrahFamilyCalculation) -> Unit,
+    onNavigateToZakatReport: () -> Unit,
     onTunaikan: (Double) -> Unit
 ) {
     val nf = NumberFormat.getNumberInstance(Locale("id", "ID"))
-    var memberCountText by remember(calc) { mutableStateOf(calc.familyMemberCount.toString()) }
-    var pricePerSoulText by remember(calc) { mutableStateOf(calc.ratePerSoulRupiah.toLong().toString()) }
+    var memberCountText by remember(calc.activeDependentsCount) { mutableStateOf(calc.activeDependentsCount.toString()) }
+    var pricePerSoulText by remember(calc.ratePerSoulRupiah) { mutableStateOf(calc.ratePerSoulRupiah.toLong().toString()) }
 
     Column(
         modifier = Modifier
@@ -801,15 +837,23 @@ private fun ZakatFitrahTab(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Total Beras: ${String.format(Locale.US, "%.1f", calc.totalRiceKg)} kg (${calc.familyMemberCount} Jiwa)",
+                        text = "Total ${calc.stapleFoodName}: ${String.format(Locale.US, "%.1f", calc.totalRiceKg)} ${calc.measurementUnit} (${calc.activeDependentsCount} Jiwa)",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "@ 2.5 kg atau Rp ${nf.format(calc.ratePerSoulRupiah)}",
+                        text = "@ ${String.format(Locale.US, "%.1f", calc.riceAmountPerPersonKg)} ${calc.measurementUnit} / Rp ${nf.format(calc.ratePerSoulRupiah)}",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (calc.useLocalStaplePrice) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Acuan Lokal: ${calc.stapleFoodName} (${calc.regionName}) • Rp ${nf.format(calc.ricePricePerKg)}/${calc.measurementUnit}",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -821,13 +865,18 @@ private fun ZakatFitrahTab(
             value = memberCountText,
             onValueChange = {
                 memberCountText = it.filter { ch -> ch.isDigit() }
-                val count = memberCountText.toIntOrNull() ?: 1
-                onUpdate(calc.copy(familyMembersCount = count))
+                val count = memberCountText.toIntOrNull()?.coerceAtLeast(1) ?: 1
+                onUpdate(
+                    calc.copy(
+                        familyMembersCount = count,
+                        dependents = ZakatFitrahDefaults.defaultDependents(count)
+                    )
+                )
             },
             label = { Text("Jumlah Anggota Keluarga (Jiwa)") },
             placeholder = { Text("cth: 4 (Kepala Keluarga, Istri, 2 Anak)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().testTag("zakat_fitrah_member_count_input")
         )
 
         OutlinedTextField(
@@ -835,13 +884,40 @@ private fun ZakatFitrahTab(
             onValueChange = {
                 pricePerSoulText = it.filter { ch -> ch.isDigit() }
                 val rate = pricePerSoulText.toDoubleOrNull() ?: 45000.0
-                onUpdate(calc.copy(cashRatePerPerson = rate))
+                onUpdate(
+                    calc.copy(
+                        useLocalStaplePrice = false,
+                        cashRatePerPerson = rate
+                    )
+                )
             },
-            label = { Text("Standar Rupiah per Jiwa (SK BAZNAS Wilayah)") },
+            label = { Text("Standar Rupiah per Jiwa (SK BAZNAS / Manual)") },
             placeholder = { Text("cth: 45000") },
+            supportingText = {
+                Text(
+                    text = if (calc.useLocalStaplePrice) {
+                        "Saat ini memakai harga pangan pokok lokal (${calc.stapleFoodName}). Mengubah angka ini akan memakai tarif manual."
+                    } else {
+                        "Atur harga pangan pokok lokal & daftar nama tanggungan di Modul Laporan Zakat."
+                    }
+                )
+            },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().testTag("zakat_fitrah_price_per_soul_input")
         )
+
+        OutlinedButton(
+            onClick = onNavigateToZakatReport,
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 48.dp)
+                .testTag("zakat_fitrah_open_report_btn"),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Buka Laporan Lengkap Zakat & Fitrah", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        }
 
         Card(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -1068,6 +1144,7 @@ private fun ZakatMaalTab(
     ibadahGoals: List<com.example.core.ibadah.IbadahGoal>,
     onUpdate: (ZakatMaalCalculation) -> Unit,
     onSyncFromDatabase: () -> Unit,
+    onNavigateToZakatReport: () -> Unit,
     onTunaikan: (Double) -> Unit
 ) {
     val haptic = LocalHapticFeedback.current
@@ -1419,6 +1496,19 @@ private fun ZakatMaalTab(
                     lineHeight = 16.sp
                 )
             }
+        }
+
+        OutlinedButton(
+            onClick = onNavigateToZakatReport,
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 48.dp)
+                .testTag("zakat_maal_open_report_btn"),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Icon(Icons.Default.Assessment, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Buka Modul Laporan Zakat Lengkap", fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
     }
 }

@@ -1,11 +1,14 @@
 package com.example.presentation.screens
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -67,6 +71,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -102,6 +107,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackupRestoreScreen(
@@ -116,12 +127,6 @@ fun BackupRestoreScreen(
 
     var selectedTab by remember { mutableStateOf(0) }
 
-    // Cloud Auth Form States
-    var emailInput by remember { mutableStateOf("") }
-    var passwordInput by remember { mutableStateOf("") }
-    var displayNameInput by remember { mutableStateOf("") }
-    var isSignUpMode by remember { mutableStateOf(false) }
-
     // Export State
     var exportPassword by remember { mutableStateOf("") }
     var generatedBackupJson by remember { mutableStateOf("") }
@@ -135,6 +140,11 @@ fun BackupRestoreScreen(
     var restoreStatusMessage by remember { mutableStateOf<String?>(null) }
     var isRestoreSuccess by remember { mutableStateOf(false) }
     var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var showCloudRestoreModeDialog by remember { mutableStateOf(false) }
+
+    val parsedManifestPreview = remember(importJsonText) {
+        if (importJsonText.isBlank()) null else BackupEngine.parseBackupPackage(importJsonText)
+    }
 
     val exportFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
@@ -230,12 +240,12 @@ fun BackupRestoreScreen(
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
-                    text = { Text("☁️ Cloud Sync", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                    text = { Text("☁️ Cloud Backup", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                 )
                 Tab(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    text = { Text("💾 Cadangan JSON", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+                    text = { Text("💾 Drive / JSON", fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
                 )
                 Tab(
                     selected = selectedTab == 2,
@@ -317,49 +327,20 @@ fun BackupRestoreScreen(
                                     Spacer(modifier = Modifier.height(12.dp))
 
                                     Text(
-                                        text = if (isSignUpMode) "Daftar Akun Cloud Amanah Baru:" else "Masuk ke Akun Cloud Amanah:",
+                                        text = "Hubungkan Akun Google untuk Cloud Backup:",
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.primary
                                     )
-
-                                    if (isSignUpMode) {
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        OutlinedTextField(
-                                            value = displayNameInput,
-                                            onValueChange = { displayNameInput = it },
-                                            label = { Text("Nama Lengkap / Nama Kas") },
-                                            singleLine = true,
-                                            modifier = Modifier.fillMaxWidth(),
-                                            shape = RoundedCornerShape(10.dp)
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    OutlinedTextField(
-                                        value = emailInput,
-                                        onValueChange = { emailInput = it },
-                                        label = { Text("Email") },
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                                        singleLine = true,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(10.dp)
-                                    )
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    OutlinedTextField(
-                                        value = passwordInput,
-                                        onValueChange = { passwordInput = it },
-                                        label = { Text("Kata Sandi (min. 6 karakter)") },
-                                        visualTransformation = PasswordVisualTransformation(),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                        singleLine = true,
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(10.dp)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Amankan seluruh transaksi, Qardh, target ibadah, pengaturan notifikasi & aturan syariah agar siap dipulihkan saat berganti perangkat atau instal ulang.",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
 
                                     if (!authState.errorMessage.isNullOrBlank()) {
-                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Spacer(modifier = Modifier.height(8.dp))
                                         Text(
                                             text = authState.errorMessage!!,
                                             fontSize = 11.sp,
@@ -368,50 +349,119 @@ fun BackupRestoreScreen(
                                     }
 
                                     Spacer(modifier = Modifier.height(12.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Button(
-                                            onClick = {
-                                                if (isSignUpMode) {
-                                                    viewModel.signUpWithEmail(emailInput, passwordInput, displayNameInput)
-                                                } else {
-                                                    viewModel.signInWithEmail(emailInput, passwordInput)
-                                                }
-                                            },
-                                            enabled = authState.status != AuthStatus.AUTHENTICATING,
-                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            if (authState.status == AuthStatus.AUTHENTICATING) {
-                                                CircularProgressIndicator( modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                                            } else {
-                                                Text(if (isSignUpMode) "Daftar Akun" else "Masuk", fontWeight = FontWeight.Bold)
+                                    Button(
+                                        onClick = {
+                                            val activity = context.findActivity()
+                                            if (activity != null) {
+                                                viewModel.signInWithGoogle(activity)
                                             }
-                                        }
-
-                                        OutlinedButton(
-                                            onClick = {
-                                                viewModel.signInWithGoogle()
-                                            },
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Text("Google Sign-In", fontSize = 12.sp)
+                                        },
+                                        enabled = authState.status != AuthStatus.AUTHENTICATING,
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .defaultMinSize(minHeight = 48.dp)
+                                            .testTag("google_sign_in_button")
+                                    ) {
+                                        if (authState.status == AuthStatus.AUTHENTICATING) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(16.dp),
+                                                strokeWidth = 2.dp,
+                                                color = MaterialTheme.colorScheme.onPrimary
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Menghubungkan Google...", fontWeight = FontWeight.Bold)
+                                        } else {
+                                            Icon(Icons.Default.Login, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Masuk dengan Google", fontWeight = FontWeight.Bold)
                                         }
                                     }
+                                }
+                            }
+                        }
 
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    TextButton(
-                                        onClick = { isSignUpMode = !isSignUpMode },
-                                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        // 1B. Cloud Snapshot Summary & Auto Backup Toggle
+                        if (authState.status == AuthStatus.AUTHENTICATED) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.CloudDone, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Snapshot Cadangan Cloud", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        }
+                                        OutlinedButton(
+                                            onClick = { viewModel.refreshCloudSnapshotSummary() },
+                                            enabled = !state.isLoadingCloudSummary,
+                                            shape = RoundedCornerShape(8.dp),
+                                            modifier = Modifier
+                                                .defaultMinSize(minHeight = 48.dp)
+                                                .testTag("refresh_cloud_summary_button")
+                                        ) {
+                                            if (state.isLoadingCloudSummary) {
+                                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                            } else {
+                                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                                            }
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Segarkan", fontSize = 11.sp)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    val cloudSummary = state.cloudSnapshotSummary
+                                    if (cloudSummary != null && cloudSummary.exists) {
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Perangkat Sumber:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(cloudSummary.deviceName, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Terakhir Diunggah:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(cloudSummary.updatedAtFormatted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Text("Cakupan Data Cloud:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                "${cloudSummary.totalBackedUpItems} entitas" + if (cloudSummary.hasPreferences) " + Preferensi" else "",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    } else {
                                         Text(
-                                            text = if (isSignUpMode) "Sudah punya akun? Masuk di sini" else "Belum punya akun? Daftar gratis",
+                                            text = "Belum ditemukan snapshot Cloud pada akun ini. Tekan 'Cadangkan ke Cloud' untuk membuat cadangan awal.",
                                             fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.secondary
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text("Cadangan Cloud Otomatis", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                                            Text("Sinkronkan otomatis preferensi & ledger saat terhubung", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        Switch(
+                                            checked = state.autoCloudBackupEnabled,
+                                            onCheckedChange = { viewModel.setAutoCloudBackupEnabled(it) },
+                                            modifier = Modifier.testTag("auto_cloud_backup_switch")
                                         )
                                     }
                                 }
@@ -480,7 +530,11 @@ fun BackupRestoreScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text("Database Lokal Room:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("${state.journalEntries.size} transaksi, ${state.wallets.size} kantong", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        "${state.journalEntries.size} jurnal, ${state.wallets.size} kantong, ${state.qardhRecords.size} qardh",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
 
                                 if (!syncState.errorMessage.isNullOrBlank()) {
@@ -502,36 +556,56 @@ fun BackupRestoreScreen(
                                         enabled = syncState.status != SyncStateStatus.SYNCING,
                                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                                         shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .defaultMinSize(minHeight = 48.dp)
+                                            .testTag("cloud_backup_sync_button")
                                     ) {
                                         if (syncState.status == SyncStateStatus.SYNCING) {
-                                            CircularProgressIndicator( modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text("Menyimpan...")
                                         } else {
                                             Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
                                             Spacer(modifier = Modifier.width(6.dp))
-                                            Text("Cadangkan ke Cloud", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                            Text("Cadangkan Cloud", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
 
                                     OutlinedButton(
-                                        onClick = { viewModel.restoreDataFromCloud() },
+                                        onClick = { showCloudRestoreModeDialog = true },
                                         enabled = syncState.status != SyncStateStatus.SYNCING,
                                         shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .defaultMinSize(minHeight = 48.dp)
+                                            .testTag("cloud_restore_button")
                                     ) {
                                         Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Pulihkan dari Cloud", fontSize = 12.sp)
+                                        Text("Pulihkan Cloud", fontSize = 12.sp)
                                     }
+                                }
+
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "Android Auto Backup juga aktif untuk mencadangkan database Room & preferensi terenkripsi ke akun Google Drive perangkat Anda.",
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(10.dp)
+                                    )
                                 }
                             }
                         }
                     }
                 }
                 1 -> {
-                    // TAB 1: EXPORT JSON
+                    // TAB 1: EXPORT JSON / GOOGLE DRIVE SAF
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -565,12 +639,12 @@ fun BackupRestoreScreen(
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column {
                                         Text(
-                                            text = "Cadangan Data Offline Mandiri",
+                                            text = "Cadangan Portabel Google Drive & JSON v4",
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 14.sp
                                         )
                                         Text(
-                                            text = "Seluruh data transaksi, mutasi kantong & aturan tersimpan lokal.",
+                                            text = "Simpan ke Google Drive, cloud storage lain, atau penyimpanan perangkat.",
                                             fontSize = 11.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -585,24 +659,24 @@ fun BackupRestoreScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Jumlah Transaksi Jurnal:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("${state.journalEntries.size} transaksi", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Transaksi Jurnal & Mutasi:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${state.journalEntries.size} jurnal • ${state.walletMutations.size} mutasi", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Jumlah Kantong Kas:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("${state.wallets.size} kantong", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Kantong, Qardh & Anggaran:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${state.wallets.size} kantong • ${state.qardhRecords.size} qardh • ${state.budgets.size} pos", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Target Tabungan Ibadah:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Text("${state.ibadahGoals.size} program", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                    Text("Ibadah, Infaq & Preferensi:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("${state.ibadahGoals.size} target • ${state.rules.size} aturan • Lengkap", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -718,15 +792,27 @@ fun BackupRestoreScreen(
                                             onClick = {
                                                 exportFileLauncher.launch("amanah_backup_${System.currentTimeMillis()}.json")
                                             },
-                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.secondary,
+                                                contentColor = MaterialTheme.colorScheme.onSecondary
+                                            ),
                                             shape = RoundedCornerShape(10.dp),
                                             modifier = Modifier
                                                 .weight(1f)
                                                 .testTag("save_backup_file_button")
                                         ) {
-                                            Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Icon(
+                                                Icons.Default.FileDownload,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSecondary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
                                             Spacer(modifier = Modifier.width(6.dp))
-                                            Text("Simpan File", fontSize = 12.sp)
+                                            Text(
+                                                "Simpan File",
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSecondary
+                                            )
                                         }
 
                                         OutlinedButton(
@@ -873,6 +959,64 @@ fun BackupRestoreScreen(
 
                                 Spacer(modifier = Modifier.height(10.dp))
 
+                                if (parsedManifestPreview != null) {
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.surface,
+                                        shape = RoundedCornerShape(12.dp),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .testTag("backup_manifest_preview_card")
+                                    ) {
+                                        Column(modifier = Modifier.padding(12.dp)) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "Pratinjau Paket Cadangan (v${parsedManifestPreview.schemaVersion})",
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                                Text(
+                                                    text = if (parsedManifestPreview.isPasswordProtected) "🔒 Terenkripsi" else "Terbuka",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.secondary
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = "Perangkat: ${parsedManifestPreview.deviceName} • ${parsedManifestPreview.exportedAt}",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "${parsedManifestPreview.journalEntriesCount} jurnal • ${parsedManifestPreview.walletsCount} kantong • ${parsedManifestPreview.goalsCount} target • ${parsedManifestPreview.qardhCount} qardh",
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            if (parsedManifestPreview.hasPreferences) {
+                                                Text(
+                                                    text = "Termasuk preferensi aplikasi, jadwal notifikasi & kaidah syariah",
+                                                    fontSize = 10.sp,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                            if (parsedManifestPreview.migrationApplied) {
+                                                Text(
+                                                    text = "Skema lama akan dimigrasikan otomatis ke v4.",
+                                                    fontSize = 10.sp,
+                                                    color = MaterialTheme.colorScheme.secondary
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                }
+
                                 OutlinedTextField(
                                     value = importPassword,
                                     onValueChange = { importPassword = it },
@@ -899,6 +1043,7 @@ fun BackupRestoreScreen(
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .defaultMinSize(minHeight = 48.dp)
                                         .testTag("confirm_restore_button")
                                 ) {
                                     Icon(Icons.Default.Restore, contentDescription = null)
@@ -965,7 +1110,8 @@ fun BackupRestoreScreen(
                             is RestoreResult.Success -> {
                                 isRestoreSuccess = true
                                 val migText = if (res.manifest.migrationApplied) " (Skema v${res.manifest.schemaVersion} dimigrasikan otomatis)" else " (Skema v${res.manifest.schemaVersion})"
-                                restoreStatusMessage = "Sukses memulihkan ${res.restoredEntries.size} transaksi buku kas & ${res.restoredWallets.size} kantong rekening.$migText"
+                                val prefNote = if (res.restoredPreferences != null) " beserta seluruh preferensi & jadwal notifikasi" else ""
+                                restoreStatusMessage = "Sukses memulihkan ${res.restoredEntries.size} transaksi, ${res.restoredWallets.size} kantong$prefNote.$migText"
                             }
                             is RestoreResult.Failure -> {
                                 isRestoreSuccess = false
@@ -982,6 +1128,59 @@ fun BackupRestoreScreen(
             dismissButton = {
                 TextButton(onClick = { showRestoreConfirmDialog = false }) {
                     Text("Batal")
+                }
+            }
+        )
+    }
+
+    if (showCloudRestoreModeDialog) {
+        AlertDialog(
+            onDismissRequest = { showCloudRestoreModeDialog = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CloudDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Mode Pemulihan Cloud", fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Pilih cara memulihkan data dari Cloud Firestore:",
+                        fontSize = 13.sp
+                    )
+                    Text(
+                        text = "• Ganti Total Data Lokal: Direkomendasikan saat pindah perangkat baru atau pemulihan pasca instal ulang agar identik dengan Cloud.\n• Gabungkan (Merge): Mempertahankan catatan lokal yang berbeda dan menimpa ID yang sama dari Cloud.",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showCloudRestoreModeDialog = false
+                        viewModel.restoreDataFromCloud(replaceLocal = true)
+                    },
+                    modifier = Modifier.testTag("cloud_restore_replace_confirm")
+                ) {
+                    Text("Ganti Total (Baru)")
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    OutlinedButton(
+                        onClick = {
+                            showCloudRestoreModeDialog = false
+                            viewModel.restoreDataFromCloud(replaceLocal = false)
+                        },
+                        modifier = Modifier.testTag("cloud_restore_merge_confirm")
+                    ) {
+                        Text("Gabungkan")
+                    }
+                    TextButton(onClick = { showCloudRestoreModeDialog = false }) {
+                        Text("Batal")
+                    }
                 }
             }
         )

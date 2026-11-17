@@ -93,7 +93,7 @@ interface QardhDao {
     @Query("SELECT * FROM qardh_records ORDER BY agreementDateMillis DESC")
     suspend fun getAllRecords(): List<QardhRecordEntity>
 
-    @Query("SELECT * FROM qardh_records WHERE status != 'COMPLETED' AND dueDateMillis IS NOT NULL AND dueDateMillis <= :thresholdMillis ORDER BY dueDateMillis ASC")
+    @Query("SELECT * FROM qardh_records WHERE status != 'LUNAS' AND status != 'DIIKHLASKAN_SEDEKAH' AND dueDateMillis IS NOT NULL AND dueDateMillis <= :thresholdMillis ORDER BY dueDateMillis ASC")
     suspend fun getPendingDueRecords(thresholdMillis: Long): List<QardhRecordEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

@@ -75,6 +75,8 @@ import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.core.accounting.JournalEntry
 import com.example.core.state.AmanahLedgerViewModel
+import com.example.presentation.components.ExperimentalBadge
+import com.example.presentation.components.ExperimentalNoticeCard
 import java.io.File
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -133,7 +135,7 @@ fun ReceiptArchiveScreen(
     }
 
     val totalNominalWithReceipts = remember(entriesWithReceipts) {
-        entriesWithReceipts.sumOf { it.totalDebit }
+        entriesWithReceipts.sumOf { it.primaryAmount }
     }
 
     val uniqueMerchantsCount = remember(entriesWithReceipts) {
@@ -145,7 +147,13 @@ fun ReceiptArchiveScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("Arsip Bukti Struk", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text("Arsip Bukti Struk", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            ExperimentalBadge(text = "🧪 Eksperimen")
+                        }
                         Text(
                             "Galeri & Rekap Transaksi Berlampiran Fisik",
                             fontSize = 11.sp,
@@ -187,6 +195,15 @@ fun ReceiptArchiveScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
             contentPadding = PaddingValues(top = 10.dp, bottom = 40.dp)
         ) {
+            // Notice Banner Fitur Eksperimen
+            item {
+                ExperimentalNoticeCard(
+                    title = "Arsip & Ekstraksi Struk Digital",
+                    subtitle = "Modul Eksperimen Dokumentasi Transaksi",
+                    description = "Hasil pemindaian dan ekstraksi struk pembelanjaan dipengaruhi oleh kualitas foto dan format cetakan nota. Mohon selalu periksa kecocokan nominal, tanggal, dan nama penerima sebelum menyetujui transaksi."
+                )
+            }
+
             // 1. Kartu Ringkasan Statistik Struk
             item {
                 Card(
@@ -454,7 +471,7 @@ fun ReceiptArchiveScreen(
 
                                     // Nominal Transaksi
                                     Text(
-                                        text = "${if (isIncome) "+" else if (isExpense) "-" else ""}Rp ${rupiahFormat.format(entry.totalDebit).replace("Rp", "").trim()}",
+                                        text = "${if (isIncome) "+" else if (isExpense) "-" else ""}Rp ${rupiahFormat.format(entry.primaryAmount).replace("Rp", "").trim()}",
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = 15.sp,
                                         color = when {
@@ -542,7 +559,7 @@ fun ReceiptArchiveScreen(
                                                     type = "image/jpeg"
                                                     putExtra(Intent.EXTRA_STREAM, uri)
                                                     putExtra(Intent.EXTRA_SUBJECT, "Bukti Transaksi - ${entry.description}")
-                                                    putExtra(Intent.EXTRA_TEXT, "Bukti Struk: ${receipt?.merchantName ?: entry.description}\nNominal: Rp ${rupiahFormat.format(entry.totalDebit).replace("Rp", "").trim()}\nRef: ${receipt?.referenceNumber ?: entry.id}")
+                                                    putExtra(Intent.EXTRA_TEXT, "Bukti Struk: ${receipt?.merchantName ?: entry.description}\nNominal: Rp ${rupiahFormat.format(entry.primaryAmount).replace("Rp", "").trim()}\nRef: ${receipt?.referenceNumber ?: entry.id}")
                                                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                                 }
                                                 context.startActivity(Intent.createChooser(sendIntent, "Bagikan Bukti Struk"))
@@ -663,7 +680,7 @@ fun ReceiptArchiveScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Total: Rp ${rupiahFormat.format(entry.totalDebit).replace("Rp", "").trim()}",
+                            text = "Total: Rp ${rupiahFormat.format(entry.primaryAmount).replace("Rp", "").trim()}",
                             color = androidx.compose.ui.graphics.Color.White,
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
@@ -683,7 +700,7 @@ fun ReceiptArchiveScreen(
                                                 type = "image/jpeg"
                                                 putExtra(Intent.EXTRA_STREAM, uri)
                                                 putExtra(Intent.EXTRA_SUBJECT, "Bukti Struk - ${entry.description}")
-                                                putExtra(Intent.EXTRA_TEXT, "Bukti Struk: ${receipt?.merchantName ?: entry.description}\nNominal: Rp ${rupiahFormat.format(entry.totalDebit).replace("Rp", "").trim()}\nRef: ${receipt?.referenceNumber ?: entry.id}")
+                                                putExtra(Intent.EXTRA_TEXT, "Bukti Struk: ${receipt?.merchantName ?: entry.description}\nNominal: Rp ${rupiahFormat.format(entry.primaryAmount).replace("Rp", "").trim()}\nRef: ${receipt?.referenceNumber ?: entry.id}")
                                                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                             }
                                             context.startActivity(Intent.createChooser(sendIntent, "Bagikan Bukti Struk"))

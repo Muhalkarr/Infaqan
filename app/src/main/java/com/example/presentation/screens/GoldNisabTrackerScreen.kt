@@ -80,6 +80,8 @@ import com.example.core.accounting.AccountCategory
 import com.example.core.gold.GoldPriceManager
 import com.example.core.gold.GoldPricePoint
 import com.example.core.state.AmanahLedgerViewModel
+import com.example.presentation.components.ExperimentalBadge
+import com.example.presentation.components.ExperimentalNoticeCard
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -139,7 +141,7 @@ fun GoldNisabTrackerScreen(
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text("Pelacak Emas & Nisab BAZNAS", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                            Icon(Icons.Default.Verified, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                            ExperimentalBadge(text = "🧪 Eksperimen")
                         }
                         Text("Standar SK BAZNAS & Konversi Moneter Klasik Dinar-Dirham", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary)
                     }
@@ -159,7 +161,16 @@ fun GoldNisabTrackerScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(6.dp)) }
+            item { Spacer(modifier = Modifier.height(4.dp)) }
+
+            // Notice Banner Fitur Eksperimen
+            item {
+                ExperimentalNoticeCard(
+                    title = "Pelacak Emas & Hisab Nisab BAZNAS",
+                    subtitle = "Modul Eksperimen Fluktuasi Pasar",
+                    description = "Harga emas acuan hisab bersumber dari estimasi data pasar dan ketetapan BAZNAS. Selalu pastikan memvalidasi harga fisik emas murni (Antam/Pegadaian) saat haul zakat maal Anda genap 1 tahun Hijriah."
+                )
+            }
 
             // 1. Current Gold Price Card
             item {

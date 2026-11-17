@@ -332,6 +332,16 @@ fun SettingsScreen(
                 }
             }
 
+            // 0. Kustomisasi Modul & Fitur
+            item {
+                com.example.presentation.screens.settings.FeatureCustomizationSettingsSection(
+                    state = state,
+                    onApplyPreset = { viewModel.applyFeaturePreset(it) },
+                    onUpdateConfig = { viewModel.updateFeatureVisibilityConfig(it) },
+                    onSetDisplayMode = { viewModel.setAppDisplayMode(it) }
+                )
+            }
+
             // 1. Profil & Kas Mukmin
             item {
                 SettingsSectionCard(
@@ -552,7 +562,7 @@ fun SettingsScreen(
                                             text = "$d H",
                                             fontSize = 11.sp,
                                             fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSel) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                            color = if (isSel) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
@@ -587,10 +597,25 @@ fun SettingsScreen(
                         }
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    val systemIsDark = androidx.compose.foundation.isSystemInDarkTheme()
+                    val effectiveIsDark = when (state.themeMode) {
+                        com.example.ui.theme.AppThemeMode.FOLLOW_SYSTEM -> systemIsDark
+                        com.example.ui.theme.AppThemeMode.TACTICAL_CYBER,
+                        com.example.ui.theme.AppThemeMode.ELEGANT_DARK,
+                        com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_DARK -> true
+                        else -> false
+                    }
                     SettingsRowToggle(
                         title = "Mode Gelap (Dark Mode)",
-                        subtitle = if (state.isDarkMode) "Tema gelap Islami aktif (Emerald-Dark)" else "Tema terang aktif",
-                        isChecked = state.isDarkMode,
+                        subtitle = when (state.themeMode) {
+                            com.example.ui.theme.AppThemeMode.TACTICAL_CYBER -> "Tema Protokol Taktis (Gelap // Cyber Terminal) aktif"
+                            com.example.ui.theme.AppThemeMode.TACTICAL_LIGHT -> "Tema Protokol Taktis (Terang // Clean Lab) aktif"
+                            com.example.ui.theme.AppThemeMode.ELEGANT_DARK -> "Tema gelap Islami aktif (Emerald-Dark)"
+                            com.example.ui.theme.AppThemeMode.LIGHT_MODE -> "Tema terang aktif"
+                            com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_LIGHT, com.example.ui.theme.AppThemeMode.HIGH_CONTRAST_DARK -> "Tema kontras tinggi aktif"
+                            com.example.ui.theme.AppThemeMode.FOLLOW_SYSTEM -> if (effectiveIsDark) "Mengikuti sistem: Gelap" else "Mengikuti sistem: Terang"
+                        },
+                        isChecked = effectiveIsDark,
                         onCheckedChange = { viewModel.toggleDarkMode() }
                     )
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
@@ -906,6 +931,9 @@ fun SettingsScreen(
 
     // Dialog Setup PIN Baru
     if (showPinSetupDialog) {
+        var recoveryQuestionInput by remember { mutableStateOf("Nama kota kelahiran Anda?") }
+        var recoveryAnswerInput by remember { mutableStateOf("") }
+        var confirmPinInput by remember { mutableStateOf("") }
         AlertDialog(
             onDismissRequest = { showPinSetupDialog = false },
             title = {
@@ -914,15 +942,49 @@ fun SettingsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Masukkan 6 digit angka rahasia untuk mengunci aplikasi.",
+                        text = "Masukkan 6 digit angka rahasia dan jawaban pemulihan untuk keamanan akun.",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     OutlinedTextField(
                         value = newPinInput,
-                        onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) newPinInput = it },
+                        onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) { newPinInput = it; pinError = null } },
                         label = { Text("PIN 6 Digit") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = confirmPinInput,
+                        onValueChange = { if (it.length <= 6 && it.all { char -> char.isDigit() }) { confirmPinInput = it; pinError = null } },
+                        label = { Text("Konfirmasi PIN 6 Digit") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = recoveryQuestionInput,
+                        onValueChange = { recoveryQuestionInput = it; pinError = null },
+                        label = { Text("Pertanyaan Pemulihan") },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            cursorColor = MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = recoveryAnswerInput,
+                        onValueChange = { recoveryAnswerInput = it; pinError = null },
+                        label = { Text("Jawaban Pemulihan") },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
@@ -942,11 +1004,15 @@ fun SettingsScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        if (newPinInput.length == 6) {
-                            viewModel.setupPinLock(newPinInput)
-                            showPinSetupDialog = false
-                        } else {
-                            pinError = "PIN harus tepat 6 digit angka."
+                        when {
+                            newPinInput.length != 6 -> pinError = "PIN harus tepat 6 digit angka."
+                            newPinInput != confirmPinInput -> pinError = "Konfirmasi PIN tidak cocok."
+                            recoveryQuestionInput.trim().isEmpty() -> pinError = "Pertanyaan pemulihan wajib diisi."
+                            recoveryAnswerInput.trim().isEmpty() -> pinError = "Jawaban pemulihan wajib diisi."
+                            else -> {
+                                viewModel.enablePin(newPinInput, recoveryQuestionInput.trim(), recoveryAnswerInput.trim())
+                                showPinSetupDialog = false
+                            }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)

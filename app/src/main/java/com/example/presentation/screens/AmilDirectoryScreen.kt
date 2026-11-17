@@ -257,7 +257,7 @@ fun AmilDirectoryScreen(
                         label = { Text("Semua (${rawInstitutions.size})", fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = Color.White,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -268,7 +268,7 @@ fun AmilDirectoryScreen(
                         label = { Text("BAZNAS", fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = Color.White,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -279,7 +279,7 @@ fun AmilDirectoryScreen(
                         label = { Text("LAZ Nasional", fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = Color.White,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -290,7 +290,7 @@ fun AmilDirectoryScreen(
                         label = { Text("Wakaf", fontSize = 11.sp) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = Color.White,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -845,7 +845,7 @@ fun AmilInstitutionFormDialog(
                                     },
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier
                                         .padding(vertical = 8.dp)
                                         .wrapContentWidth(Alignment.CenterHorizontally)

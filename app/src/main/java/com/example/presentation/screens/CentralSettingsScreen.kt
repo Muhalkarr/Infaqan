@@ -14,10 +14,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MenuBook
@@ -41,6 +45,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.example.ui.theme.AppThemeMode
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.TacticalSubScreenHeader
+import com.example.ui.theme.CyberNeonGreen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,6 +71,8 @@ import com.example.presentation.screens.settings.EditInitialDateDialog
 import com.example.presentation.screens.settings.EditProfileDialog
 import com.example.presentation.screens.settings.ExportSummaryDialog
 import com.example.presentation.screens.settings.InfaqSettingsSection
+import com.example.presentation.screens.settings.ExpenseCategorySettingsSection
+import com.example.presentation.screens.settings.FeatureCustomizationSettingsSection
 import com.example.presentation.screens.settings.LedgerIdentitySettingsSection
 import com.example.presentation.screens.settings.MaintenanceSettingsSection
 import com.example.presentation.screens.settings.RecurringSettingsSection
@@ -77,14 +87,16 @@ import java.util.Locale
 private enum class SettingsCategory(val label: String, val icon: ImageVector) {
     ALL("Semua", Icons.Default.Tune),
     LEDGER("Kas & Identitas", Icons.Default.AccountBalance),
-    THEME("Tema & Kontras", Icons.Default.Palette),
+    THEME("Tema & Privasi", Icons.Default.Palette),
     TEXT_SCALE("Skala Teks", Icons.Default.FormatSize),
-    INFAQ("Infaq & Shadaqah", Icons.Default.Savings),
-    ZAKAT("Zakat & Emas", Icons.Default.VolunteerActivism),
+    FEATURE_CUSTOMIZATION("Modul & Fitur", Icons.Default.Tune),
+    EXPENSE_CATEGORIES("Kategori Pengeluaran", Icons.Default.Category),
+    INFAQ("Infaq & Notifikasi", Icons.Default.Savings),
+    ZAKAT("Zakat & Nisab", Icons.Default.VolunteerActivism),
     BUDGET("Anggaran & Israf", Icons.Default.PieChart),
     RECURRING("Transaksi Rutin", Icons.Default.Schedule),
     SECURITY("Keamanan & PIN", Icons.Default.Shield),
-    MAINTENANCE("Fiqh & Data", Icons.Default.MenuBook)
+    MAINTENANCE("Edukasi & Data", Icons.Default.MenuBook)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -104,6 +116,7 @@ fun CentralSettingsScreen(
     onNavigateToExportReport: () -> Unit = {},
     onNavigateToDebugTerminal: () -> Unit = {},
     onNavigateToShariahRules: () -> Unit = {},
+    onNavigateToNotificationSettings: () -> Unit = {},
     onOpenDrawer: () -> Unit = {}
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -124,76 +137,108 @@ fun CentralSettingsScreen(
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                title = {
-                    Column {
-                        Text(
-                            text = "Pengaturan Terpusat",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Konfigurasi Seluruh Modul & Fitur Aplikasi",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+            if (state.themeMode.isTactical) {
+                TacticalSubScreenHeader(
+                    title = "Pengaturan Sistem Terpusat",
+                    subCode = "SYS//CONFIG-09",
+                    onBack = onNavigateBack,
+                    trailingActions = {
+                        IconButton(
+                            onClick = { showExportSummaryDialog = true },
+                            modifier = Modifier.testTag("central_settings_export_button")
+                        ) {
+                            Icon(Icons.Default.Share, contentDescription = "Ekspor Ringkasan", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(
+                            onClick = { showResetConfirmationDialog = true },
+                            modifier = Modifier.testTag("central_settings_reset_button")
+                        ) {
+                            Icon(Icons.Default.RestartAlt, contentDescription = "Reset", tint = MaterialTheme.colorScheme.error)
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("central_settings_menu_sidebar_button")
+                        ) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu Sidebar", tint = MaterialTheme.colorScheme.primary)
+                        }
                     }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateBack,
-                        modifier = Modifier.testTag("central_settings_back_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Kembali ke Layar Sebelumnya",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                )
+            } else {
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    title = {
+                        Column {
+                            Text(
+                                text = "Pengaturan Terpusat",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Konfigurasi Seluruh Modul & Fitur Aplikasi",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.testTag("central_settings_back_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Kembali ke Layar Sebelumnya",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { showExportSummaryDialog = true },
+                            modifier = Modifier.testTag("central_settings_export_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Ekspor Ringkasan Buku Kas",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        }
+                        IconButton(
+                            onClick = { showResetConfirmationDialog = true },
+                            modifier = Modifier.testTag("central_settings_reset_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.RestartAlt,
+                                contentDescription = "Reset Pengaturan Awal",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        IconButton(
+                            onClick = onOpenDrawer,
+                            modifier = Modifier.testTag("central_settings_menu_sidebar_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Menu,
+                                contentDescription = "Buka Menu Sidebar",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                },
-                actions = {
-                    IconButton(
-                        onClick = { showExportSummaryDialog = true },
-                        modifier = Modifier.testTag("central_settings_export_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Ekspor Ringkasan Buku Kas",
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                    IconButton(
-                        onClick = { showResetConfirmationDialog = true },
-                        modifier = Modifier.testTag("central_settings_reset_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.RestartAlt,
-                            contentDescription = "Reset Pengaturan Awal",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                    IconButton(
-                        onClick = onOpenDrawer,
-                        modifier = Modifier.testTag("central_settings_menu_sidebar_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Menu,
-                            contentDescription = "Buka Menu Sidebar",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            )
-        }
+                )
+            }
+        },
     ) { paddingValues ->
+        val isTactical = state.themeMode.isTactical
+        val filterChipShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             // Category Filter Bar (Horizontal Scroll)
             Row(
@@ -209,7 +254,18 @@ fun CentralSettingsScreen(
                     FilterChip(
                         selected = isSelected,
                         onClick = { selectedCategory = category },
-                        label = { Text(category.label, fontSize = 12.sp) },
+                        shape = filterChipShape,
+                        border = if (isTactical) {
+                            if (isSelected) androidx.compose.foundation.BorderStroke(1.2.dp, MaterialTheme.colorScheme.primary)
+                            else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.6f))
+                        } else null,
+                        label = {
+                            Text(
+                                text = category.label,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
                         leadingIcon = {
                             Icon(
                                 imageVector = category.icon,
@@ -218,16 +274,19 @@ fun CentralSettingsScreen(
                             )
                         },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isTactical) 0.85f else 0.5f),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
                             selectedLabelColor = MaterialTheme.colorScheme.primary,
-                            selectedLeadingIconColor = MaterialTheme.colorScheme.primary
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                            labelColor = MaterialTheme.colorScheme.onSurface,
+                            iconColor = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
                         modifier = Modifier.testTag("settings_filter_${category.name.lowercase()}")
                     )
                 }
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            HorizontalDivider(color = if (isTactical) MaterialTheme.colorScheme.outline.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
             // Main Settings Content
             Column(
@@ -251,7 +310,7 @@ fun CentralSettingsScreen(
                     )
                 }
 
-                // 2. TEMA & KONTRAS TAMPILAN
+                // 2. TEMA, PRIVASI & KONTRAS TAMPILAN
                 if (selectedCategory == SettingsCategory.ALL || selectedCategory == SettingsCategory.THEME) {
                     ThemeContrastSettingsSection(
                         state = state,
@@ -261,12 +320,34 @@ fun CentralSettingsScreen(
                     )
                 }
 
-                // 2B. SKALA TAMPILAN & UKURAN TEKS
-                if (selectedCategory == SettingsCategory.ALL || selectedCategory == SettingsCategory.THEME || selectedCategory == SettingsCategory.TEXT_SCALE) {
+                // 3. SKALA TAMPILAN & UKURAN TEKS
+                if (selectedCategory == SettingsCategory.ALL || selectedCategory == SettingsCategory.TEXT_SCALE) {
                     TextScaleSettingsSection(
                         state = state,
                         onSetUiScaleMode = { viewModel.setUiScaleMode(it) },
                         onSetUiScaleFactor = { viewModel.setUiScaleFactor(it) }
+                    )
+                }
+
+                // 4. KUSTOMISASI MODUL & FITUR APLIKASI (Mode Ringkas/Lengkap & Preset)
+                if (selectedCategory == SettingsCategory.ALL || selectedCategory == SettingsCategory.FEATURE_CUSTOMIZATION) {
+                    FeatureCustomizationSettingsSection(
+                        state = state,
+                        onApplyPreset = { viewModel.applyFeaturePreset(it) },
+                        onUpdateConfig = { viewModel.updateFeatureVisibilityConfig(it) },
+                        onSetDisplayMode = { viewModel.setAppDisplayMode(it) }
+                    )
+                }
+
+                // 5. KUSTOMISASI KATEGORI PENGELUARAN
+                if (selectedCategory == SettingsCategory.ALL || selectedCategory == SettingsCategory.EXPENSE_CATEGORIES) {
+                    ExpenseCategorySettingsSection(
+                        state = state,
+                        onToggleCategory = { viewModel.toggleExpenseCategoryVisibility(it) },
+                        onApplyPreset = { viewModel.applyExpenseCategoryPreset(it) },
+                        onAddNewCategory = { name, desc -> viewModel.addNewExpenseAccount(name, desc) },
+                        onDeleteCustomCategory = { viewModel.deleteCustomExpenseCategory(it) },
+                        onResetToDefault = { viewModel.resetExpenseCategoriesToDefault() }
                     )
                 }
 
@@ -278,7 +359,19 @@ fun CentralSettingsScreen(
                         onSetDefaultInfaqRate = { viewModel.setDefaultInfaqRate(it) },
                         onSetAutoDeductInfaqEnabled = { viewModel.setAutoDeductInfaqEnabled(it) },
                         onSetVaultMonthlyTarget = { viewModel.setVaultMonthlyTarget(it) },
-                        onSetSedekahSubuhTargetDays = { viewModel.setSedekahSubuhTargetDays(it) }
+                        onSetSedekahSubuhTargetDays = { viewModel.setSedekahSubuhTargetDays(it) },
+                        onUpdateInfaqVaultReminder = { viewModel.updateInfaqVaultReminderConfig(it) },
+                        onNavigateToNotificationSettings = onNavigateToNotificationSettings,
+                        onSendTestInfaqNotification = {
+                            viewModel.sendTestInfaqVaultNotification(context) { sent ->
+                                Toast.makeText(
+                                    context,
+                                    if (sent) "Notifikasi pengingat Infaq Vault dikirim!"
+                                    else "Gagal mengirim notifikasi. Periksa izin notifikasi.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     )
                 }
 

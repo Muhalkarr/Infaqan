@@ -15,7 +15,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.ui.theme.LocalAppThemeMode
+import com.example.ui.theme.isTactical
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -23,6 +26,8 @@ import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -66,9 +71,11 @@ fun TunaikanInfaqSyukurDialog(
     wallets: List<WalletAccount>,
     getWalletBalance: (String) -> Double,
     onDismiss: () -> Unit,
-    onConfirm: (walletId: String, amount: Double, note: String) -> Unit
+    onConfirm: (walletId: String, amount: Double, note: String, isAllocateToVault: Boolean) -> Unit
 ) {
     val nf = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
+
+    var isAllocateToVault by remember { mutableStateOf(true) }
 
     var selectedWalletId by remember {
         mutableStateOf(
@@ -86,11 +93,14 @@ fun TunaikanInfaqSyukurDialog(
 
     val currentAmount = infaqAmountText.toDoubleOrNull() ?: 0.0
     val selectedWalletBalance = getWalletBalance(selectedWalletId)
-    val isInsufficientBalance = currentAmount > selectedWalletBalance
+    val isInsufficientBalance = !isAllocateToVault && currentAmount > selectedWalletBalance
+
+    val isTactical = LocalAppThemeMode.current.isTactical
 
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.testTag("dialog_tunaikan_infaq_syukur"),
+        shape = if (isTactical) CutCornerShape(12.dp) else RoundedCornerShape(20.dp),
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -99,7 +109,7 @@ fun TunaikanInfaqSyukurDialog(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(CircleShape)
+                        .clip(if (isTactical) CutCornerShape(4.dp) else CircleShape)
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
@@ -138,7 +148,7 @@ fun TunaikanInfaqSyukurDialog(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                     ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(12.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -237,83 +247,152 @@ fun TunaikanInfaqSyukurDialog(
                     }
                 }
 
-                // Pilih Dompet Sumber Dana
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                // Pilih Metode Penunaian (Infaq Vault vs Tunai Kas)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Keluarkan dari Dompet / Kas:",
+                        text = "Metode Pemenuhan Infaq Syukur:",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    wallets.forEach { wallet ->
-                        val balance = getWalletBalance(wallet.id)
-                        val isSelected = wallet.id == selectedWalletId
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = isAllocateToVault,
+                            onClick = { isAllocateToVault = true },
+                            label = { Text("Infaq Vault", fontSize = 12.sp) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Savings,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        FilterChip(
+                            selected = !isAllocateToVault,
+                            onClick = { isAllocateToVault = false },
+                            label = { Text("Tunai Kas", fontSize = 12.sp) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Payment,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { selectedWalletId = wallet.id }
-                                .testTag("wallet_option_${wallet.id}"),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) {
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                                } else {
-                                    MaterialTheme.colorScheme.surface
-                                }
-                            ),
+                    if (isAllocateToVault) {
+                        Surface(
                             shape = RoundedCornerShape(10.dp),
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.dp,
-                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                            )
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    RadioButton(
-                                        selected = isSelected,
-                                        onClick = { selectedWalletId = wallet.id }
+                            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Icon(Icons.Default.Savings, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                    Text(
+                                        text = "Ditambahkan ke Virtual Infaq Vault",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
                                     )
-                                    Column {
-                                        Text(
-                                            text = wallet.name,
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 13.sp,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            text = wallet.institutionName,
-                                            fontSize = 11.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
                                 }
                                 Text(
-                                    text = "Rp ${nf.format(balance.toLong())}",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
-                                    color = if (balance < currentAmount) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                    text = "Nominal Rp ${nf.format(currentAmount.toLong())} akan langsung menambah saldo Infaq Vault bulanan Anda. Tidak memotong uang kas saat ini, dan disalurkan bersamaan di kemudian hari.",
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-                    }
+                    } else {
+                        // Pilih Dompet Sumber Dana Tunai
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Keluarkan dari Dompet / Kas Riil:",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
 
-                    if (isInsufficientBalance) {
-                        Text(
-                            text = "⚠️ Saldo dompet terpilih tidak mencukupi untuk nominal infaq ini.",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.error,
-                            lineHeight = 15.sp
-                        )
+                            wallets.forEach { wallet ->
+                                val balance = getWalletBalance(wallet.id)
+                                val isSelected = wallet.id == selectedWalletId
+
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { selectedWalletId = wallet.id }
+                                        .testTag("wallet_option_${wallet.id}"),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isSelected) {
+                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                        } else {
+                                            MaterialTheme.colorScheme.surface
+                                        }
+                                    ),
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            RadioButton(
+                                                selected = isSelected,
+                                                onClick = { selectedWalletId = wallet.id }
+                                            )
+                                            Column {
+                                                Text(
+                                                    text = wallet.name,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 13.sp,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = wallet.institutionName,
+                                                    fontSize = 11.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                        Text(
+                                            text = "Rp ${nf.format(balance.toLong())}",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.sp,
+                                            color = if (balance < currentAmount) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+
+                            if (isInsufficientBalance) {
+                                Text(
+                                    text = "⚠️ Saldo dompet terpilih tidak mencukupi untuk nominal infaq ini.",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.error,
+                                    lineHeight = 15.sp
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -326,26 +405,19 @@ fun TunaikanInfaqSyukurDialog(
                     shape = RoundedCornerShape(10.dp),
                     singleLine = true
                 )
-
-                Text(
-                    text = "💡 Transaksi ini akan mencatat pengeluaran Infaq riil berpasangan (Beban Infaq & Kas Dompet) tanpa mengubah catatan riwayat penerimaan rezeki non-tunai.",
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 15.sp
-                )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (selectedWalletId.isNotBlank() && currentAmount > 0) {
-                        onConfirm(selectedWalletId, currentAmount, noteText)
+                    if (currentAmount > 0) {
+                        onConfirm(selectedWalletId, currentAmount, noteText, isAllocateToVault)
                     }
                 },
-                enabled = selectedWalletId.isNotBlank() && currentAmount > 0 && !isInsufficientBalance,
+                enabled = currentAmount > 0 && (isAllocateToVault || (selectedWalletId.isNotBlank() && !isInsufficientBalance)),
                 modifier = Modifier.testTag("confirm_tunaikan_infaq_button")
             ) {
-                Text("Tunaikan Infaq")
+                Text(if (isAllocateToVault) "Masuk Infaq Vault" else "Tunaikan Infaq")
             }
         },
         dismissButton = {
@@ -358,3 +430,4 @@ fun TunaikanInfaqSyukurDialog(
         }
     )
 }
+

@@ -13,11 +13,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.ui.theme.isTactical
+import com.example.ui.theme.CyberNeonGreen
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VolunteerActivism
@@ -43,9 +47,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.presentation.components.ExperimentalBadge
 import androidx.compose.ui.unit.sp
 import com.example.core.state.AmanahLedgerUiState
 import java.text.NumberFormat
+
+import com.example.core.infaq.InfaqVaultReminderConfig
+import com.example.presentation.components.InfaqVaultReminderCard
 
 @Composable
 fun InfaqSettingsSection(
@@ -54,8 +62,13 @@ fun InfaqSettingsSection(
     onSetDefaultInfaqRate: (Double) -> Unit,
     onSetAutoDeductInfaqEnabled: (Boolean) -> Unit,
     onSetVaultMonthlyTarget: (Double) -> Unit,
-    onSetSedekahSubuhTargetDays: (Int) -> Unit
+    onSetSedekahSubuhTargetDays: (Int) -> Unit,
+    onUpdateInfaqVaultReminder: (InfaqVaultReminderConfig) -> Unit = {},
+    onNavigateToNotificationSettings: () -> Unit = {},
+    onSendTestInfaqNotification: () -> Unit = {}
 ) {
+    val isTactical = state.themeMode.isTactical
+    val chipShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
     SettingsSectionCard(
         title = "Infaq, Shadaqah & Sedekah Subuh",
         subtitle = "Pengaturan persentase infaq otomatis dan target filantropi",
@@ -139,12 +152,16 @@ fun InfaqSettingsSection(
                 listOf(1000000.0 to "1 Jt", 2500000.0 to "2.5 Jt", 5000000.0 to "5 Jt", 10000000.0 to "10 Jt", 20000000.0 to "20 Jt").forEach { (target, label) ->
                     val isSelected = Math.abs(state.vaultMonthlyTarget - target) < 1.0
                     Surface(
-                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(8.dp),
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        shape = chipShape,
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.2.dp, MaterialTheme.colorScheme.primary) else null,
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(chipShape)
                             .clickable { onSetVaultMonthlyTarget(target) }
                             .padding(vertical = 6.dp)
                     ) {
@@ -200,7 +217,7 @@ fun InfaqSettingsSection(
                     text = "${state.sedekahSubuhTargetDays} Hari Istiqomah",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                 )
             }
             Row(
@@ -209,13 +226,18 @@ fun InfaqSettingsSection(
             ) {
                 listOf(7, 21, 30, 40, 100, 365).forEach { days ->
                     val isSelected = state.sedekahSubuhTargetDays == days
+                    val chipAccent = if (isTactical) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                     Surface(
-                        color = if (isSelected) MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(8.dp),
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary) else null,
+                        color = if (isSelected) {
+                            chipAccent.copy(alpha = 0.16f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        shape = chipShape,
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.2.dp, chipAccent) else null,
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(chipShape)
                             .clickable { onSetSedekahSubuhTargetDays(days) }
                             .padding(vertical = 6.dp)
                     ) {
@@ -223,7 +245,7 @@ fun InfaqSettingsSection(
                             text = "$days H",
                             fontSize = 11.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface,
+                            color = if (isSelected) chipAccent else MaterialTheme.colorScheme.onSurface,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -251,6 +273,72 @@ fun InfaqSettingsSection(
                 modifier = Modifier.fillMaxWidth().testTag("custom_sedekah_days_input")
             )
         }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+
+        Surface(
+            onClick = onNavigateToNotificationSettings,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            shape = chipShape,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.primary.copy(alpha = if (isTactical) 0.6f else 0.4f)
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .testTag("btn_open_notification_settings")
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(if (isTactical) CutCornerShape(4.dp) else CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NotificationsActive,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Pusat Kustomisasi Notifikasi Push",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = state.notificationConfig.summarySubtitle(),
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.Tune,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        InfaqVaultReminderCard(
+            config = state.infaqVaultReminderConfig,
+            vaultBalance = state.virtualInfaqVaultBalance,
+            rules = state.rules,
+            onUpdateConfig = onUpdateInfaqVaultReminder,
+            onSendTestNotification = onSendTestInfaqNotification
+        )
     }
 }
 
@@ -308,10 +396,14 @@ fun ZakatNisabSettingsSection(
             )
         }
 
+        val isTactical = state.themeMode.isTactical
+        val cardInnerShape = if (isTactical) CutCornerShape(6.dp) else RoundedCornerShape(10.dp)
+
         // Nisab Info Card
         Surface(
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-            shape = RoundedCornerShape(10.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (isTactical) 0.7f else 0.45f),
+            shape = cardInnerShape,
+            border = if (isTactical) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)) else null,
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
         ) {
             Row(
@@ -344,9 +436,12 @@ fun ZakatNisabSettingsSection(
         // Tombol Akses Pusat Kustomisasi Logika & Parameter Syariah
         Surface(
             onClick = onNavigateToShariahRules,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-            shape = RoundedCornerShape(10.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            shape = cardInnerShape,
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.primary.copy(alpha = if (isTactical) 0.6f else 0.4f)
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp)
@@ -359,7 +454,7 @@ fun ZakatNisabSettingsSection(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(CircleShape)
+                        .clip(if (isTactical) CutCornerShape(4.dp) else CircleShape)
                         .background(MaterialTheme.colorScheme.primary),
                     contentAlignment = Alignment.Center
                 ) {
@@ -372,12 +467,18 @@ fun ZakatNisabSettingsSection(
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Pusat Kustomisasi Logika Syariah",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Pusat Kustomisasi Logika Syariah",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        ExperimentalBadge(text = "🧪 Eksperimen")
+                    }
                     Text(
                         text = "Sesuaikan bobot nisab, tarif zakat, mazhab fikih & nomor SK fatwa",
                         fontSize = 11.sp,
@@ -414,6 +515,7 @@ fun ZakatNisabSettingsSection(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
+            val offsetShape = if (isTactical) CutCornerShape(4.dp) else RoundedCornerShape(8.dp)
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -421,12 +523,16 @@ fun ZakatNisabSettingsSection(
                 listOf(-2, -1, 0, 1, 2).forEach { offset ->
                     val isSelected = state.selectedHijriOffset == offset
                     Surface(
-                        color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(8.dp),
-                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        shape = offsetShape,
+                        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.2.dp, MaterialTheme.colorScheme.primary) else null,
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(offsetShape)
                             .clickable { onSetHijriOffset(offset) }
                             .padding(vertical = 6.dp)
                     ) {

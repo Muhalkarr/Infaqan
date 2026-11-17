@@ -33,6 +33,7 @@ import com.example.presentation.screens.InteractiveGuideScreen
 import com.example.presentation.screens.IslamicKnowledgeGroundingScreen
 import com.example.presentation.screens.MonthlyReportScreen
 import com.example.presentation.screens.MultiWalletScreen
+import com.example.presentation.screens.NotificationSettingsScreen
 import com.example.presentation.screens.QardhScreen
 import com.example.presentation.screens.ReceiptArchiveScreen
 import com.example.presentation.screens.RecurringTransactionsScreen
@@ -45,6 +46,7 @@ import com.example.presentation.screens.ShariahComplianceAuditScreen
 import com.example.presentation.screens.ShariahRulesCustomizationScreen
 import com.example.presentation.screens.VaultDistributionHistoryScreen
 import com.example.presentation.screens.ZakatHubScreen
+import com.example.presentation.screens.ZakatReportScreen
 
 object AmanahRoutes {
     const val DASHBOARD = "dashboard"
@@ -55,6 +57,7 @@ object AmanahRoutes {
     const val MULTI_WALLET = "multi_wallet"
     const val IBADAH_GOALS = "ibadah_goals"
     const val ZAKAT_HUB = "zakat_hub"
+    const val ZAKAT_REPORT = "zakat_report"
     const val BACKUP_RESTORE = "backup_restore"
     const val QARDH = "qardh"
     const val AMIL_DIRECTORY = "amil_directory"
@@ -67,6 +70,7 @@ object AmanahRoutes {
     const val INFAQ_RULES = "infaq_rules"
     const val SEDEKAH_SUBUH = "sedekah_subuh"
     const val SECURITY_SETTINGS = "security_settings"
+    const val NOTIFICATION_SETTINGS = "notification_settings"
     const val RECURRING_TRANSACTIONS = "recurring_transactions"
     const val BUDGET_ALLOCATION = "budget_allocation"
     const val APP_LOCK = "app_lock"
@@ -266,7 +270,8 @@ fun AmanahNavHost(
             ZakatHubScreen(
                 viewModel = viewModel,
                 onNavigateBack = handleSmartBack,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToZakatReport = { navController.navigate(AmanahRoutes.ZAKAT_REPORT) }
             )
         }
 
@@ -323,6 +328,16 @@ fun AmanahNavHost(
             ZakatHubScreen(
                 viewModel = viewModel,
                 onNavigateBack = handleSmartBack,
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToZakatReport = { navController.navigate(AmanahRoutes.ZAKAT_REPORT) }
+            )
+        }
+
+        // 7B. Laporan Zakat Komprehensif (Maal & Fitrah)
+        composable(AmanahRoutes.ZAKAT_REPORT) {
+            ZakatReportScreen(
+                viewModel = viewModel,
+                onNavigateBack = handleSmartBack,
                 onOpenDrawer = onOpenDrawer
             )
         }
@@ -369,7 +384,8 @@ fun AmanahNavHost(
             ExportReportScreen(
                 viewModel = viewModel,
                 onBackClick = handleSmartBack,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToZakatReport = { navController.navigate(AmanahRoutes.ZAKAT_REPORT) }
             )
         }
 
@@ -378,7 +394,8 @@ fun AmanahNavHost(
             HaulNisabScreen(
                 viewModel = viewModel,
                 onNavigateBack = handleSmartBack,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToZakatReport = { navController.navigate(AmanahRoutes.ZAKAT_REPORT) }
             )
         }
 
@@ -427,6 +444,15 @@ fun AmanahNavHost(
             )
         }
 
+        // 18B. Push Notification Customization Center
+        composable(AmanahRoutes.NOTIFICATION_SETTINGS) {
+            NotificationSettingsScreen(
+                viewModel = viewModel,
+                onNavigateBack = handleSmartBack,
+                onOpenDrawer = onOpenDrawer
+            )
+        }
+
         // 19. Monthly Report
         composable(AmanahRoutes.MONTHLY_REPORT) {
             MonthlyReportScreen(
@@ -442,7 +468,9 @@ fun AmanahNavHost(
             AnalyticsScreen(
                 viewModel = viewModel,
                 onNavigateBack = handleSmartBack,
-                onOpenDrawer = onOpenDrawer
+                onOpenDrawer = onOpenDrawer,
+                onNavigateToVaultHistory = { navController.navigate(AmanahRoutes.VAULT_HISTORY) },
+                onNavigateToInfaqRules = { navController.navigate(AmanahRoutes.INFAQ_RULES) }
             )
         }
 
@@ -484,6 +512,13 @@ fun AmanahNavHost(
                 onNavigateToIslamicGrounding = { navController.navigate(AmanahRoutes.ISLAMIC_GROUNDING) },
                 onNavigateToExportReport = { navController.navigate(AmanahRoutes.EXPORT_REPORT) },
                 onNavigateToDualCalendar = { navController.navigate(AmanahRoutes.DUAL_CALENDAR) },
+                onNavigateToAnalytics = { navController.navigate(AmanahRoutes.ANALYTICS) },
+                onNavigateToZakatReport = { navController.navigate(AmanahRoutes.ZAKAT_REPORT) },
+                onNavigateToBusinessZakat = { navController.navigate(AmanahRoutes.BUSINESS_ZAKAT) },
+                onNavigateToGoldTracker = { navController.navigate(AmanahRoutes.GOLD_NISAB_TRACKER) },
+                onNavigateToShariahAudit = { navController.navigate(AmanahRoutes.SHARIAH_AUDIT) },
+                onNavigateToShariahRules = { navController.navigate(AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION) },
+                onNavigateToReceiptArchive = { navController.navigate(AmanahRoutes.RECEIPT_ARCHIVE) },
                 onOpenDrawer = onOpenDrawer
             )
         }
@@ -505,6 +540,7 @@ fun AmanahNavHost(
                 onNavigateToExportReport = { navController.navigate(AmanahRoutes.EXPORT_REPORT) },
                 onNavigateToDebugTerminal = { navController.navigate(AmanahRoutes.DEBUG_TERMINAL) },
                 onNavigateToShariahRules = { navController.navigate(AmanahRoutes.SHARIAH_RULES_CUSTOMIZATION) },
+                onNavigateToNotificationSettings = { navController.navigate(AmanahRoutes.NOTIFICATION_SETTINGS) },
                 onOpenDrawer = onOpenDrawer
             )
         }

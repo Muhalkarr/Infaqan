@@ -21,8 +21,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ConfirmationNumber
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,12 +35,17 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +68,8 @@ fun DashboardRezekiNonTunaiWidget(
     rezekiList: List<RezekiNonTunaiRecord>,
     onAddRezekiClick: () -> Unit,
     onTunaikanInfaqClick: (RezekiNonTunaiRecord) -> Unit,
+    onEditRezekiClick: (RezekiNonTunaiRecord) -> Unit = {},
+    onDeleteRezekiClick: (RezekiNonTunaiRecord) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val nf = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
@@ -79,6 +91,11 @@ fun DashboardRezekiNonTunaiWidget(
     val countItems = monthlyRezeki.size
     val paidInfaqCount = remember(monthlyRezeki) {
         monthlyRezeki.count { it.isPaidInfaq }
+    }
+
+    var showAllRecords by remember { mutableStateOf(false) }
+    val displayedList = remember(rezekiList, showAllRecords) {
+        if (showAllRecords) rezekiList else rezekiList.take(3)
     }
 
     Card(
@@ -137,13 +154,26 @@ fun DashboardRezekiNonTunaiWidget(
                 Button(
                     onClick = onAddRezekiClick,
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary
+                    ),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                     modifier = Modifier.testTag("add_rezeki_button")
                 ) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSecondary,
+                        modifier = Modifier.size(14.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Catat", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Catat",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondary
+                    )
                 }
             }
 
@@ -211,7 +241,7 @@ fun DashboardRezekiNonTunaiWidget(
                 }
             }
 
-            // Recent 2 or 3 records
+            // Recent or full records
             if (rezekiList.isEmpty()) {
                 Surface(
                     shape = RoundedCornerShape(10.dp),
@@ -238,13 +268,36 @@ fun DashboardRezekiNonTunaiWidget(
                     }
                 }
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    rezekiList.take(3).forEach { record ->
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    displayedList.forEach { record ->
                         RezekiItemRow(
                             record = record,
                             nf = nf,
-                            onTunaikanInfaqClick = { onTunaikanInfaqClick(record) }
+                            onTunaikanInfaqClick = { onTunaikanInfaqClick(record) },
+                            onEditClick = { onEditRezekiClick(record) },
+                            onDeleteClick = { onDeleteRezekiClick(record) }
                         )
+                    }
+
+                    if (rezekiList.size > 3) {
+                        TextButton(
+                            onClick = { showAllRecords = !showAllRecords },
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Icon(
+                                imageVector = if (showAllRecords) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (showAllRecords) "Tampilkan Sedikit" else "Lihat Semua (${rezekiList.size} Riwayat)",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                        }
                     }
                 }
             }
@@ -257,6 +310,8 @@ private fun RezekiItemRow(
     record: RezekiNonTunaiRecord,
     nf: NumberFormat,
     onTunaikanInfaqClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dateFormatted = remember(record.dateMillis) {
@@ -275,12 +330,14 @@ private fun RezekiItemRow(
         shape = RoundedCornerShape(10.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onEditClick)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(10.dp),
+                .padding(start = 10.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -291,7 +348,7 @@ private fun RezekiItemRow(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(34.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
@@ -315,7 +372,7 @@ private fun RezekiItemRow(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
@@ -325,9 +382,20 @@ private fun RezekiItemRow(
                     color = MaterialTheme.colorScheme.primary
                 )
                 if (record.isPaidInfaq) {
+                    val isVault = record.isVaultAllocated
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Icon(imageVector = Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(11.dp))
-                        Text(text = "Infaq Lunas", fontSize = 10.sp, color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
+                        Icon(
+                            imageVector = if (isVault) Icons.Default.Savings else Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = if (isVault) MaterialTheme.colorScheme.primary else Color(0xFF10B981),
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Text(
+                            text = if (isVault) "Infaq Vault" else "Infaq Lunas",
+                            fontSize = 10.sp,
+                            color = if (isVault) MaterialTheme.colorScheme.primary else Color(0xFF10B981),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 } else {
                     Surface(
@@ -343,6 +411,35 @@ private fun RezekiItemRow(
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
+                }
+            }
+
+            // Action Buttons: Edit & Delete
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(0.dp)
+            ) {
+                IconButton(
+                    onClick = onEditClick,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Rezeki",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+                IconButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteOutline,
+                        contentDescription = "Hapus Rezeki",
+                        tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f),
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }

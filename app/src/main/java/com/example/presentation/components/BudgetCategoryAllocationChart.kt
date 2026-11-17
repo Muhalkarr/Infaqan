@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -54,6 +55,8 @@ import androidx.compose.ui.unit.sp
 import com.example.core.accounting.JournalEntry
 import com.example.core.budget.BudgetAllocation
 import com.example.ui.theme.GoldLight
+import com.example.ui.theme.LocalAppThemeMode
+import com.example.ui.theme.isTactical
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -119,12 +122,13 @@ fun BudgetCategoryAllocationChart(
             it.categoryName.contains("Operasional", ignoreCase = true)
         }.sumOf { it.monthlyLimit }
 
-        // 3. Infaq Kasab & Tabungan Ibadah (Investasi Akhirat: Vault, Sedekah, Zakat)
-        val infaqAccountIds = setOf("acc_vault", "acc_zakat_payable", "acc_disbursed", "acc_infaq_exp", "acc_charity")
+        // 3. Infaq Kasab & Tabungan Ibadah (Investasi Akhirat: Penyaluran ZISWAF & Sedekah)
+        val infaqAccountIds = setOf("acc_vault", "acc_zakat_payable", "acc_disbursed", "acc_infaq_exp", "acc_charity", "acc_sedekah_extra")
         val infaqSpent = journalEntries.sumOf { entry ->
             entry.lines.filter { line ->
-                (line.accountId in setOf("acc_disbursed", "acc_infaq_exp", "acc_zakat_payable", "acc_charity") && line.debit > 0) ||
-                (entry.transactionType in listOf("DISBURSE", "SEDEKAH", "INFAQ_PAYOUT") && line.accountId == "acc_vault" && line.debit > 0)
+                val isPayoutTx = entry.transactionType in listOf("DISBURSE", "SEDEKAH", "INFAQ_PAYOUT", "INFAQ_SEDEKAH", "ZAKAT")
+                val isExpenseRoundUp = entry.transactionType == "EXPENSE" && line.accountId in setOf("acc_disbursed", "acc_infaq_exp", "acc_charity") && line.debit > 0
+                (isPayoutTx && line.accountId in infaqAccountIds && line.debit > 0) || isExpenseRoundUp
             }.sumOf { it.debit }
         }
 
@@ -136,10 +140,13 @@ fun BudgetCategoryAllocationChart(
             it.categoryName.contains("Zakat", ignoreCase = true)
         }.sumOf { it.monthlyLimit }
 
-        // 4. Tahsiniyyat (Pelengkap/Gaya Hidup Halal: Rekreasi, Hiburan, Belanja)
+        // 4. Tahsiniyyat (Pelengkap/Gaya Hidup Halal: Rekreasi, Hiburan, Belanja & kategori lain)
+        val knownMappedIds = dharuriyyatAccountIds + hajiyyatAccountIds + infaqAccountIds
         val tahsiniyyatAccountIds = setOf("acc_lifestyle", "acc_entertainment", "acc_hobby", "acc_shopping", "acc_other_exp")
         val tahsiniyyatSpent = expenseEntries.sumOf { entry ->
-            entry.lines.filter { it.accountId in tahsiniyyatAccountIds && it.debit > 0 }.sumOf { it.debit }
+            entry.lines.filter {
+                it.debit > 0 && (it.accountId in tahsiniyyatAccountIds || it.accountId !in knownMappedIds)
+            }.sumOf { it.debit }
         }
 
         val tahsiniyyatBudget = budgetCategories.filter {
@@ -264,6 +271,8 @@ fun BudgetCategoryAllocationChart(
         }
     }
 
+    val isTactical = LocalAppThemeMode.current.isTactical
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -271,8 +280,8 @@ fun BudgetCategoryAllocationChart(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        shape = if (isTactical) CutCornerShape(8.dp) else RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = if (isTactical) 0.55f else 1f))
     ) {
         Column(
             modifier = Modifier

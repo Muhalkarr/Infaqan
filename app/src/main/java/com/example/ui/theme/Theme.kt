@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 
 enum class UiScaleMode(val displayName: String, val scaleFactor: Float, val description: String) {
     COMPACT("Ringkas (85%)", 0.85f, "Elemen lebih padat, muat lebih banyak informasi"),
@@ -21,11 +22,17 @@ enum class UiScaleMode(val displayName: String, val scaleFactor: Float, val desc
 
 enum class AppThemeMode(val title: String, val description: String) {
     FOLLOW_SYSTEM("Ikuti Sistem (Otomatis)", "Menyesuaikan otomatis dengan mode gelap/terang pada pengaturan ponsel Anda"),
+    TACTICAL_CYBER("Protokol Taktis (Gelap // Cyber Terminal)", "Tema retro-futuristik sci-fi HUD dengan aksen phosphor cyber green & dark obsidian"),
+    TACTICAL_LIGHT("Protokol Taktis (Terang // Clean Lab)", "Tema Clean Lab bersih dengan aksen tactical emerald, wireframe borders & amber"),
     ELEGANT_DARK("Gelap Elegan", "Tema bernuansa emerald gelap & aksen emas berkilau"),
     LIGHT_MODE("Terang Bersih", "Tema terang bersih dengan tipografi jelas & teduh"),
     HIGH_CONTRAST_LIGHT("Kontras Tinggi (Terang)", "Kontras maksimal latar putih & teks hitam pekat untuk aksesibilitas"),
     HIGH_CONTRAST_DARK("Kontras Tinggi (Gelap)", "Latar hitam murni & teks kontras tinggi untuk keterbacaan tajam")
 }
+
+val AppThemeMode.isTactical: Boolean
+    get() = this == AppThemeMode.TACTICAL_CYBER || this == AppThemeMode.TACTICAL_LIGHT
+
 
 private val IslamicDarkColorScheme = darkColorScheme(
     primary = EmeraldPrimary,
@@ -116,19 +123,105 @@ private val HighContrastDarkColorScheme = darkColorScheme(
     onError = Color.Black
 )
 
+private val TacticalCyberColorScheme = darkColorScheme(
+    primary = CyberNeonGreen,
+    onPrimary = Color(0xFF002917),
+    primaryContainer = CyberNeonGreenContainer,
+    onPrimaryContainer = CyberNeonGreen,
+    secondary = CyberTacticalGold,
+    onSecondary = Color(0xFF281C00),
+    secondaryContainer = Color(0xFF453200),
+    onSecondaryContainer = Color(0xFFFFE082),
+    tertiary = Color(0xFF00E5FF),
+    onTertiary = Color.Black,
+    background = CyberTerminalBackground,
+    onBackground = CyberTerminalTextPrimary,
+    surface = CyberTerminalSurface,
+    onSurface = CyberTerminalTextPrimary,
+    surfaceVariant = CyberTerminalSurfaceVariant,
+    onSurfaceVariant = CyberTerminalTextSecondary,
+    outline = CyberTacticalBorder,
+    outlineVariant = Color(0xFF132E2A),
+    error = Color(0xFFFF5252),
+    onError = Color.White
+)
+
+private val TacticalLightColorScheme = lightColorScheme(
+    primary = TacticalLightPrimary,
+    onPrimary = Color.White,
+    primaryContainer = TacticalLightPrimaryContainer,
+    onPrimaryContainer = Color(0xFF002917),
+    secondary = TacticalLightSecondary,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFFFECC8),
+    onSecondaryContainer = Color(0xFF452B00),
+    tertiary = Color(0xFF006874),
+    onTertiary = Color.White,
+    background = TacticalLightBackground,
+    onBackground = TacticalLightTextPrimary,
+    surface = TacticalLightSurface,
+    onSurface = TacticalLightTextPrimary,
+    surfaceVariant = TacticalLightSurfaceVariant,
+    onSurfaceVariant = TacticalLightTextSecondary,
+    outline = TacticalLightBorder,
+    outlineVariant = Color(0xFFBDD0CC),
+    error = Color(0xFFBA1A1A),
+    onError = Color.White
+)
+
+val LocalAppThemeMode = androidx.compose.runtime.compositionLocalOf { AppThemeMode.FOLLOW_SYSTEM }
+
+@Composable
+fun rememberAppCardShape(cornerDp: Int = 14): androidx.compose.ui.graphics.Shape {
+    val themeMode = LocalAppThemeMode.current
+    return remember(themeMode, cornerDp) {
+        if (themeMode.isTactical) {
+            androidx.compose.foundation.shape.CutCornerShape((cornerDp * 0.5f).coerceAtLeast(4f).dp)
+        } else {
+            androidx.compose.foundation.shape.RoundedCornerShape(cornerDp.dp)
+        }
+    }
+}
+
+@Composable
+fun rememberAppShape(cornerDp: Int = 8): androidx.compose.ui.graphics.Shape {
+    val themeMode = LocalAppThemeMode.current
+    return remember(themeMode, cornerDp) {
+        if (themeMode.isTactical) {
+            androidx.compose.foundation.shape.CutCornerShape((cornerDp * 0.4f).coerceAtLeast(3f).dp)
+        } else {
+            androidx.compose.foundation.shape.RoundedCornerShape(cornerDp.dp)
+        }
+    }
+}
+
 @Composable
 fun AmanahLedgerTheme(
+    themeMode: AppThemeMode = AppThemeMode.FOLLOW_SYSTEM,
     darkTheme: Boolean = isSystemInDarkTheme(),
     highContrast: Boolean = false,
     uiScaleFactor: Float = 1.0f,
     content: @Composable () -> Unit
 ) {
-    val colorScheme: ColorScheme = when {
-        highContrast && darkTheme -> HighContrastDarkColorScheme
-        highContrast && !darkTheme -> HighContrastLightColorScheme
-        darkTheme -> IslamicDarkColorScheme
-        else -> IslamicLightColorScheme
+    val colorScheme: ColorScheme = when (themeMode) {
+        AppThemeMode.TACTICAL_CYBER -> TacticalCyberColorScheme
+        AppThemeMode.TACTICAL_LIGHT -> TacticalLightColorScheme
+        AppThemeMode.HIGH_CONTRAST_DARK -> HighContrastDarkColorScheme
+        AppThemeMode.HIGH_CONTRAST_LIGHT -> HighContrastLightColorScheme
+        AppThemeMode.ELEGANT_DARK -> IslamicDarkColorScheme
+        AppThemeMode.LIGHT_MODE -> IslamicLightColorScheme
+        AppThemeMode.FOLLOW_SYSTEM -> {
+            when {
+                highContrast && darkTheme -> HighContrastDarkColorScheme
+                highContrast && !darkTheme -> HighContrastLightColorScheme
+                darkTheme -> IslamicDarkColorScheme
+                else -> IslamicLightColorScheme
+            }
+        }
     }
+
+    val typography = if (themeMode.isTactical) TacticalCyberTypography else Typography
+    val shapes = if (themeMode.isTactical) TacticalCyberShapes else StandardShapes
 
     val currentDensity = LocalDensity.current
     val effectiveScale = uiScaleFactor.coerceIn(0.75f, 1.6f)
@@ -140,13 +233,22 @@ fun AmanahLedgerTheme(
     }
 
     CompositionLocalProvider(
-        LocalDensity provides scaledDensity
+        LocalDensity provides scaledDensity,
+        LocalAppThemeMode provides themeMode
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = Typography,
-            content = content
-        )
+            typography = typography,
+            shapes = shapes
+        ) {
+            if (themeMode.isTactical) {
+                TacticalTerminalOverlay(isLight = themeMode == AppThemeMode.TACTICAL_LIGHT) {
+                    content()
+                }
+            } else {
+                content()
+            }
+        }
     }
 }
 

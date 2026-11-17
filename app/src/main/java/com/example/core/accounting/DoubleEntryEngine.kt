@@ -24,7 +24,8 @@ data class Account(
     val code: String,
     val name: String,
     val category: AccountCategory,
-    val description: String = ""
+    val description: String = "",
+    val isCustom: Boolean = false
 )
 
 data class JournalLine(
@@ -47,6 +48,15 @@ data class JournalEntry(
     val totalDebit: Double = lines.sumOf { it.debit }
     val totalCredit: Double = lines.sumOf { it.credit }
     val isBalanced: Boolean = abs(totalDebit - totalCredit) < 0.01
+
+    val primaryAmount: Double
+        get() = when (transactionType) {
+            "INFLOW", "INCOME", "EXPENSE" -> {
+                val mainDebits = lines.filter { it.debit > 0.0 && it.accountId != "acc_disbursed" }
+                if (mainDebits.isNotEmpty()) mainDebits.sumOf { it.debit } else totalDebit
+            }
+            else -> totalDebit
+        }
 
     init {
         require(isBalanced) {

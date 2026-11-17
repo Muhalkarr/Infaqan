@@ -7,7 +7,11 @@ data class HijriDate(
     val year: Int,
     val month: Int,
     val day: Int
-) {
+) : Comparable<HijriDate> {
+    fun toComparableInt(): Int = (year * 10000) + (month * 100) + day
+
+    override fun compareTo(other: HijriDate): Int = toComparableInt().compareTo(other.toComparableInt())
+
     val monthName: String
         get() = monthNames.getOrElse(month - 1) { "Bulan $month" }
 
@@ -150,6 +154,74 @@ object HijriCalendarEngine {
             month = hijriMonth.coerceIn(1, 12),
             day = hijriDay.coerceIn(1, 30)
         )
+    }
+
+    /**
+     * Mengonversi tanggal Hijriah ke tanggal Masehi (pukul 12:00 siang waktu lokal)
+     * menggunakan invers JDN dan verifikasi bijektif terhadap [fromGregorian]
+     * sehingga 100% konsisten dengan [manualOffsetDays].
+     */
+    fun toGregorian(
+        hijriYear: Int,
+        hijriMonth: Int,
+        hijriDay: Int,
+        manualOffsetDays: Int = 0
+    ): Date {
+        val safeYear = hijriYear.coerceIn(1, 9999)
+        val safeMonth = hijriMonth.coerceIn(1, 12)
+        val safeDay = hijriDay.coerceIn(1, 30)
+
+        val approxJd = ((11 * safeYear + 3) / 30) + 354 * safeYear +
+            30 * safeMonth - ((safeMonth - 1) / 2) + safeDay + 1948440 - 385
+
+        val baseCal = julianDayToGregorianCalendar(approxJd).apply {
+            if (manualOffsetDays != 0) {
+                add(Calendar.DAY_OF_YEAR, -manualOffsetDays)
+            }
+        }
+
+        // Kalibrasi tepat +/- 2 hari agar fromGregorian(..., maghribHour=24, manualOffsetDays)
+        // menghasilkan HijriDate yang persis sama (atau hari terakhir bulan bila safeDay=30 pd bulan 29 hari)
+        val targetKey = (safeYear * 10000) + (safeMonth * 100) + safeDay
+        val probe = baseCal.clone() as Calendar
+        for (shift in -2..2) {
+            val c = (probe.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, shift) }
+            val h = fromGregorian(c.time, maghribHour = 24, manualOffsetDays = manualOffsetDays)
+            val key = h.toComparableInt()
+            if (key == targetKey) {
+                return c.time
+            }
+        }
+        return baseCal.time
+    }
+
+    fun daysInHijriMonth(hijriYear: Int, hijriMonth: Int, manualOffsetDays: Int = 0): Int {
+        val d30 = toGregorian(hijriYear, hijriMonth, 30, manualOffsetDays = manualOffsetDays)
+        val check = fromGregorian(d30, maghribHour = 24, manualOffsetDays = manualOffsetDays)
+        return if (check.year == hijriYear && check.month == hijriMonth && check.day == 30) 30 else 29
+    }
+
+    private fun julianDayToGregorianCalendar(jd: Int): Calendar {
+        var l = jd + 68569
+        val n = (4 * l) / 146097
+        l -= (146097 * n + 3) / 4
+        val i = (4000 * (l + 1)) / 1461001
+        l -= (1461 * i) / 4 - 31
+        val j = (80 * l) / 2447
+        val day = l - (2447 * j) / 80
+        l = j / 11
+        val month = j + 2 - 12 * l
+        val year = 100 * (n - 49) + i + l
+
+        return Calendar.getInstance().apply {
+            set(Calendar.YEAR, year)
+            set(Calendar.MONTH, (month - 1).coerceIn(0, 11))
+            set(Calendar.DAY_OF_MONTH, day.coerceIn(1, 31))
+            set(Calendar.HOUR_OF_DAY, 12)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
     }
 
     fun isFriday(date: Date = Date()): Boolean {

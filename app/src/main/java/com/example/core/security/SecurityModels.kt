@@ -86,13 +86,8 @@ data class SecurityConfig(
 
     fun verifyRecoveryAnswer(answer: String): Boolean {
         val trimmed = answer.trim().lowercase(Locale.ROOT)
-        if (trimmed.isEmpty()) return false
+        if (trimmed.isEmpty() || securityAnswerHash.isEmpty()) return false
         val hashed = hashString(trimmed)
-        // Check stored hash
-        if (hashed == securityAnswerHash) return true
-        // If stored hash was raw/untrimmed or default "indonesia", or user answered "tasikmalaya"
-        if (trimmed == "tasikmalaya" || trimmed == "indonesia") return true
-        if (securityAnswerHash.isEmpty()) return true
-        return false
+        return hashed == securityAnswerHash
     }
 }
